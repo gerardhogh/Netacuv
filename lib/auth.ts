@@ -108,10 +108,14 @@ export const authOptions: NextAuthOptions = {
           where: { id: token.sub },
           include: { role: true },
         });
-        if (dbUser) {
-          token.role = dbUser.role?.name || "TALENT";
-          token.isPremium = dbUser.isPremium || false;
+        
+        if (!dbUser) {
+          // L'utilisateur n'existe plus en DB, on force la déconnexion
+          return { ...token, error: "DeletedAccount" };
         }
+        
+        token.role = dbUser.role?.name || "TALENT";
+        token.isPremium = dbUser.isPremium || false;
       } else if (user) {
         token.role = (user as any).role || "TALENT";
         token.isPremium = (user as any).isPremium || false;
@@ -119,6 +123,10 @@ export const authOptions: NextAuthOptions = {
       return token;
     },
     async session({ session, token }) {
+      if ((token as any).error === "DeletedAccount") {
+        return {} as any; // Cela force la déconnexion en vidant la session
+      }
+      
       if (session.user) {
         (session.user as any).id = token.sub;
         (session.user as any).role = token.role || "TALENT";
