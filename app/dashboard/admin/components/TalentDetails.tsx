@@ -150,14 +150,62 @@ export function TalentDetails({ talent, onBack }: { talent: any, onBack: () => v
           )}
 
           {activeTab === "Réseaux" && (
-            <div className="text-center text-slate-500 py-20">
-              Contenu des réseaux sociaux
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="flex items-center gap-3 p-4 bg-slate-50 rounded-xl border border-slate-100">
+                  <div className="w-8 h-8 rounded-full bg-[#1877F2] flex items-center justify-center text-white font-bold font-serif">f</div>
+                  <div className="flex flex-col overflow-hidden">
+                    <span className="text-xs text-slate-500 font-semibold">Facebook</span>
+                    <span className="text-sm font-medium text-slate-800 truncate">{talent.socials?.facebook || "Non renseigné"}</span>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3 p-4 bg-slate-50 rounded-xl border border-slate-100">
+                  <div className="w-8 h-8 rounded-full bg-[#0A66C2] flex items-center justify-center text-white font-bold">in</div>
+                  <div className="flex flex-col overflow-hidden">
+                    <span className="text-xs text-slate-500 font-semibold">LinkedIn</span>
+                    <span className="text-sm font-medium text-slate-800 truncate">{talent.socials?.linkedin || "Non renseigné"}</span>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3 p-4 bg-slate-50 rounded-xl border border-slate-100">
+                  <div className="w-8 h-8 rounded-full bg-black flex items-center justify-center text-white font-bold">X</div>
+                  <div className="flex flex-col overflow-hidden">
+                    <span className="text-xs text-slate-500 font-semibold">Twitter</span>
+                    <span className="text-sm font-medium text-slate-800 truncate">{talent.socials?.twitter || "Non renseigné"}</span>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3 p-4 bg-slate-50 rounded-xl border border-slate-100">
+                  <div className="w-8 h-8 rounded-full bg-[#E60023] flex items-center justify-center text-white font-bold font-serif">P</div>
+                  <div className="flex flex-col overflow-hidden">
+                    <span className="text-xs text-slate-500 font-semibold">Pinterest</span>
+                    <span className="text-sm font-medium text-slate-800 truncate">{talent.socials?.pinterest || "Non renseigné"}</span>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3 p-4 bg-slate-50 rounded-xl border border-slate-100">
+                  <div className="w-8 h-8 rounded-full bg-[#1769FF] flex items-center justify-center text-white font-bold text-[10px]">Be</div>
+                  <div className="flex flex-col overflow-hidden">
+                    <span className="text-xs text-slate-500 font-semibold">Behance</span>
+                    <span className="text-sm font-medium text-slate-800 truncate">{talent.socials?.behance || "Non renseigné"}</span>
+                  </div>
+                </div>
+              </div>
             </div>
           )}
           
           {activeTab === "Vidéo Entretien" && (
-            <div className="text-center text-slate-500 py-20">
-              Contenu de la vidéo d&apos;entretien
+            <div className="flex flex-col items-center justify-center min-h-[300px]">
+              {talent.videoUrl ? (
+                <div className="w-full bg-black rounded-xl aspect-[16/9] overflow-hidden shadow-md relative border border-slate-200">
+                  <video 
+                    src={talent.videoUrl} 
+                    controls 
+                    className="w-full h-full object-contain"
+                  />
+                </div>
+              ) : (
+                <div className="text-center text-slate-500 py-20 bg-slate-50 rounded-xl border border-slate-100 w-full">
+                  <p className="font-medium text-sm">Aucune vidéo d'entretien disponible</p>
+                </div>
+              )}
             </div>
           )}
         </div>

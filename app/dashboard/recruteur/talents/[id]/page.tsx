@@ -95,6 +95,7 @@ function mapToTalentProfile(dbData: any): TalentProfile {
     isVerified: dbData.isVerified,
     imageUrl: dbData.imageUrl || "/assets/candidate-alicia-parker.jpg",
     cvUpdated: dbData.updatedAt || "Récemment",
+    cvUrl: dbData.cvUrl,
     videoUrl: dbData.videoUrl,
     interviewSession: dbData.interviewSession,
     socials: {

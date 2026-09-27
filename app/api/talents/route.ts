@@ -59,6 +59,7 @@ export async function GET(request: Request) {
         date: new Date(t.createdAt).toLocaleDateString('fr-FR'),
         status: t.active ? "Actif" : "Suspendu",
         videoOk: !!profile?.videoUrl,
+        videoUrl: profile?.videoUrl,
         domaine: profile?.degree || "Général",
         location: profile?.city || "Non spécifié",
         country: profile?.country || "Non spécifié",

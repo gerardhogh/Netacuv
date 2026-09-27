@@ -532,6 +532,18 @@ export default function InterviewPage() {
           const videoUrl = URL.createObjectURL(videoBlob);
           setRecordedVideoUrl(videoUrl);
           await saveVideoToDB(videoBlob);
+          
+          // Upload to Supabase so recruiter/admin can view it
+          try {
+            const formData = new FormData();
+            formData.append("video", videoBlob, "interview." + (mimeType.includes("mp4") ? "mp4" : "webm"));
+            await fetch("/api/talents/video", {
+              method: "POST",
+              body: formData,
+            });
+          } catch (e) {
+            console.error("Failed to upload video to Supabase", e);
+          }
         }
         // Stop media tracks now that the interview is done
         stopAllMediaTracks();
