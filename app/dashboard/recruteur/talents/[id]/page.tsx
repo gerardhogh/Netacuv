@@ -56,6 +56,7 @@ interface TalentProfile {
   isVerified: boolean;
   imageUrl: string;
   cvUpdated: string;
+  cvUrl?: string;
   videoUrl?: string;
   interviewSession?: {
     id: string;
@@ -78,30 +79,30 @@ function mapToTalentProfile(dbData: any): TalentProfile {
   return {
     id: dbData.id.toString(),
     name: dbData.name,
-    username: dbData.email?.split("@")[0] || "",
+    username: dbData.username || dbData.email?.split("@")[0] || "",
     profession: dbData.profession,
     firstName: dbData.name?.split(" ")[0] || "",
     lastName: dbData.name?.split(" ").slice(1).join(" ") || "",
     sex: dbData.gender,
-    opportunites: "Emploi", // DB doesn't have this, default
-    pays: dbData.location?.split(",")[1]?.trim() || "Benin",
-    ville: dbData.location?.split(",")[0]?.trim() || "Cotonou",
+    opportunites: "Emploi",
+    pays: dbData.country || "Non précisé",
+    ville: dbData.city || "Non précisé",
     phone: dbData.contact,
     email: dbData.email,
     bio: dbData.bio,
-    competences: dbData.skills?.join(", ") || "",
+    competences: Array.isArray(dbData.skills) ? dbData.skills.join(", ") : (dbData.skills || ""),
     isActive: true, // Assuming active if listed
     isVerified: dbData.isVerified,
     imageUrl: dbData.imageUrl || "/assets/candidate-alicia-parker.jpg",
-    cvUpdated: "Récemment", // placeholder
+    cvUpdated: dbData.updatedAt || "Récemment",
     videoUrl: dbData.videoUrl,
     interviewSession: dbData.interviewSession,
     socials: {
-      facebook: "https://web.facebook.com/",
-      linkedin: "https://linkedin.com/",
-      twitter: "https://twitter.com/",
-      pinterest: "https://pinterest.com/",
-      behance: "https://behance.net/",
+      facebook: dbData.socials?.facebook || "",
+      linkedin: dbData.socials?.linkedin || "",
+      twitter: dbData.socials?.twitter || "",
+      pinterest: dbData.socials?.pinterest || "",
+      behance: dbData.socials?.behance || "",
     },
   };
 }
@@ -687,42 +688,54 @@ export default function TalentDetailPage() {
 
                 {/* CV preview thumbnail */}
                 <div className="relative w-full aspect-[3/4] rounded-xl overflow-hidden bg-slate-100 border border-slate-200 mb-4 shadow-sm">
-                  <div className="absolute inset-0 flex items-center justify-center bg-slate-50">
-                    <div className="w-full h-full bg-gradient-to-b from-slate-700 to-slate-900 flex flex-col p-4 text-white">
-                      {/* Mock CV content */}
-                      <div className="flex items-start gap-3 mb-4">
-                        <div className="w-12 h-12 rounded-full bg-white/20 shrink-0" />
-                        <div className="space-y-1.5 flex-1">
-                          <div className="h-2 bg-white/60 rounded w-3/4" />
-                          <div className="h-1.5 bg-white/30 rounded w-1/2" />
-                        </div>
+                  {talent.cvUrl ? (
+                    talent.cvUrl.endsWith('.pdf') ? (
+                      <iframe src={`${talent.cvUrl}#toolbar=0&navpanes=0&scrollbar=0`} className="w-full h-full pointer-events-none" />
+                    ) : (
+                      <Image src={talent.cvUrl} alt="CV" fill className="object-contain" />
+                    )
+                  ) : (
+                    <div className="absolute inset-0 flex items-center justify-center bg-slate-50">
+                      <div className="text-slate-400 text-sm font-medium">
+                        Aucun CV importé
                       </div>
-                      {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
-                        <div key={i} className="mb-2">
-                          <div className={`h-1.5 bg-white/${i % 2 === 0 ? "40" : "25"} rounded mb-1`} style={{ width: `${60 + (i % 3) * 15}%` }} />
-                          <div className="h-1 bg-white/15 rounded" style={{ width: `${40 + (i % 4) * 10}%` }} />
-                        </div>
-                      ))}
                     </div>
-                  </div>
+                  )}
                 </div>
 
                 {/* CV actions */}
                 <div className="flex gap-2">
-                  <button
-                    onClick={() => showToast("Téléchargement du PDF...")}
-                    className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl border border-red-200 text-red-500 hover:bg-red-50 text-xs font-semibold transition-colors"
+                  <a
+                    href={talent.cvUrl || "#"}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    download={`CV_${talent.name.replace(/\s+/g, '_')}`}
+                    className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl border text-xs font-semibold transition-colors ${talent.cvUrl ? "border-red-200 text-red-500 hover:bg-red-50" : "border-slate-200 text-slate-400 cursor-not-allowed"}`}
+                    onClick={(e) => {
+                      if (!talent.cvUrl) {
+                        e.preventDefault();
+                        showToast("Aucun CV disponible");
+                      }
+                    }}
                   >
                     <Download size={13} />
-                    Télécharger le pdf
-                  </button>
-                  <button
-                    onClick={() => showToast("Prévisualisation du CV...")}
-                    className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl bg-[#32A8D7] hover:bg-[#2896c2] text-white text-xs font-semibold transition-colors shadow-sm"
+                    Télécharger
+                  </a>
+                  <a
+                    href={talent.cvUrl || "#"}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-white text-xs font-semibold transition-colors shadow-sm ${talent.cvUrl ? "bg-[#32A8D7] hover:bg-[#2896c2]" : "bg-slate-300 cursor-not-allowed"}`}
+                    onClick={(e) => {
+                      if (!talent.cvUrl) {
+                        e.preventDefault();
+                        showToast("Aucun CV disponible");
+                      }
+                    }}
                   >
                     <Eye size={13} />
-                    Prévisualiser
-                  </button>
+                    Ouvrir
+                  </a>
                 </div>
               </div>
             </div>

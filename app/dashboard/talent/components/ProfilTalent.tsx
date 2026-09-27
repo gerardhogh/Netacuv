@@ -659,6 +659,7 @@ function InformationsTab({ onUpdate }: { onUpdate: () => void }) {
     try {
       const payload = {
         name: formData.name,
+        username: formData.username,
         bio: formData.bio,
         phone: formData.phone,
         city: formData.city,

@@ -35,26 +35,47 @@ export async function GET(
     // Check if we have an interview session
     const interviewSession = profile?.interviewSessions?.[0]; // Taking the first one if it exists
 
+    let skills = [];
+    if (profile?.skills) {
+      try {
+        skills = JSON.parse(profile.skills);
+      } catch (e) {
+        skills = profile.skills.split(',').map(s => s.trim());
+      }
+    }
+
     const formattedTalent = {
       id: talentUser.id,
       name: talentUser.name || "Talent Anonyme",
+      username: profile?.username || talentUser.email?.split('@')[0] || "",
       email: talentUser.email || "",
       contact: profile?.phone || "Non spécifié",
       date: new Date(talentUser.createdAt).toLocaleDateString('fr-FR'),
+      updatedAt: profile?.updatedAt ? new Date(profile.updatedAt).toLocaleDateString('fr-FR') : "Récemment",
       status: talentUser.active ? "Actif" : "Suspendu",
       videoUrl: profile?.videoUrl,
       domaine: profile?.degree || "Général",
       location: (profile?.city && profile?.country) 
         ? `${profile.city}, ${profile.country}` 
         : (profile?.city || profile?.country || "Non spécifié"),
-      profession: profile?.bio?.substring(0, 30) || "Talent", 
+      country: profile?.country || "",
+      city: profile?.city || "",
+      profession: profile?.degree || "Talent", 
       bio: profile?.bio || "Aucune biographie",
       imageUrl: talentUser.image || "/assets/avatar_africain.jpg",
       cvUrl: profile?.cvUrl || "",
       isVerified: true,
-      skills: profile?.skills ? JSON.parse(profile.skills) : [],
+      skills: skills,
       gender: profile?.gender || "Non précisé",
       
+      socials: {
+        facebook: profile?.facebook || "",
+        linkedin: profile?.linkedin || "",
+        twitter: profile?.twitter || "",
+        pinterest: profile?.pinterest || "",
+        behance: profile?.behance || "",
+      },
+
       // Interview details
       interviewSession: interviewSession ? {
         id: interviewSession.id,
