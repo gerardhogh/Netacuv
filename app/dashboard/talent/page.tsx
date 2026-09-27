@@ -137,10 +137,24 @@ export default function TalentDashboard() {
             const nameParts = decodedName.split('-');
             if (nameParts.length > 2) {
               setCvFileName(nameParts.slice(2).join('-').replace(/_/g, ' '));
+              
+              const timestamp = parseInt(nameParts[1], 10);
+              if (!isNaN(timestamp) && timestamp > 1000000000000) {
+                const date = new Date(timestamp);
+                setCvUploadedAt(date.toLocaleDateString("fr-FR", {
+                  day: "numeric", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit"
+                }).replace(':', 'h'));
+              } else {
+                setCvUploadedAt(new Date(data.talentProfile.updatedAt || Date.now()).toLocaleDateString("fr-FR", {
+                  day: "numeric", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit"
+                }).replace(':', 'h'));
+              }
             } else {
               setCvFileName(decodedName.replace(/_/g, ' '));
+              setCvUploadedAt(new Date(data.talentProfile.updatedAt || Date.now()).toLocaleDateString("fr-FR", {
+                day: "numeric", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit"
+              }).replace(':', 'h'));
             }
-            setCvUploadedAt("Mis à jour récemment");
           } else {
             setCvFileName("Aucun CV ajouté");
             setCvUploadedAt("Pas de CV");

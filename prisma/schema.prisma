@@ -107,6 +107,7 @@ model TalentProfile {
   userId      String   @unique
   user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   
+  username    String?  @unique
   bio         String?
   phone       String?
   videoUrl    String?  // Vidéo de présentation (le même rendu pour Admin/Recruteur)

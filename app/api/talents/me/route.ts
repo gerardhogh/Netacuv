@@ -84,7 +84,8 @@ export async function PUT(req: Request) {
       pinterest,
       behance,
       other1,
-      other2
+      other2,
+      username
     } = data;
 
     // Mise à jour du User
@@ -97,6 +98,7 @@ export async function PUT(req: Request) {
 
     // Prepare talent profile data
     const talentData: any = {};
+    if (username !== undefined) talentData.username = username;
     if (bio !== undefined) talentData.bio = bio;
     if (phone !== undefined) talentData.phone = phone;
     if (city !== undefined) talentData.city = city;

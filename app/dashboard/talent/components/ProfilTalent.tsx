@@ -71,10 +71,24 @@ function ProfilTalentContent({ initialTab = "informations" }: { initialTab?: Sub
             const nameParts = decodedName.split('-');
             if (nameParts.length > 2) {
               setCvName(nameParts.slice(2).join('-').replace(/_/g, ' '));
+              
+              const timestamp = parseInt(nameParts[1], 10);
+              if (!isNaN(timestamp) && timestamp > 1000000000000) {
+                const date = new Date(timestamp);
+                setCvDate(date.toLocaleDateString("fr-FR", {
+                  day: "numeric", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit"
+                }).replace(':', 'h'));
+              } else {
+                setCvDate(new Date(data.talentProfile.updatedAt || Date.now()).toLocaleDateString("fr-FR", {
+                  day: "numeric", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit"
+                }).replace(':', 'h'));
+              }
             } else {
               setCvName(decodedName.replace(/_/g, ' '));
+              setCvDate(new Date(data.talentProfile.updatedAt || Date.now()).toLocaleDateString("fr-FR", {
+                day: "numeric", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit"
+              }).replace(':', 'h'));
             }
-            setCvDate("Mis à jour récemment");
           }
 
           const isInfoComplete = !!(
@@ -176,7 +190,9 @@ function ProfilTalentContent({ initialTab = "informations" }: { initialTab?: Sub
       day: "numeric",
       month: "long",
       year: "numeric",
-    });
+      hour: "2-digit",
+      minute: "2-digit"
+    }).replace(':', 'h');
 
     try {
       const formData = new FormData();
@@ -610,7 +626,7 @@ function InformationsTab({ onUpdate }: { onUpdate: () => void }) {
             email: data.email || "",
             bio: data.talentProfile?.bio || "",
             degree: data.talentProfile?.degree || "",
-            username: data.email?.split("@")[0] || "",
+            username: data.talentProfile?.username || data.email?.split("@")[0] || "",
             gender: data.talentProfile?.gender || "",
             country: data.talentProfile?.country || "",
             city: data.talentProfile?.city || "",
