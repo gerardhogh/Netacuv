@@ -63,6 +63,19 @@ function ProfilTalentContent({ initialTab = "informations" }: { initialTab?: Sub
           if (data.avatar) setUserAvatar(data.avatar);
           if (data.name) setUserName(data.name);
           if (data.talentProfile?.degree) setUserTitle(data.talentProfile.degree);
+          
+          if (data.talentProfile?.cvUrl) {
+            setCvBlobUrl(data.talentProfile.cvUrl);
+            const rawFileName = data.talentProfile.cvUrl.split('/').pop()?.split('?')[0] || "CV.pdf";
+            const decodedName = decodeURIComponent(rawFileName);
+            const nameParts = decodedName.split('-');
+            if (nameParts.length > 2) {
+              setCvName(nameParts.slice(2).join('-').replace(/_/g, ' '));
+            } else {
+              setCvName(decodedName.replace(/_/g, ' '));
+            }
+            setCvDate("Mis à jour récemment");
+          }
 
           const isInfoComplete = !!(
             data.name?.trim() &&
@@ -103,23 +116,8 @@ function ProfilTalentContent({ initialTab = "informations" }: { initialTab?: Sub
       setActiveTab("video");
     }
 
-    // Load saved CV from localStorage & IndexedDB
-    try {
-      const storedName = localStorage.getItem("check_cv_name");
-      const storedDate = localStorage.getItem("check_cv_date");
-      if (storedName) setCvName(storedName);
-      if (storedDate) setCvDate(storedDate);
-
-      getCvFromDB().then((data) => {
-        if (data && data.blob) {
-          const url = URL.createObjectURL(data.blob);
-          setCvBlobUrl(url);
-          if (data.name) setCvName(data.name);
-        }
-      }).catch(console.error);
-    } catch (e) {
-      console.error(e);
-    }
+    // Plus besoin de charger le CV depuis IndexedDB/localStorage,
+    // on va utiliser l'URL du backend récupérée via fetchProfile()
     
 
 
@@ -673,7 +671,7 @@ function InformationsTab({ onUpdate }: { onUpdate: () => void }) {
     }
   };
 
-  const profileLink = typeof window !== "undefined" && formData.username ? `${window.location.origin}/talents/${formData.username}` : "";
+  const profileLink = typeof window !== "undefined" && formData.username ? `https://netacuv.com/talents/${formData.username}` : "";
 
   const handleCopyLink = () => {
     if (!profileLink) return;

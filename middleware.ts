@@ -69,6 +69,11 @@ export async function middleware(req: NextRequest) {
     }
   }
 
+  // Rediriger les utilisateurs connectés qui tentent d'accéder à l'accueil ou aux pages d'auth
+  if (token && (path === "/" || path === "/connexion" || path === "/inscription")) {
+    return NextResponse.redirect(new URL("/dashboard", req.url));
+  }
+
   return NextResponse.next();
 }
 
