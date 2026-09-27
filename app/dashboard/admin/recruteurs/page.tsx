@@ -15,7 +15,7 @@ export default function AdminRecruteurs() {
   const { data: users = [], isLoading: loading, mutate } = useSWR("/api/users", fetcher);
 
   const recruteurs = Array.isArray(users) ? users
-    .filter((u: any) => u.recruiterProfile || u.role?.name === "Recruteur")
+    .filter((u: any) => u.recruiterProfile || u.role?.name?.toUpperCase() === "RECRUTEUR")
     .map((r: any, index: number) => ({
       id: r.id,
       no: (index + 1).toString().padStart(2, '0'),

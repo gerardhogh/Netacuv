@@ -23,6 +23,15 @@ export async function GET() {
       role: true,
       createdAt: true,
       updatedAt: true,
+      active: true,
+      recruiterProfile: {
+        include: {
+          jobOffers: {
+            include: { applications: true }
+          }
+        }
+      },
+      talentProfile: true
     },
   });
 
