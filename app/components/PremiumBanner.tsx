@@ -15,19 +15,16 @@ export default function PremiumBanner() {
   const [success, setSuccess] = useState(false);
 
   useEffect(() => {
+    if (session === undefined) return;
     if (session?.user?.isPremium) {
       setIsVisible(false);
-      return;
-    }
-    const bannerClosed = localStorage.getItem("premiumBannerClosed");
-    if (bannerClosed !== "true") {
+    } else {
       setIsVisible(true);
     }
   }, [session]);
 
   const handleClose = () => {
     setIsVisible(false);
-    localStorage.setItem("premiumBannerClosed", "true");
   };
 
   const handleSimulatePayment = async () => {
