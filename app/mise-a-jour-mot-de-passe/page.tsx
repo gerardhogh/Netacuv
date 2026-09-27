@@ -20,41 +20,38 @@ export default function UpdatePasswordPage() {
   const [checkingSession, setCheckingSession] = useState(true);
 
   useEffect(() => {
-    const checkSession = async () => {
-      // Cas 1 : code PKCE reçu en query param (nouveau flow Supabase)
-      const urlParams = new URLSearchParams(window.location.search);
-      const code = urlParams.get("code");
+    let mounted = true;
 
-      if (code) {
-        // Échanger le code côté client pour obtenir une session stockée dans le navigateur
-        const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
-        if (exchangeError) {
+    // Supabase intercepte automatiquement le hash #access_token=... dans l'URL
+    // et déclenche un événement onAuthStateChange
+    const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
+      if (!mounted) return;
+      
+      if (event === "PASSWORD_RECOVERY" || session) {
+        setCheckingSession(false);
+      }
+    });
+
+    // Cas où on ouvre la page avec une session déjà active, ou si l'event ne se lance pas
+    const checkInitialSession = async () => {
+      const { data } = await supabase.auth.getSession();
+      
+      // Laisser le temps à l'event listener de catcher le hash (PKCE ou implicite)
+      setTimeout(() => {
+        if (!mounted) return;
+        if (!data.session && window.location.hash.indexOf("type=recovery") === -1 && window.location.hash.indexOf("access_token=") === -1) {
           setError("Le lien de réinitialisation est invalide ou a expiré. Veuillez refaire la demande.");
           setCheckingSession(false);
-          return;
         }
-        // Nettoyer l'URL
-        window.history.replaceState({}, "", "/mise-a-jour-mot-de-passe");
-        setCheckingSession(false);
-        return;
-      }
-
-      // Cas 2 : session déjà présente (ancien flow hash-based ou session active)
-      const { data } = await supabase.auth.getSession();
-      if (!data.session) {
-        // Attendre un peu au cas où le hash est en cours de traitement
-        setTimeout(async () => {
-          const { data: retryData } = await supabase.auth.getSession();
-          if (!retryData.session) {
-            setError("Le lien de réinitialisation est invalide ou a expiré. Veuillez refaire la demande.");
-          }
-          setCheckingSession(false);
-        }, 1500);
-      } else {
-        setCheckingSession(false);
-      }
+      }, 1500);
     };
-    checkSession();
+
+    checkInitialSession();
+
+    return () => {
+      mounted = false;
+      authListener.subscription.unsubscribe();
+    };
   }, []);
 
   const hasMinLength = password.length >= 8;

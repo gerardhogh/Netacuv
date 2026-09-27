@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Eye, EyeOff, Shield, Bell, Globe2, AlertTriangle } from "lucide-react";
-import { useLang } from "../../../context/LangContext";
+import { useLang, LOCALES } from "../../../context/LangContext";
 
 export default function ParametresTab() {
   const [emailNotif, setEmailNotif] = useState(true);
@@ -113,14 +113,17 @@ export default function ParametresTab() {
           <h3 className="text-base font-bold text-slate-800">Langue de la plateforme</h3>
         </div>
         <div className="max-w-lg">
-          <select
-            value={lang}
-            onChange={(e) => setLang(e.target.value as any)}
-            className="w-full bg-[#f8fafc] border border-slate-200 rounded-lg px-4 py-3 text-sm text-slate-800 outline-none focus:ring-2 focus:ring-blue-100 appearance-none cursor-pointer"
-          >
-            <option value="fr">🇫🇷 Français</option>
-            <option value="en">🇬🇧 English</option>
-          </select>
+          <div className="relative">
+            <select
+              value={lang}
+              onChange={(e) => setLang(e.target.value as any)}
+              className="w-full bg-[#f8fafc] border border-slate-200 rounded-lg px-4 py-3 text-sm text-slate-800 outline-none focus:ring-2 focus:ring-blue-100 appearance-none cursor-pointer"
+            >
+              {LOCALES.map(({ code, label, flag }) => (
+                <option key={code} value={code}>{flag} {label}</option>
+              ))}
+            </select>
+          </div>
         </div>
       </section>
 

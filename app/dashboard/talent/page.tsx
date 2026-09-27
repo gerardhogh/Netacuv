@@ -5,7 +5,7 @@ import Image from "next/image";
 import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "../../context/AuthContext";
-import { useLang } from "../../context/LangContext";
+import { useLang, LOCALES } from "../../context/LangContext";
 import LogoutButton from "../../components/LogoutButton";
 import {
   Menu,
@@ -417,18 +417,20 @@ export default function TalentDashboard() {
                 aria-label="Langue"
               >
                 <Globe size={18} />
-                <span className="notranslate text-xs font-bold uppercase">{lang === "en" ? "EN" : "FR"}</span>
+                <span className="notranslate text-xs font-bold uppercase">{lang.toUpperCase()}</span>
               </button>
               {langMenuOpen && (
-                <div className="absolute right-0 mt-2 w-36 bg-white rounded-2xl shadow-xl border border-slate-100 py-2 z-30 animate-fade-in">
-                  {(["fr", "en"] as const).map((l) => (
+                <div className="absolute right-0 mt-2 w-40 bg-white rounded-2xl shadow-xl border border-slate-100 py-2 z-30 animate-fade-in">
+                  {LOCALES.map(({ code, label, flag }) => (
                     <button
-                      key={l}
-                      onClick={() => { setLang(l); setLangMenuOpen(false); }}
-                      className={`w-full text-left px-4 py-2 text-xs font-semibold transition-colors ${lang === l ? "text-blue-600 bg-blue-50" : "text-slate-600 hover:bg-slate-50"
-                        }`}
+                      key={code}
+                      onClick={() => { setLang(code); setLangMenuOpen(false); }}
+                      className={`w-full text-left px-4 py-2 text-xs font-semibold flex items-center gap-2 transition-colors ${
+                        lang === code ? "text-blue-600 bg-blue-50" : "text-slate-600 hover:bg-slate-50"
+                      }`}
                     >
-                      {l === "fr" ? "🇫🇷 Français" : l === "en" ? "🇬🇧 English" : l === "es" ? "🇪🇸 Español" : "🇵🇹 Português"}
+                      <span className="text-base">{flag}</span>
+                      <span>{label}</span>
                     </button>
                   ))}
                 </div>

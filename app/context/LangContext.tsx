@@ -10,13 +10,13 @@ import {
 } from "react";
 
 // ─── Supported locales ────────────────────────────────────────────────────────
-export type Locale = "fr" | "en" | "es" | "pt";
+export type Locale = "fr" | "en" | "es" | "zh";
 
 export const LOCALES: { code: Locale; label: string; flag: string }[] = [
   { code: "fr", label: "Français", flag: "🇫🇷" },
   { code: "en", label: "English", flag: "🇬🇧" },
   { code: "es", label: "Español", flag: "🇪🇸" },
-  { code: "pt", label: "Português", flag: "🇵🇹" },
+  { code: "zh", label: "中文", flag: "🇨🇳" },
 ];
 
 const COOKIE_NAME = "netacuv_locale";
@@ -43,7 +43,7 @@ const loaders: Record<Locale, () => Promise<Dictionary>> = {
   fr: () => import("../../lib/i18n/fr.json").then((m) => m.default as Dictionary),
   en: () => import("../../lib/i18n/en.json").then((m) => m.default as Dictionary),
   es: () => import("../../lib/i18n/es.json").then((m) => m.default as Dictionary),
-  pt: () => import("../../lib/i18n/pt.json").then((m) => m.default as Dictionary),
+  zh: () => import("../../lib/i18n/zh.json").then((m) => m.default as Dictionary),
 };
 
 // ─── Cookie helpers ───────────────────────────────────────────────────────────
@@ -59,7 +59,7 @@ function setCookie(name: string, value: string, days = 365) {
 }
 
 function isValidLocale(l: string): l is Locale {
-  return ["fr", "en", "es", "pt"].includes(l);
+  return ["fr", "en", "es", "zh"].includes(l);
 }
 
 // ─── Context ──────────────────────────────────────────────────────────────────
@@ -83,14 +83,15 @@ const LangContext = createContext<LangContextValue>({
 
 // ─── Provider ─────────────────────────────────────────────────────────────────
 export function LangProvider({ children }: { children: ReactNode }) {
-  const [locale, setLocaleState] = useState<Locale>(() => {
-    // SSR-safe: default to French, will be overridden on client
-    return DEFAULT_LOCALE;
-  });
+  const [locale, setLocaleState] = useState<Locale>(DEFAULT_LOCALE);
   const [dict, setDict] = useState<Dictionary>(FALLBACK);
 
-  // Restore locale from cookie on mount
+  // Restore locale from cookie on mount (client-side only)
   useEffect(() => {
+    // Clean up any legacy googtrans cookies left by the old Google Translate integration
+    document.cookie = "googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/";
+    document.cookie = `googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; domain=${window.location.hostname}; path=/`;
+
     const saved = getCookie(COOKIE_NAME);
     const initial = saved && isValidLocale(saved) ? saved : DEFAULT_LOCALE;
     if (initial !== locale) {
@@ -99,25 +100,23 @@ export function LangProvider({ children }: { children: ReactNode }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Load dictionary whenever locale changes
+  // Load dictionary and sync <html lang> whenever locale changes
   useEffect(() => {
     let cancelled = false;
     loaders[locale]().then((d) => {
       if (!cancelled) setDict(d);
     });
-    // Do NOT update <html lang="..."> attribute because Google Translate relies on it being "fr" to trigger translation!
-    // document.documentElement.lang = locale;
-    return () => { cancelled = true; };
+    // Keep <html lang> in sync for accessibility & SEO
+    document.documentElement.lang = locale;
+    return () => {
+      cancelled = true;
+    };
   }, [locale]);
 
+  // Instant locale switch — no page reload, pure React state update
   const setLocale = useCallback((newLocale: Locale) => {
     setCookie(COOKIE_NAME, newLocale);
     setLocaleState(newLocale);
-    
-    // Set googtrans cookie for global translation
-    document.cookie = `googtrans=/fr/${newLocale}; path=/`;
-    document.cookie = `googtrans=/fr/${newLocale}; domain=${window.location.hostname}; path=/`;
-    window.location.reload();
   }, []);
 
   // Convenience translator for flat sections

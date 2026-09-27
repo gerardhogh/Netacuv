@@ -10,44 +10,62 @@ export async function middleware(req: NextRequest) {
     secureCookie: process.env.NODE_ENV === "production",
   });
 
+  const hostname = req.headers.get("host") || "";
   const path = req.nextUrl.pathname;
 
-  // Si l'utilisateur n'est pas connecté, le rediriger vers la page de connexion
-  if (!token) {
-    const url = new URL("/connexion", req.url);
-    url.searchParams.set("callbackUrl", encodeURI(req.url));
-    return NextResponse.redirect(url);
-  }
+  // Intercepter le sous-domaine admin
+  const isAdminSubdomain = hostname === "admin.netacuv.com" || hostname.startsWith("admin.localhost");
 
-  // Rediriger si l'accès à l'espace Admin est tenté par un non-ADMIN
-  if (path.startsWith("/dashboard/admin") && token.role !== "ADMIN") {
-    return NextResponse.redirect(new URL("/dashboard", req.url));
-  }
-
-  // Rediriger si l'accès à l'espace Recruteur est tenté par un rôle non autorisé
-  if (
-    (path.startsWith("/dashboard/recruiter") || path.startsWith("/dashboard/recruteur")) &&
-    !["RECRUTEUR", "ADMIN"].includes(token.role as string)
-  ) {
-    return NextResponse.redirect(new URL("/dashboard/talent", req.url));
-  }
-
-  // Rediriger si l'accès à l'espace Talent est tenté par un rôle non autorisé
-  if (
-    path.startsWith("/dashboard/talent") &&
-    !["TALENT", "ADMIN"].includes(token.role as string)
-  ) {
-    return NextResponse.redirect(new URL("/dashboard/recruteur", req.url));
-  }
-
-  // Si on accède à la racine du dashboard, on redirige vers le bon espace selon le rôle
-  if (path === "/dashboard") {
-    if (token.role === "ADMIN") {
+  if (isAdminSubdomain && path === "/") {
+    // Si déjà connecté en tant qu'admin, rediriger vers le dashboard
+    if (token?.role === "ADMIN") {
       return NextResponse.redirect(new URL("/dashboard/admin", req.url));
-    } else if (token.role === "RECRUTEUR") {
-      return NextResponse.redirect(new URL("/dashboard/recruteur", req.url));
-    } else {
+    }
+    // Sinon on rewrite silencieusement vers la page de login admin
+    return NextResponse.rewrite(new URL("/admin", req.url));
+  }
+
+  // Routes protégées nécessitant une connexion
+  const isProtectedRoute = path.startsWith("/dashboard") || path.startsWith("/interview");
+
+  if (isProtectedRoute) {
+    // Si l'utilisateur n'est pas connecté, le rediriger vers la page de connexion
+    if (!token) {
+      const url = new URL("/connexion", req.url);
+      url.searchParams.set("callbackUrl", encodeURI(req.url));
+      return NextResponse.redirect(url);
+    }
+
+    // Si on accède à la racine du dashboard, on redirige vers le bon espace selon le rôle
+    if (path === "/dashboard") {
+      if (token.role === "ADMIN") {
+        return NextResponse.redirect(new URL("/dashboard/admin", req.url));
+      } else if (token.role === "RECRUTEUR") {
+        return NextResponse.redirect(new URL("/dashboard/recruteur", req.url));
+      } else {
+        return NextResponse.redirect(new URL("/dashboard/talent", req.url));
+      }
+    }
+
+    // Rediriger si l'accès à l'espace Admin est tenté par un non-ADMIN
+    if (path.startsWith("/dashboard/admin") && token.role !== "ADMIN") {
+      return NextResponse.redirect(new URL("/dashboard", req.url));
+    }
+
+    // Rediriger si l'accès à l'espace Recruteur est tenté par un rôle non autorisé
+    if (
+      (path.startsWith("/dashboard/recruiter") || path.startsWith("/dashboard/recruteur")) &&
+      !["RECRUTEUR", "ADMIN"].includes(token.role as string)
+    ) {
       return NextResponse.redirect(new URL("/dashboard/talent", req.url));
+    }
+
+    // Rediriger si l'accès à l'espace Talent est tenté par un rôle non autorisé
+    if (
+      path.startsWith("/dashboard/talent") &&
+      !["TALENT", "ADMIN"].includes(token.role as string)
+    ) {
+      return NextResponse.redirect(new URL("/dashboard/recruteur", req.url));
     }
   }
 
@@ -56,7 +74,14 @@ export async function middleware(req: NextRequest) {
 
 export const config = {
   matcher: [
-    "/dashboard/:path*",
-    "/interview/:path*",
+    /*
+     * Match all request paths except for the ones starting with:
+     * - api (API routes)
+     * - _next/static (static files)
+     * - _next/image (image optimization files)
+     * - favicon.ico (favicon file)
+     * - images, assets, Logo
+     */
+    "/((?!api|_next/static|_next/image|favicon.ico|assets|Logo|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
   ],
 };

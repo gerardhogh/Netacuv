@@ -1,8 +1,10 @@
 "use client";
 import React, { useState } from "react";
 import { Eye, EyeOff, ChevronDown } from "lucide-react";
+import { useLang, LOCALES } from "../../../context/LangContext";
 
 export default function AdminParametres() {
+  const { locale, setLocale } = useLang();
   const [emailNotif, setEmailNotif] = useState(true);
   const [smsNotif, setSmsNotif] = useState(false);
   const [showPassword1, setShowPassword1] = useState(false);
@@ -94,11 +96,15 @@ export default function AdminParametres() {
       {/* Langue de la plateforme */}
       <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
         <h3 className="text-lg font-bold text-slate-800 mb-6">Langue de la plateforme</h3>
-        <div className="relative w-full">
-          <select className="w-full bg-[#f8f9fa] border-none rounded-lg py-3 px-4 text-sm focus:ring-2 focus:ring-[#1e8ae9] appearance-none cursor-pointer text-slate-500">
-            <option value="">Choisir la langue</option>
-            <option value="fr">Français</option>
-            <option value="en">Anglais</option>
+        <div className="relative w-full max-w-sm">
+          <select
+            value={locale}
+            onChange={(e) => setLocale(e.target.value as typeof locale)}
+            className="w-full bg-[#f8f9fa] border-none rounded-lg py-3 px-4 text-sm focus:ring-2 focus:ring-[#1e8ae9] appearance-none cursor-pointer text-slate-800 font-medium"
+          >
+            {LOCALES.map(({ code, label, flag }) => (
+              <option key={code} value={code}>{flag} {label}</option>
+            ))}
           </select>
           <ChevronDown size={18} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
         </div>

@@ -2,6 +2,7 @@
 import React, { useState } from "react";
 import { Search, Mail, Eye, Edit, Trash2 } from "lucide-react";
 import { RecruteurDetails } from "../components/RecruteurDetails";
+import { Modal } from "@/app/components/ui/Modal";
 import useSWR from "swr";
 
 const fetcher = (url: string) => fetch(url).then(res => res.json());
@@ -9,8 +10,9 @@ const fetcher = (url: string) => fetch(url).then(res => res.json());
 export default function AdminRecruteurs() {
   const [search, setSearch] = useState("");
   const [selectedRecruteur, setSelectedRecruteur] = useState<any>(null);
+  const [confirmAction, setConfirmAction] = useState<{ id: string, type: 'activate' | 'suspend' | 'delete' } | null>(null);
 
-  const { data: users = [], isLoading: loading } = useSWR("/api/users", fetcher);
+  const { data: users = [], isLoading: loading, mutate } = useSWR("/api/users", fetcher);
 
   const recruteurs = Array.isArray(users) ? users
     .filter((u: any) => u.recruiterProfile || u.role?.name === "Recruteur")
@@ -43,6 +45,30 @@ export default function AdminRecruteurs() {
   if (selectedRecruteur) {
     return <RecruteurDetails recruteur={selectedRecruteur} onBack={() => setSelectedRecruteur(null)} />;
   }
+
+  const handleConfirmAction = async () => {
+    if (!confirmAction) return;
+    const { id, type } = confirmAction;
+    
+    try {
+      if (type === 'delete') {
+        const res = await fetch(`/api/users/${id}`, { method: "DELETE" });
+        if (res.ok) mutate();
+      } else {
+        const active = type === 'activate';
+        const res = await fetch(`/api/users/${id}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ active })
+        });
+        if (res.ok) mutate();
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setConfirmAction(null);
+    }
+  };
 
   return (
     <div className="space-y-6 animate-fade-in-up">
@@ -133,19 +159,19 @@ export default function AdminRecruteurs() {
                         <button onClick={() => setSelectedRecruteur(r)} className="text-[#32A8D7] hover:underline">Voir profil</button>
                         
                         {r.status === 'En attente' && (
-                          <button className="text-green-500 hover:underline">Approuver</button>
+                          <button onClick={() => setConfirmAction({ id: r.id, type: 'activate' })} className="text-green-500 hover:underline">Approuver</button>
                         )}
                         {r.status === 'Suspendu' && (
-                          <button className="text-green-500 hover:underline">Réactiver</button>
+                          <button onClick={() => setConfirmAction({ id: r.id, type: 'activate' })} className="text-green-500 hover:underline">Réactiver</button>
                         )}
                         
-                        <button className="text-[#32A8D7] hover:underline">Modifier</button>
+                        <button onClick={() => setSelectedRecruteur(r)} className="text-[#32A8D7] hover:underline">Modifier</button>
                         
                         {r.status !== 'Suspendu' && (
-                          <button className="text-yellow-500 hover:underline">Suspendre</button>
+                          <button onClick={() => setConfirmAction({ id: r.id, type: 'suspend' })} className="text-yellow-500 hover:underline">Suspendre</button>
                         )}
                         
-                        <button className="text-red-500 hover:underline">Supprimer</button>
+                        <button onClick={() => setConfirmAction({ id: r.id, type: 'delete' })} className="text-red-500 hover:underline">Supprimer</button>
                       </div>
                     </td>
                   </tr>
@@ -166,6 +192,37 @@ export default function AdminRecruteurs() {
           </div>
         )}
       </div>
+
+      {/* Modal de confirmation */}
+      <Modal
+        isOpen={!!confirmAction}
+        onClose={() => setConfirmAction(null)}
+        title={confirmAction?.type === 'delete' ? 'Supprimer le recruteur' : confirmAction?.type === 'activate' ? 'Activer le recruteur' : 'Suspendre le recruteur'}
+        description={
+          confirmAction?.type === 'delete' 
+            ? 'Voulez-vous vraiment supprimer ce recruteur ? Cette action est irréversible.' 
+            : confirmAction?.type === 'activate'
+            ? 'Voulez-vous activer ce recruteur ?'
+            : 'Voulez-vous suspendre ce recruteur ?'
+        }
+      >
+        <div className="flex justify-end gap-3 mt-4">
+          <button 
+            onClick={() => setConfirmAction(null)}
+            className="px-4 py-2 text-sm font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors"
+          >
+            Annuler
+          </button>
+          <button 
+            onClick={handleConfirmAction}
+            className={`px-4 py-2 text-sm font-semibold text-white rounded-lg transition-colors ${
+              confirmAction?.type === 'delete' ? 'bg-red-500 hover:bg-red-600' : 'bg-[#32A8D7] hover:bg-[#2b90b8]'
+            }`}
+          >
+            Confirmer
+          </button>
+        </div>
+      </Modal>
     </div>
   );
 }

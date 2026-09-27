@@ -6,10 +6,11 @@ import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useAuth } from "../../../context/AuthContext";
 import {
-  Menu, Bell, ChevronDown, X, LogOut,
+  Menu, Bell, ChevronDown, X, LogOut, Globe,
   Home, Users, Briefcase, Settings, History, Shield
 } from "lucide-react";
 import LogoutButton from "../../../components/LogoutButton";
+import { useLang, LOCALES } from "../../../context/LangContext";
 
 const sidebarItems = [
   { href: "/dashboard/admin", icon: Home, label: "Tableau de bord", matchExact: true },
@@ -25,8 +26,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const [notifMenuOpen, setNotifMenuOpen] = useState(false);
+  const [langMenuOpen, setLangMenuOpen] = useState(false);
   const pathname = usePathname();
   const { user, logout } = useAuth();
+  const { locale, setLocale } = useLang();
 
   return (
     <div className="flex min-h-screen" style={{ background: "#edeeef" }}>
@@ -87,7 +90,33 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           </div>
           <div className="flex items-center gap-4">
             <div className="relative">
-              <button onClick={() => { setNotifMenuOpen(!notifMenuOpen); setProfileMenuOpen(false); }} className="relative text-slate-500 hover:text-slate-700 p-2 rounded-full hover:bg-slate-100 transition-colors" aria-label="Notifications">
+              <button
+                onClick={() => { setLangMenuOpen(!langMenuOpen); setNotifMenuOpen(false); setProfileMenuOpen(false); }}
+                className="p-2 text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded-full transition-colors relative"
+                aria-label="Language"
+              >
+                <Globe size={20} />
+              </button>
+              {langMenuOpen && (
+                <div className="absolute right-0 mt-2 w-40 bg-white rounded-2xl shadow-xl border border-slate-100 py-2 z-30 animate-fade-in">
+                  {LOCALES.map(({ code, label, flag }) => (
+                    <button
+                      key={code}
+                      onClick={() => { setLocale(code); setLangMenuOpen(false); }}
+                      className={`w-full text-left px-4 py-2 text-xs font-semibold flex items-center gap-2 transition-colors ${
+                        locale === code ? "text-blue-600 bg-blue-50" : "text-slate-600 hover:bg-slate-50"
+                      }`}
+                    >
+                      <span className="text-base">{flag}</span>
+                      <span>{label}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+            
+            <div className="relative">
+              <button onClick={() => { setNotifMenuOpen(!notifMenuOpen); setLangMenuOpen(false); setProfileMenuOpen(false); }} className="relative text-slate-500 hover:text-slate-700 p-2 rounded-full hover:bg-slate-100 transition-colors" aria-label="Notifications">
                 <Bell size={20} />
                 <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full"></span>
               </button>
@@ -109,7 +138,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             </div>
             <div className="relative">
               <button
-                onClick={() => { setProfileMenuOpen(!profileMenuOpen); setNotifMenuOpen(false); }}
+                onClick={() => { setProfileMenuOpen(!profileMenuOpen); setNotifMenuOpen(false); setLangMenuOpen(false); }}
                 className="flex items-center gap-2 p-1 rounded-full hover:bg-slate-100 transition-colors"
               >
                 <div className="w-9 h-9 rounded-full overflow-hidden relative border border-slate-200">

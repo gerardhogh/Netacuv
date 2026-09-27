@@ -2,6 +2,7 @@
 import React, { useState } from "react";
 import { Search } from "lucide-react";
 import { TalentDetails } from "../components/TalentDetails";
+import { Modal } from "@/app/components/ui/Modal";
 import useSWR from "swr";
 
 const fetcher = (url: string) => fetch(url).then(res => res.json());
@@ -22,8 +23,9 @@ interface TalentData {
 export default function AdminTalents() {
   const [search, setSearch] = useState("");
   const [selectedTalent, setSelectedTalent] = useState<TalentData | null>(null);
+  const [confirmAction, setConfirmAction] = useState<{ id: string, type: 'activate' | 'suspend' | 'delete' } | null>(null);
 
-  const { data: talentsData = [], isLoading: loading } = useSWR("/api/talents", fetcher);
+  const { data: talentsData = [], isLoading: loading, mutate } = useSWR("/api/talents", fetcher);
 
   const talents: TalentData[] = talentsData;
 
@@ -43,6 +45,30 @@ export default function AdminTalents() {
   if (selectedTalent) {
     return <TalentDetails talent={selectedTalent} onBack={() => setSelectedTalent(null)} />;
   }
+
+  const handleConfirmAction = async () => {
+    if (!confirmAction) return;
+    const { id, type } = confirmAction;
+    
+    try {
+      if (type === 'delete') {
+        const res = await fetch(`/api/users/${id}`, { method: "DELETE" });
+        if (res.ok) mutate();
+      } else {
+        const active = type === 'activate';
+        const res = await fetch(`/api/users/${id}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ active })
+        });
+        if (res.ok) mutate();
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setConfirmAction(null);
+    }
+  };
 
   return (
     <div className="space-y-6 animate-fade-in-up">
@@ -143,19 +169,19 @@ export default function AdminTalents() {
                         <button onClick={() => setSelectedTalent(t)} className="text-[#32A8D7] hover:underline">Voir profil</button>
                         
                         {t.status === 'En attente' && (
-                          <button className="text-green-500 hover:underline">Approuver</button>
+                          <button onClick={() => setConfirmAction({ id: t.id, type: 'activate' })} className="text-green-500 hover:underline">Approuver</button>
                         )}
                         {t.status === 'Suspendu' && (
-                          <button className="text-green-500 hover:underline">Réactiver</button>
+                          <button onClick={() => setConfirmAction({ id: t.id, type: 'activate' })} className="text-green-500 hover:underline">Réactiver</button>
                         )}
                         
-                        <button className="text-[#32A8D7] hover:underline">Modifier</button>
+                        <button onClick={() => setSelectedTalent(t)} className="text-[#32A8D7] hover:underline">Modifier</button>
                         
                         {t.status !== 'Suspendu' && (
-                          <button className="text-yellow-500 hover:underline">Suspendre</button>
+                          <button onClick={() => setConfirmAction({ id: t.id, type: 'suspend' })} className="text-yellow-500 hover:underline">Suspendre</button>
                         )}
                         
-                        <button className="text-red-500 hover:underline">Supprimer</button>
+                        <button onClick={() => setConfirmAction({ id: t.id, type: 'delete' })} className="text-red-500 hover:underline">Supprimer</button>
                       </div>
                     </td>
                   </tr>
@@ -176,6 +202,37 @@ export default function AdminTalents() {
           </div>
         )}
       </div>
+
+      {/* Modal de confirmation */}
+      <Modal
+        isOpen={!!confirmAction}
+        onClose={() => setConfirmAction(null)}
+        title={confirmAction?.type === 'delete' ? 'Supprimer le talent' : confirmAction?.type === 'activate' ? 'Activer le talent' : 'Suspendre le talent'}
+        description={
+          confirmAction?.type === 'delete' 
+            ? 'Voulez-vous vraiment supprimer ce talent ? Cette action est irréversible.' 
+            : confirmAction?.type === 'activate'
+            ? 'Voulez-vous activer ce talent ?'
+            : 'Voulez-vous suspendre ce talent ?'
+        }
+      >
+        <div className="flex justify-end gap-3 mt-4">
+          <button 
+            onClick={() => setConfirmAction(null)}
+            className="px-4 py-2 text-sm font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors"
+          >
+            Annuler
+          </button>
+          <button 
+            onClick={handleConfirmAction}
+            className={`px-4 py-2 text-sm font-semibold text-white rounded-lg transition-colors ${
+              confirmAction?.type === 'delete' ? 'bg-red-500 hover:bg-red-600' : 'bg-[#32A8D7] hover:bg-[#2b90b8]'
+            }`}
+          >
+            Confirmer
+          </button>
+        </div>
+      </Modal>
     </div>
   );
 }

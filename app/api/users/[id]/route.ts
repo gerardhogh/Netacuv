@@ -10,12 +10,8 @@ export async function PUT(
   const { id } = await params;
   const session = await getServerSession(authOptions);
 
-  // Seul un ADMIN peut modifier le rôle d'un autre utilisateur
   if (!session || session.user?.role !== "ADMIN") {
-    return NextResponse.json(
-      { error: "Accès refusé. Action réservée aux administrateurs." },
-      { status: 403 }
-    );
+    return NextResponse.json({ error: "Accès refusé." }, { status: 403 });
   }
 
   const body = await req.json();
@@ -25,14 +21,48 @@ export async function PUT(
     data: {
       roleId: body.roleId,
       name: body.name,
-    },
-    select: {
-      id: true,
-      name: true,
-      email: true,
-      role: true,
+      active: body.active, // Allow updating active status if passed
     },
   });
 
   return NextResponse.json(updatedUser);
+}
+
+export async function PATCH(
+  req: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const { id } = await params;
+  const session = await getServerSession(authOptions);
+
+  if (!session || session.user?.role !== "ADMIN") {
+    return NextResponse.json({ error: "Accès refusé." }, { status: 403 });
+  }
+
+  const body = await req.json();
+
+  const updatedUser = await prisma.user.update({
+    where: { id },
+    data: body,
+  });
+
+  return NextResponse.json(updatedUser);
+}
+
+export async function DELETE(
+  req: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const { id } = await params;
+  const session = await getServerSession(authOptions);
+
+  if (!session || session.user?.role !== "ADMIN") {
+    return NextResponse.json({ error: "Accès refusé." }, { status: 403 });
+  }
+
+  await prisma.user.delete({
+    where: { id },
+  });
+
+  return NextResponse.json({ success: true });
 }
