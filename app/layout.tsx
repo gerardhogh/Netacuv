@@ -15,6 +15,7 @@ export const metadata: Metadata = {
 
 import Providers from "./components/Providers";
 import { LangProvider } from "./context/LangContext";
+import NextTopLoader from 'nextjs-toploader';
 
 export default function RootLayout({
   children,
@@ -33,6 +34,7 @@ export default function RootLayout({
         />
       </head>
       <body>
+        <NextTopLoader color="#f97316" showSpinner={false} />
         <LangProvider>
           <Providers>{children}</Providers>
         </LangProvider>
