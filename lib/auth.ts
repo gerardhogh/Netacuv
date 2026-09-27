@@ -97,7 +97,12 @@ export const authOptions: NextAuthOptions = {
 
   ],
   callbacks: {
-    async jwt({ token, user }) {
+    async jwt({ token, user, trigger, session }) {
+      // Si une mise à jour manuelle de la session est déclenchée (update())
+      if (trigger === "update" && session?.isPremium !== undefined) {
+        token.isPremium = session.isPremium;
+      }
+
       if (token.sub) {
         const dbUser = await prisma.user.findUnique({
           where: { id: token.sub },

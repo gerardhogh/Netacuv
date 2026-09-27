@@ -689,7 +689,13 @@ export default function TalentDetailPage() {
 
                 {/* CV preview thumbnail */}
                 <div className="relative w-full aspect-[3/4] rounded-xl overflow-hidden bg-slate-100 border border-slate-200 mb-4 shadow-sm">
-                  {talent.cvUrl ? (
+                  {user?.isPremium === false ? (
+                    <div className="absolute inset-0 flex items-center justify-center bg-slate-200 blur-sm pointer-events-none">
+                      <div className="text-slate-800 text-sm font-bold bg-white/50 px-3 py-1 rounded">
+                        CV masqué (Premium)
+                      </div>
+                    </div>
+                  ) : talent.cvUrl ? (
                     talent.cvUrl.endsWith('.pdf') ? (
                       <iframe src={`${talent.cvUrl}#toolbar=0&navpanes=0&scrollbar=0`} className="w-full h-full pointer-events-none" />
                     ) : (
@@ -707,13 +713,16 @@ export default function TalentDetailPage() {
                 {/* CV actions */}
                 <div className="flex gap-2">
                   <a
-                    href={talent.cvUrl || "#"}
+                    href={user?.isPremium !== false ? (talent.cvUrl || "#") : "#"}
                     target="_blank"
                     rel="noopener noreferrer"
-                    download={`CV_${talent.name.replace(/\s+/g, '_')}`}
-                    className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl border text-xs font-semibold transition-colors ${talent.cvUrl ? "border-red-200 text-red-500 hover:bg-red-50" : "border-slate-200 text-slate-400 cursor-not-allowed"}`}
+                    download={user?.isPremium !== false ? `CV_${talent.name.replace(/\s+/g, '_')}` : undefined}
+                    className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl border text-xs font-semibold transition-colors ${user?.isPremium !== false && talent.cvUrl ? "border-red-200 text-red-500 hover:bg-red-50" : "border-slate-200 text-slate-400 cursor-not-allowed"}`}
                     onClick={(e) => {
-                      if (!talent.cvUrl) {
+                      if (user?.isPremium === false) {
+                        e.preventDefault();
+                        showToast("Premium requis pour télécharger le CV");
+                      } else if (!talent.cvUrl) {
                         e.preventDefault();
                         showToast("Aucun CV disponible");
                       }
@@ -723,12 +732,15 @@ export default function TalentDetailPage() {
                     Télécharger
                   </a>
                   <a
-                    href={talent.cvUrl || "#"}
+                    href={user?.isPremium !== false ? (talent.cvUrl || "#") : "#"}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-white text-xs font-semibold transition-colors shadow-sm ${talent.cvUrl ? "bg-[#32A8D7] hover:bg-[#2896c2]" : "bg-slate-300 cursor-not-allowed"}`}
+                    className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-white text-xs font-semibold transition-colors shadow-sm ${user?.isPremium !== false && talent.cvUrl ? "bg-[#32A8D7] hover:bg-[#2896c2]" : "bg-slate-300 cursor-not-allowed"}`}
                     onClick={(e) => {
-                      if (!talent.cvUrl) {
+                      if (user?.isPremium === false) {
+                        e.preventDefault();
+                        showToast("Premium requis pour voir le CV");
+                      } else if (!talent.cvUrl) {
                         e.preventDefault();
                         showToast("Aucun CV disponible");
                       }

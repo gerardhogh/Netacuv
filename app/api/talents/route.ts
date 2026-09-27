@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
 
 export async function GET(request: Request) {
   try {
@@ -36,6 +38,13 @@ export async function GET(request: Request) {
       }
     });
 
+    const session = await getServerSession(authOptions);
+    const isPremium = session?.user?.isPremium === true;
+    const isAdmin = session?.user?.role === "ADMIN";
+    
+    // Si c'est un recruteur non-premium, on masque certaines données
+    const shouldHideSensitive = !isAdmin && !isPremium;
+
     const formattedTalents = talents.map((t: any, index: number) => {
       const profile = t.talentProfile;
       let skillsArray = [];
@@ -54,8 +63,8 @@ export async function GET(request: Request) {
         firstName: t.name?.split(" ")[0] || "",
         lastName: t.name?.split(" ").slice(1).join(" ") || "",
         username: profile?.username || t.email?.split("@")[0] || "",
-        email: t.email || "",
-        contact: profile?.phone || "Non spécifié",
+        email: shouldHideSensitive ? "premium@requis.com" : (t.email || ""),
+        contact: shouldHideSensitive ? "Premium requis" : (profile?.phone || "Non spécifié"),
         date: new Date(t.createdAt).toLocaleDateString('fr-FR'),
         status: t.active ? "Actif" : "Suspendu",
         videoOk: !!profile?.videoUrl,
@@ -66,12 +75,18 @@ export async function GET(request: Request) {
         profession: profile?.degree || "Talent", 
         bio: profile?.bio || "Aucune biographie",
         avatar: t.image || "/assets/avatar_africain.jpg",
-        cvUrl: profile?.cvUrl || "",
+        cvUrl: shouldHideSensitive ? "" : (profile?.cvUrl || ""),
         isVerified: true,
         skills: Array.isArray(skillsArray) ? skillsArray.join(", ") : "",
         gender: profile?.gender || "Non précisé",
         opportunity: "Emploi",
-        socials: {
+        socials: shouldHideSensitive ? {
+          facebook: "",
+          linkedin: "",
+          twitter: "",
+          pinterest: "",
+          behance: "",
+        } : {
           facebook: profile?.facebook || "",
           linkedin: profile?.linkedin || "",
           twitter: profile?.twitter || "",

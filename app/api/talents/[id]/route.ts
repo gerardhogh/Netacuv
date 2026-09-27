@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
 
 export async function GET(
   request: Request,
@@ -44,12 +46,19 @@ export async function GET(
       }
     }
 
+    const session = await getServerSession(authOptions);
+    const isPremium = session?.user?.isPremium === true;
+    const isAdmin = session?.user?.role === "ADMIN";
+    
+    // Si c'est un recruteur non-premium, on masque certaines données
+    const shouldHideSensitive = !isAdmin && !isPremium;
+
     const formattedTalent = {
       id: talentUser.id,
       name: talentUser.name || "Talent Anonyme",
       username: profile?.username || talentUser.email?.split('@')[0] || "",
-      email: talentUser.email || "",
-      contact: profile?.phone || "Non spécifié",
+      email: shouldHideSensitive ? "premium@requis.com" : (talentUser.email || ""),
+      contact: shouldHideSensitive ? "Premium requis" : (profile?.phone || "Non spécifié"),
       date: new Date(talentUser.createdAt).toLocaleDateString('fr-FR'),
       updatedAt: profile?.updatedAt ? new Date(profile.updatedAt).toLocaleDateString('fr-FR') : "Récemment",
       status: talentUser.active ? "Actif" : "Suspendu",
@@ -63,12 +72,18 @@ export async function GET(
       profession: profile?.degree || "Talent", 
       bio: profile?.bio || "Aucune biographie",
       imageUrl: talentUser.image || "/assets/avatar_africain.jpg",
-      cvUrl: profile?.cvUrl || "",
+      cvUrl: shouldHideSensitive ? "" : (profile?.cvUrl || ""),
       isVerified: true,
       skills: skills,
       gender: profile?.gender || "Non précisé",
       
-      socials: {
+      socials: shouldHideSensitive ? {
+        facebook: "",
+        linkedin: "",
+        twitter: "",
+        pinterest: "",
+        behance: "",
+      } : {
         facebook: profile?.facebook || "",
         linkedin: profile?.linkedin || "",
         twitter: profile?.twitter || "",
