@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Eye, EyeOff, Shield, Bell, Globe2, AlertTriangle } from "lucide-react";
 import { useLang, LOCALES } from "../../../context/LangContext";
+import { useRouter } from "next/navigation";
 
 export default function ParametresTab() {
   const [emailNotif, setEmailNotif] = useState(true);
@@ -15,7 +16,10 @@ export default function ParametresTab() {
   const [showConfirm, setShowConfirm] = useState(false);
   const { locale: lang, setLocale: setLang } = useLang();
   const [pwdSuccess, setPwdSuccess] = useState(false);
-  const [deactivateModal, setDeactivateModal] = useState(false);
+  const [deleteModal, setDeleteModal] = useState(false);
+  const [reason, setReason] = useState("");
+  const [customReason, setCustomReason] = useState("");
+  const router = useRouter();
 
   const handlePasswordUpdate = (e: React.FormEvent) => {
     e.preventDefault();
@@ -131,42 +135,87 @@ export default function ParametresTab() {
       <section className="bg-white rounded-2xl p-6 border border-red-100 shadow-sm">
         <div className="flex items-center gap-2 mb-2">
           <AlertTriangle size={18} className="text-red-500" />
-          <h3 className="text-base font-bold text-red-600">Désactiver mon compte</h3>
+          <h3 className="text-base font-bold text-red-600">Supprimer mon compte</h3>
         </div>
         <p className="text-sm text-slate-500 mb-4">
-          Vous pouvez désactiver temporairement votre compte. Vous pourrez le réactiver à tout moment.
+          La suppression de votre compte est définitive. Toutes vos données seront effacées et vous devrez créer un nouveau compte si vous souhaitez revenir.
         </p>
         <button
-          onClick={() => setDeactivateModal(true)}
+          onClick={() => setDeleteModal(true)}
           className="bg-red-500 hover:bg-red-600 text-white font-bold py-2.5 px-6 rounded-lg text-sm transition-colors"
         >
-          Désactiver mon compte
+          Supprimer mon compte
         </button>
       </section>
 
-      {/* Deactivate Confirmation Modal */}
-      {deactivateModal && (
+      {/* Delete Confirmation Modal */}
+      {deleteModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
           <div className="w-full max-w-sm bg-white rounded-2xl p-6 shadow-2xl text-center space-y-4">
             <div className="w-14 h-14 bg-red-50 rounded-full flex items-center justify-center mx-auto">
               <AlertTriangle size={28} className="text-red-500" />
             </div>
-            <h4 className="text-lg font-bold text-slate-900">Confirmer la désactivation</h4>
+            <h4 className="text-lg font-bold text-slate-900">Confirmer la suppression</h4>
             <p className="text-sm text-slate-500">
-              Êtes-vous sûr de vouloir désactiver temporairement votre compte ? Vous ne recevrez plus de notifications.
+              Veuillez sélectionner la raison de la suppression de votre compte :
             </p>
+            <div className="relative text-left mb-3">
+              <select 
+                value={reason} 
+                onChange={(e) => setReason(e.target.value)}
+                className="w-full appearance-none px-3.5 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-sm text-slate-700 outline-none focus:border-[#32A8D7] focus:bg-white transition-colors cursor-pointer"
+              >
+                <option value="">Choisis la raison</option>
+                <option>Je n'ai plus besoin du service</option>
+                <option>J'ai trouvé un emploi</option>
+                <option>Le service ne correspond pas à mes besoins</option>
+                <option>Problème technique</option>
+                <option>Autre raison</option>
+              </select>
+            </div>
+            {reason === "Autre raison" && (
+              <textarea
+                placeholder="Précisez votre raison..."
+                value={customReason}
+                onChange={(e) => setCustomReason(e.target.value)}
+                className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-sm outline-none focus:border-[#32A8D7]"
+                rows={3}
+              />
+            )}
             <div className="flex gap-3 pt-2">
               <button
-                onClick={() => setDeactivateModal(false)}
+                onClick={() => setDeleteModal(false)}
                 className="flex-1 py-2.5 rounded-xl border border-slate-200 text-sm font-semibold text-slate-600 hover:bg-slate-50"
               >
                 Annuler
               </button>
               <button
-                onClick={() => setDeactivateModal(false)}
-                className="flex-1 py-2.5 rounded-xl bg-red-500 hover:bg-red-600 text-white text-sm font-bold"
+                onClick={async () => {
+                  const finalReason = reason === "Autre raison" ? customReason : reason;
+                  if (!finalReason.trim()) {
+                    alert("Veuillez fournir une raison.");
+                    return;
+                  }
+                  try {
+                    const res = await fetch("/api/users/me/delete", {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({ reason: finalReason }),
+                    });
+                    if (res.ok) {
+                      setDeleteModal(false);
+                      import("next-auth/react").then((mod) => mod.signOut({ callbackUrl: "/" }));
+                    } else {
+                      alert("Erreur lors de la suppression.");
+                    }
+                  } catch (error) {
+                    alert("Erreur serveur.");
+                  }
+                }}
+                disabled={!reason || (reason === "Autre raison" && !customReason.trim())}
+                className="flex-1 py-2.5 rounded-xl bg-red-500 hover:bg-red-600 disabled:opacity-50 text-white text-sm font-bold"
               >
-                Confirmer
+                Supprimer
               </button>
             </div>
           </div>

@@ -259,3 +259,11 @@ model Transaction {
   
   createdAt     DateTime @default(now())
 }
+
+model DeletedAccount {
+  id        String   @id @default(cuid())
+  email     String
+  role      String
+  reason    String   @db.Text
+  createdAt DateTime @default(now())
+}

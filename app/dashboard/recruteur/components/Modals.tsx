@@ -120,29 +120,45 @@ export function SuccessModal({
   );
 }
 
-// ─── Désactivation Modal (with reason selector) ───────────────────────────────
-interface DeactivateModalProps {
+// ─── Suppression Modal (with reason selector) ───────────────────────────────
+interface DeleteAccountModalProps {
   onCancel: () => void;
-  onConfirm: () => void;
+  onConfirm: (reason: string) => void;
 }
 
-export function DeactivateModal({ onCancel, onConfirm }: DeactivateModalProps) {
+export function DeleteAccountModal({ onCancel, onConfirm }: DeleteAccountModalProps) {
   const [mounted, setMounted] = useState(false);
+  const [reason, setReason] = useState("");
+  const [customReason, setCustomReason] = useState("");
+
   useEffect(() => setMounted(true), []);
 
   if (!mounted) return null;
+
+  const handleConfirm = () => {
+    const finalReason = reason === "Autre raison" ? customReason : reason;
+    if (!finalReason.trim()) {
+      alert("Veuillez fournir une raison.");
+      return;
+    }
+    onConfirm(finalReason);
+  };
 
   return createPortal(
     <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
       <div className="bg-white rounded-2xl shadow-2xl border border-slate-100 w-full max-w-sm p-7 flex flex-col gap-5 text-center mx-auto relative">
         <div>
-          <h2 className="text-lg font-extrabold text-slate-900 mb-2">Confirmer la désactivation</h2>
-          <p className="text-sm text-slate-500 mb-4">Veuillez sélectionner la raison de votre désactivation :</p>
-          <div className="relative text-left">
-            <select className="w-full appearance-none px-3.5 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-sm text-slate-500 outline-none focus:border-[#32A8D7] focus:bg-white transition-colors cursor-pointer">
+          <h2 className="text-lg font-extrabold text-slate-900 mb-2">Confirmer la suppression</h2>
+          <p className="text-sm text-slate-500 mb-4">Veuillez sélectionner la raison de la suppression de votre compte :</p>
+          <div className="relative text-left mb-3">
+            <select 
+              value={reason} 
+              onChange={(e) => setReason(e.target.value)}
+              className="w-full appearance-none px-3.5 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-sm text-slate-700 outline-none focus:border-[#32A8D7] focus:bg-white transition-colors cursor-pointer"
+            >
               <option value="">Choisis la raison</option>
-              <option>Je n&apos;ai plus besoin du service</option>
-              <option>J&apos;ai trouvé une autre solution</option>
+              <option>Je n'ai plus besoin du service</option>
+              <option>J'ai trouvé une autre solution</option>
               <option>Le service ne correspond pas à mes besoins</option>
               <option>Problème technique</option>
               <option>Autre raison</option>
@@ -151,6 +167,15 @@ export function DeactivateModal({ onCancel, onConfirm }: DeactivateModalProps) {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
             </svg>
           </div>
+          {reason === "Autre raison" && (
+            <textarea
+              placeholder="Précisez votre raison..."
+              value={customReason}
+              onChange={(e) => setCustomReason(e.target.value)}
+              className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-sm outline-none focus:border-[#32A8D7]"
+              rows={3}
+            />
+          )}
         </div>
         <div className="flex gap-3">
           <button
@@ -160,10 +185,11 @@ export function DeactivateModal({ onCancel, onConfirm }: DeactivateModalProps) {
             Annuler
           </button>
           <button
-            onClick={onConfirm}
-            className="flex-1 py-2.5 rounded-xl bg-red-500 hover:bg-red-600 text-white text-sm font-semibold shadow-sm transition-colors"
+            onClick={handleConfirm}
+            disabled={!reason || (reason === "Autre raison" && !customReason.trim())}
+            className="flex-1 py-2.5 rounded-xl bg-red-500 hover:bg-red-600 disabled:opacity-50 text-white text-sm font-semibold shadow-sm transition-colors"
           >
-            Désactiver mon compte
+            Supprimer mon compte
           </button>
         </div>
       </div>

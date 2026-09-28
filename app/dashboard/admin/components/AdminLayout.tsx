@@ -7,7 +7,7 @@ import { usePathname } from "next/navigation";
 import { useAuth } from "../../../context/AuthContext";
 import {
   Menu, Bell, ChevronDown, X, LogOut, Globe,
-  Home, Users, Briefcase, Settings, History, Shield
+  Home, Users, Briefcase, Settings, History, Shield, AlertTriangle
 } from "lucide-react";
 import LogoutButton from "../../../components/LogoutButton";
 import { useLang, LOCALES } from "../../../context/LangContext";
@@ -20,6 +20,7 @@ const sidebarItems = [
   { href: "/dashboard/admin/transactions", icon: History, label: "Transactions" },
   { href: "/dashboard/admin/permissions", icon: Shield, label: "Permissions & Rôles" },
   { href: "/dashboard/admin/parametres", icon: Settings, label: "Paramètres" },
+  { href: "/dashboard/admin/suppressions", icon: AlertTriangle, label: "Suppression de compte" },
 ];
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {

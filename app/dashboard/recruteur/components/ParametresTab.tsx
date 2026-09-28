@@ -12,8 +12,10 @@ import {
   AlertTriangle,
   CheckCircle,
 } from "lucide-react";
-import { DeactivateModal } from "./Modals";
+import { DeleteAccountModal } from "./Modals";
 import { useLang, LOCALES } from "../../../context/LangContext";
+import { useRouter } from "next/navigation";
+import { signOut } from "next-auth/react";
 
 export default function ParametresTab() {
   // i18n
@@ -31,8 +33,9 @@ export default function ParametresTab() {
   const [showNew, setShowNew] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
 
-  // Deactivate
-  const [showDeactivateModal, setShowDeactivateModal] = useState(false);
+  // Delete Account
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const router = useRouter();
 
   // Toast
   const [toastMsg, setToastMsg] = useState<string | null>(null);
@@ -67,11 +70,28 @@ export default function ParametresTab() {
         </div>
       )}
 
-      {/* Deactivate modal */}
-      {showDeactivateModal && (
-        <DeactivateModal
-          onCancel={() => setShowDeactivateModal(false)}
-          onConfirm={() => { setShowDeactivateModal(false); showToast("Compte désactivé. Au revoir !"); }}
+      {/* Delete account modal */}
+      {showDeleteModal && (
+        <DeleteAccountModal
+          onCancel={() => setShowDeleteModal(false)}
+          onConfirm={async (reason) => {
+            setShowDeleteModal(false);
+            try {
+              const res = await fetch("/api/users/me/delete", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ reason }),
+              });
+              if (res.ok) {
+                showToast("Compte supprimé définitivement.");
+                setTimeout(() => signOut({ callbackUrl: "/" }), 2000);
+              } else {
+                showToast("Erreur lors de la suppression.");
+              }
+            } catch (error) {
+              showToast("Erreur serveur.");
+            }
+          }}
         />
       )}
 
@@ -264,22 +284,22 @@ export default function ParametresTab() {
         </div>
       </div>
 
-      {/* ── Deactivate account ───────────────────────────────────────────── */}
+      {/* ── Supprimer le compte ───────────────────────────────────────────── */}
       <div className="bg-red-50 rounded-2xl border border-red-100 p-6">
         <div className="flex items-start gap-3">
           <div className="w-8 h-8 rounded-xl bg-red-100 flex items-center justify-center shrink-0">
             <AlertTriangle size={15} className="text-red-500" />
           </div>
           <div className="flex-1">
-            <h3 className="font-bold text-red-700 text-sm mb-1">{t("settings", "dangerZone")}</h3>
+            <h3 className="font-bold text-red-700 text-sm mb-1">Zone de danger</h3>
             <p className="text-xs text-red-500 leading-relaxed mb-4">
-              {t("settings", "deactivateDesc")}
+              La suppression de votre compte est définitive. Toutes vos données seront effacées et vous devrez créer un nouveau compte si vous souhaitez revenir.
             </p>
             <button
-              onClick={() => setShowDeactivateModal(true)}
+              onClick={() => setShowDeleteModal(true)}
               className="px-5 py-2.5 rounded-xl bg-red-500 hover:bg-red-600 text-white text-xs font-bold shadow-sm transition-colors"
             >
-              {t("settings", "deactivateBtn")}
+              Supprimer mon compte
             </button>
           </div>
         </div>
