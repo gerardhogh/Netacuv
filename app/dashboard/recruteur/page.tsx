@@ -63,7 +63,8 @@ export default function RecruteurDashboard() {
   const { user, logout } = useAuth();
   const { locale, setLocale, t } = useLang();
   
-  const { data: talents = [] } = useSWR("/api/talents", fetcher);
+  const [searchQuery, setSearchQuery] = useState("");
+  const { data: talents = [] } = useSWR(`/api/talents?q=${encodeURIComponent(searchQuery)}`, fetcher);
 
   const [activeTab, setActiveTab] = useState<RecruiterTab>("dashboard");
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -94,8 +95,7 @@ export default function RecruteurDashboard() {
     }
   }, []);
 
-  // Recherche state
-  const [searchQuery, setSearchQuery] = useState("graphisme");
+  // Search Query already initialized above
   const [favorites, setFavorites] = useState<string[]>([]);
 
   // Notifications

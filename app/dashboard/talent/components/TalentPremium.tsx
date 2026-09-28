@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { CheckCircle, XCircle, Smartphone, CreditCard, ArrowLeft, CheckCheck, Clock, Sparkles } from "lucide-react";
+import { useAuth } from "../../../../context/AuthContext";
 
 type PayStep = "plan" | "method" | "input" | "processing" | "success";
 type PayMethod = "mtn" | "moov" | "wave" | "card" | null;
@@ -23,6 +24,8 @@ const COUNTRY_PREFIXES: Record<string, string> = {
 
 export default function TalentPremium() {
   const router = useRouter();
+  const { user } = useAuth();
+  const isPremium = user?.isPremium;
   const [step, setStep] = useState<PayStep>("plan");
   const [method, setMethod] = useState<PayMethod>(null);
   const [phone, setPhone] = useState("");
@@ -282,10 +285,19 @@ export default function TalentPremium() {
                 </ul>
                 
                 <button
-                  onClick={() => setStep("method")}
-                  className="w-full bg-gradient-to-r from-orange-400 to-amber-500 hover:from-orange-500 hover:to-amber-600 text-white font-bold py-4 rounded-xl transition-all shadow-md hover:shadow-lg hover:-translate-y-0.5 flex items-center justify-center gap-2"
+                  disabled={isPremium}
+                  onClick={() => !isPremium && setStep("method")}
+                  className={`w-full font-bold py-4 rounded-xl transition-all shadow-md flex items-center justify-center gap-2 mt-auto ${
+                    isPremium 
+                      ? "bg-slate-100 text-slate-400 cursor-not-allowed border border-slate-200" 
+                      : "bg-gradient-to-r from-orange-400 to-amber-500 hover:from-orange-500 hover:to-amber-600 text-white hover:shadow-lg hover:-translate-y-0.5"
+                  }`}
                 >
-                  <CreditCard size={18} /> Activer mon Premium à 700 FCFA
+                  {isPremium ? (
+                    <><CheckCheck size={18} /> Offre Premium activée</>
+                  ) : (
+                    <><CreditCard size={18} /> Activer mon Premium à 700 FCFA</>
+                  )}
                 </button>
               </div>
             </div>

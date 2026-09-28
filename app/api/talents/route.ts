@@ -18,20 +18,26 @@ export async function GET(request: Request) {
     if (country) filters.country = country;
     if (city) filters.city = city;
 
-    // Return users that have a TalentProfile
+    // Return users that have a TalentProfile and role TALENT
     const talents = await prisma.user.findMany({
       where: {
+        role: {
+          name: 'TALENT'
+        },
+        active: true,
         talentProfile: filters,
         ...(query ? {
           OR: [
             { name: { contains: query, mode: 'insensitive' } },
             { talentProfile: { bio: { contains: query, mode: 'insensitive' } } },
             { talentProfile: { skills: { contains: query, mode: 'insensitive' } } },
+            { talentProfile: { degree: { contains: query, mode: 'insensitive' } } },
           ]
         } : {})
       },
       include: {
-        talentProfile: true
+        talentProfile: true,
+        role: true,
       },
       orderBy: {
         createdAt: 'desc'
