@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { CheckCircle, XCircle, Smartphone, CreditCard, ArrowLeft, CheckCheck, Clock, Sparkles } from "lucide-react";
-import { useAuth } from "../../../../context/AuthContext";
+import { useAuth } from "../../../context/AuthContext";
 
 type PayStep = "plan" | "method" | "input" | "processing" | "success";
 type PayMethod = "mtn" | "moov" | "wave" | "card" | null;
