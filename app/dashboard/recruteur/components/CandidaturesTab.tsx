@@ -95,7 +95,7 @@ export default function CandidaturesTab() {
   const fetcher = (url: string) => fetch(url).then(res => res.json());
   const { data: candidaturesFetched = [], mutate } = useSWR("/api/applications?role=recruiter", fetcher);
   
-  const candidatures: ApplicationData[] = candidaturesFetched.map((app: any) => ({
+  const candidatures: ApplicationData[] = Array.isArray(candidaturesFetched) ? candidaturesFetched.map((app: any) => ({
     id: app.id,
     talent: app.talent?.user?.name || "Talent sans nom",
     talentUserId: app.talent?.userId,
@@ -110,7 +110,7 @@ export default function CandidaturesTab() {
     cvJoint: !!app.talent?.cvUrl,
     score: Math.floor(Math.random() * 20) + 70, // Mock score for now
     imageUrl: app.talent?.user?.image || `https://ui-avatars.com/api/?name=${encodeURIComponent(app.talent?.user?.name || "T")}&background=random`
-  }));
+  })) : [];
 
   const perPage = 8;
   const totalPages = Math.ceil(candidatures.length / perPage) || 1;

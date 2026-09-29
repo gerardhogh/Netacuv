@@ -2,6 +2,11 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { getToken } from "next-auth/jwt";
 
+// Basic in-memory rate limiting (Note: resets on serverless cold starts)
+const rateLimitMap = new Map<string, { count: number; lastReset: number }>();
+const RATE_LIMIT_WINDOW_MS = 60 * 1000; // 1 minute
+const MAX_REQUESTS_PER_WINDOW = 30; // 30 reqs / min
+
 export async function middleware(req: NextRequest) {
   // Use getToken directly. It automatically handles secure cookies on production/HTTPS.
   const token = await getToken({
@@ -11,6 +16,29 @@ export async function middleware(req: NextRequest) {
 
   const hostname = req.headers.get("host") || "";
   const path = req.nextUrl.pathname;
+  const ip = req.headers.get("x-forwarded-for") || req.headers.get("x-real-ip") || "unknown";
+
+  // -- 1. RATE LIMITING (Point 11) --
+  if (path.startsWith("/api/")) {
+    const now = Date.now();
+    const rateLimitData = rateLimitMap.get(ip) || { count: 0, lastReset: now };
+
+    if (now - rateLimitData.lastReset > RATE_LIMIT_WINDOW_MS) {
+      rateLimitData.count = 1;
+      rateLimitData.lastReset = now;
+    } else {
+      rateLimitData.count += 1;
+    }
+    
+    rateLimitMap.set(ip, rateLimitData);
+
+    if (rateLimitData.count > MAX_REQUESTS_PER_WINDOW) {
+      return new NextResponse(
+        JSON.stringify({ error: "Too many requests, please try again later." }),
+        { status: 429, headers: { "Content-Type": "application/json" } }
+      );
+    }
+  }
 
   // Intercepter le sous-domaine admin
   const isAdminSubdomain = hostname === "admin.netacuv.com" || hostname.startsWith("admin.localhost");
@@ -39,7 +67,7 @@ export async function middleware(req: NextRequest) {
     if (path === "/dashboard") {
       if (token.role === "ADMIN") {
         return NextResponse.redirect(new URL("/dashboard/admin", req.url));
-      } else if (token.role === "RECRUTEUR") {
+      } else if (token.role === "RECRUTEUR" || token.role === "RECRUITER") {
         return NextResponse.redirect(new URL("/dashboard/recruteur", req.url));
       } else {
         return NextResponse.redirect(new URL("/dashboard/talent", req.url));
@@ -54,7 +82,7 @@ export async function middleware(req: NextRequest) {
     // Rediriger si l'accès à l'espace Recruteur est tenté par un rôle non autorisé
     if (
       (path.startsWith("/dashboard/recruiter") || path.startsWith("/dashboard/recruteur")) &&
-      !["RECRUTEUR", "ADMIN"].includes(token.role as string)
+      !["RECRUTEUR", "RECRUITER", "ADMIN"].includes(token.role as string)
     ) {
       return NextResponse.redirect(new URL("/dashboard/talent", req.url));
     }
@@ -69,7 +97,9 @@ export async function middleware(req: NextRequest) {
   }
 
   // Rediriger les utilisateurs connectés qui tentent d'accéder à l'accueil ou aux pages d'auth
-  if (token && (path === "/" || path === "/connexion" || path === "/inscription")) {
+  // Exception: si account_deleted=true est présent, laisser passer (l'utilisateur vient de supprimer son compte)
+  const isAccountDeleted = req.nextUrl.searchParams.get("account_deleted") === "true";
+  if (token && !isAccountDeleted && (path === "/" || path === "/connexion" || path === "/inscription")) {
     return NextResponse.redirect(new URL("/dashboard", req.url));
   }
 

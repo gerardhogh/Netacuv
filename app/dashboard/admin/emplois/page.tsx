@@ -3,6 +3,7 @@ import React, { useState } from "react";
 import { Search, MoreHorizontal } from "lucide-react";
 import Link from "next/link";
 import useSWR from "swr";
+import { EmptyState } from "@/components/ui/EmptyState";
 
 const fetcher = (url: string) => fetch(url).then(res => res.json());
 
@@ -185,14 +186,10 @@ export default function AdminEmplois() {
                 </table>
               </div>
             ) : (
-              <div className="flex flex-col items-center justify-center py-20 text-slate-400">
-                <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" className="mb-4 text-slate-300">
-                  <rect x="2" y="7" width="20" height="14" rx="2" ry="2" />
-                  <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16" />
-                </svg>
-                <p className="text-lg font-medium text-slate-500 mb-1">Aucune offre trouvée</p>
-                <p className="text-sm">Il n&apos;y a pas d&apos;offres correspondant à vos critères.</p>
-              </div>
+              <EmptyState 
+                title="Aucune offre trouvée" 
+                description="Il n'y a pas d'offres correspondant à vos critères." 
+              />
             )}
           </div>
         </div>
@@ -266,17 +263,15 @@ export default function AdminEmplois() {
               </div>
             </>
           ) : (
-            <div className="bg-white rounded-xl border border-slate-100 shadow-sm flex flex-col items-center justify-center py-20 text-slate-400">
-              <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" className="mb-4 text-slate-300">
-                <rect x="2" y="7" width="20" height="14" rx="2" ry="2" />
-                <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16" />
-              </svg>
-              <p className="text-lg font-medium text-slate-500 mb-1">Vous n&apos;avez publié aucune offre</p>
-              <p className="text-sm mb-4">Cliquez sur le bouton &quot;Publier une offre&quot; pour créer votre première annonce.</p>
-              <button className="px-6 py-2 bg-[#32A8D7] text-white font-bold rounded-lg hover:bg-[#2b91bb] transition-colors">
-                + Publier une offre
-              </button>
-            </div>
+            <EmptyState 
+              title="Vous n'avez publié aucune offre"
+              description="Cliquez sur le bouton 'Publier une offre' pour créer votre première annonce."
+              actionButton={
+                <button className="px-6 py-2 bg-[#32A8D7] text-white font-bold rounded-lg hover:bg-[#2b91bb] transition-colors">
+                  + Publier une offre
+                </button>
+              }
+            />
           )}
         </div>
       )}

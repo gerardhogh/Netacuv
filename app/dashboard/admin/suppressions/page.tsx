@@ -70,7 +70,7 @@ export default function SuppressionsPage() {
                     <td className="px-6 py-4">
                       <span className={`px-2.5 py-1 rounded-full text-[11px] font-bold ${
                         d.role === "TALENT" ? "bg-blue-100 text-blue-700" :
-                        d.role === "RECRUITER" ? "bg-purple-100 text-purple-700" :
+                        (d.role === "RECRUITER" || d.role === "RECRUTEUR") ? "bg-purple-100 text-purple-700" :
                         "bg-slate-100 text-slate-700"
                       }`}>
                         {d.role}

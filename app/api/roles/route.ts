@@ -1,4 +1,6 @@
 import { NextResponse } from 'next/server';
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
 import { prisma } from '@/lib/prisma';
 
 export async function GET() {
@@ -32,11 +34,14 @@ export async function POST(req: Request) {
       }
     });
 
+    const session = await getServerSession(authOptions);
+    const adminName = session?.user?.name || session?.user?.email || "Administrateur Inconnu";
+
     // Add Audit Log
     await prisma.auditLog.create({
       data: {
         action: `Rôle "${name}" créé`,
-        by: "Jean Dupont\n(Administrateur)", // TODO: get from session
+        by: `${adminName}\n(Administrateur)`,
       }
     });
 

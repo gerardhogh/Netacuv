@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { logger } from "@/lib/logger";
 
 // GET : Récupérer les candidatures selon le rôle de l'utilisateur
 export async function GET() {
@@ -37,7 +38,7 @@ export async function GET() {
     }
 
     // 2. RECRUITER : ne voit que les candidatures sur ses offres
-    if (role === "RECRUITER") {
+    if (role === "RECRUITER" || role === "RECRUTEUR") {
       const recruiterProfile = await prisma.recruiterProfile.findFirst({
         where: { userId: session.user.id },
       });
@@ -52,7 +53,12 @@ export async function GET() {
             recruiterId: recruiterProfile.id,
           },
         },
-        include: { talent: true, jobOffer: true },
+        include: { 
+          talent: {
+            include: { user: true }
+          }, 
+          jobOffer: true 
+        },
         orderBy: { createdAt: "desc" },
       });
 
@@ -71,6 +77,7 @@ export async function GET() {
 
     return NextResponse.json({ error: "Rôle non autorisé." }, { status: 403 });
   } catch (error) {
+    logger.error("Failed to fetch applications", { error: error instanceof Error ? error.message : "Unknown", context: "api/applications/GET" });
     return NextResponse.json(
       { error: "Erreur lors de la récupération des candidatures." },
       { status: 500 }
@@ -147,6 +154,23 @@ export async function POST(req: Request) {
       );
     }
 
+    // 4. Check for double application (Idempotency)
+    const existingApplication = await prisma.application.findUnique({
+      where: {
+        talentId_jobOfferId: {
+          talentId: talentProfile.id,
+          jobOfferId: jobOfferId,
+        },
+      },
+    });
+
+    if (existingApplication) {
+      return NextResponse.json(
+        { error: "Vous avez déjà postulé à cette offre." },
+        { status: 409 }
+      );
+    }
+
     // Création de la candidature rattachée de façon sécurisée
     const newApplication = await prisma.application.create({
       data: {
@@ -155,8 +179,10 @@ export async function POST(req: Request) {
       },
     });
 
+    logger.info("Application submitted", { talentId: talentProfile.id, jobOfferId });
     return NextResponse.json(newApplication, { status: 201 });
   } catch (error) {
+    logger.error("Failed to submit application", { error: error instanceof Error ? error.message : "Unknown", context: "api/applications/POST" });
     return NextResponse.json(
       { error: "Erreur lors de la soumission de la candidature." },
       { status: 500 }

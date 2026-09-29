@@ -12,8 +12,8 @@ export async function GET() {
       return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
     }
 
-    const talentsCount = await prisma.user.count({ where: { role: { name: "TALENT" } } });
-    const recruteursCount = await prisma.user.count({ where: { role: { name: "RECRUITER" } } });
+    const talentsCount = await prisma.user.count({ where: { talentProfile: { isNot: null } } });
+    const recruteursCount = await prisma.user.count({ where: { recruiterProfile: { isNot: null } } });
     const jobsCount = await prisma.jobOffer.count();
     const applicationsCount = await prisma.application.count();
 

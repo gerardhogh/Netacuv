@@ -38,6 +38,9 @@ model User {
 
   // Transactions liées à l'utilisateur
   transactions  Transaction[]
+
+  @@index([roleId])
+  @@index([isPremium])
 }
 
 model Account {
@@ -186,6 +189,9 @@ model JobOffer {
 
   applications    Application[]
   aiInterviews    AIInterview[]
+
+  @@index([recruiterId])
+  @@index([status])
 }
 
 model Application {
@@ -202,6 +208,9 @@ model Application {
   updatedAt       DateTime @updatedAt
 
   @@unique([talentId, jobOfferId])
+  @@index([jobOfferId])
+  @@index([talentId])
+  @@index([status])
 }
 
 // ==========================================
@@ -258,6 +267,10 @@ model Transaction {
   user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   
   createdAt     DateTime @default(now())
+
+  @@index([userId])
+  @@index([status])
+  @@index([type])
 }
 
 model DeletedAccount {

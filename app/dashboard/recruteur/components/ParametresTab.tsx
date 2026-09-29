@@ -84,7 +84,7 @@ export default function ParametresTab() {
               });
               if (res.ok) {
                 showToast("Compte supprimé définitivement.");
-                setTimeout(() => signOut({ callbackUrl: "/" }), 2000);
+                setTimeout(() => signOut({ callbackUrl: "/?account_deleted=true" }), 2000);
               } else {
                 showToast("Erreur lors de la suppression.");
               }

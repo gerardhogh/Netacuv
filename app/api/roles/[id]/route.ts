@@ -1,4 +1,6 @@
 import { NextResponse } from 'next/server';
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
 import { prisma } from '@/lib/prisma';
 
 export async function PUT(req: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -22,10 +24,13 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
       ? `Rôle "${updatedRole.name}" ${active ? 'activé' : 'suspendu'}` 
       : `Rôle "${updatedRole.name}" modifié`;
       
+    const session = await getServerSession(authOptions);
+    const adminName = session?.user?.name || session?.user?.email || "Administrateur Inconnu";
+
     await prisma.auditLog.create({
       data: {
         action: actionDesc,
-        by: "Jean Dupont\n(Administrateur)", // TODO: get from session
+        by: `${adminName}\n(Administrateur)`,
       }
     });
 
@@ -53,11 +58,14 @@ export async function DELETE(req: Request, { params }: { params: Promise<{ id: s
       where: { id }
     });
 
+    const session = await getServerSession(authOptions);
+    const adminName = session?.user?.name || session?.user?.email || "Administrateur Inconnu";
+
     // Add Audit Log
     await prisma.auditLog.create({
       data: {
         action: `Rôle "${deletedRole.name}" supprimé`,
-        by: "Jean Dupont\n(Administrateur)", // TODO: get from session
+        by: `${adminName}\n(Administrateur)`,
       }
     });
 

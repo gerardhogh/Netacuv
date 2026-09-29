@@ -19,17 +19,25 @@ export default function ForgotPasswordPage() {
     setIsLoading(true);
     setError("");
 
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL || window.location.origin;
-    const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${appUrl}/mise-a-jour-mot-de-passe`,
-    });
+    try {
+      const res = await fetch("/api/auth/forgot-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
 
-    if (error) {
-      setError(error.message);
-    } else {
-      setIsSuccess(true);
+      const data = await res.json();
+
+      if (!res.ok) {
+        setError(data.error || "Une erreur est survenue lors de l'envoi de l'e-mail.");
+      } else {
+        setIsSuccess(true);
+      }
+    } catch (err: any) {
+      setError(err.message || "Erreur de connexion.");
+    } finally {
+      setIsLoading(false);
     }
-    setIsLoading(false);
   };
 
   return (

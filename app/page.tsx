@@ -4,7 +4,7 @@ import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
 import Link from "next/link";
 import Image from "next/image";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Plus, Minus } from "lucide-react";
 import { motion } from "framer-motion";
 
@@ -12,6 +12,21 @@ export default function HomePage() {
   const [activeFaqTab, setActiveFaqTab] = useState<"talents" | "recruteurs">("talents");
   const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(0);
   const [activeHowTab, setActiveHowTab] = useState<"talents" | "recruteurs">("talents");
+  const [showDeletedModal, setShowDeletedModal] = useState(false);
+
+  // Check URL for account_deleted
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get("account_deleted") === "true") {
+        setShowDeletedModal(true);
+        // Remove query param without reloading
+        const newUrl = new URL(window.location.href);
+        newUrl.searchParams.delete("account_deleted");
+        window.history.replaceState({}, "", newUrl.toString());
+      }
+    }
+  }, []);
 
   const toggleFaq = (index: number) => {
     setOpenFaqIndex(openFaqIndex === index ? null : index);
@@ -653,6 +668,41 @@ export default function HomePage() {
       </section>
 
       <Footer />
+
+      {/* ── MODAL SUPPRESSION COMPTE ── */}
+      {showDeletedModal && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in">
+          <div className="bg-white rounded-3xl w-full max-w-md p-8 text-center shadow-2xl relative overflow-hidden">
+            <div className="w-20 h-20 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-6 border border-red-100">
+              <span className="text-4xl">👋</span>
+            </div>
+            
+            <h3 className="text-2xl font-black text-slate-800 mb-3 tracking-tight">
+              C'est un au revoir !
+            </h3>
+            
+            <p className="text-slate-500 text-sm leading-relaxed mb-8 px-2 font-medium">
+              Votre compte a bien été supprimé définitivement. Nous sommes désolés de vous voir partir, mais la porte de Netacuv vous sera toujours grande ouverte. N'hésitez pas à créer un nouveau compte si vous changez d'avis !
+            </p>
+            
+            <div className="flex flex-col gap-3">
+              <Link
+                href="/inscription"
+                onClick={() => setShowDeletedModal(false)}
+                className="w-full py-3.5 bg-[#32A8D7] hover:bg-[#2896c2] text-white font-bold rounded-xl shadow-md transition-all active:scale-[0.98]"
+              >
+                Créer un nouveau compte
+              </Link>
+              <button
+                onClick={() => setShowDeletedModal(false)}
+                className="w-full py-3.5 bg-white border border-slate-200 hover:bg-slate-50 text-slate-600 font-bold rounded-xl transition-all active:scale-[0.98]"
+              >
+                Fermer
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

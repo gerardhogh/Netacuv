@@ -84,6 +84,9 @@ export default function ConnexionPage() {
     setGoogleLoading(true);
     setError("");
     try {
+      // Create a cookie to remember the intended role for Google signin
+      document.cookie = `netacuv_intended_role=${tab}; path=/; max-age=3600`;
+      
       await signIn("google", {
         callbackUrl:
           tab === "admin"

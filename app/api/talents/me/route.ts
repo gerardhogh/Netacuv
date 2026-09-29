@@ -1,24 +1,29 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { getServerSession } from "next-auth/next";
-import { authOptions } from "@/lib/auth";
+import { getToken } from "next-auth/jwt";
+import { logger } from "@/lib/logger";
 
 export const dynamic = 'force-dynamic';
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
+    const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET });
     
-    if (!session || !session.user) {
+    if (!token?.sub) {
       return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
     }
 
-    const userId = (session.user as any).id;
+    const userId = token.sub;
     
     let user = await prisma.user.findUnique({
       where: { id: userId },
-      include: {
-        talentProfile: true
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        image: true,
+        isPremium: true,
+        talentProfile: true,
       }
     });
 
@@ -53,20 +58,20 @@ export async function GET() {
       talentProfile: user.talentProfile || {}
     });
   } catch (error) {
-    console.error("Erreur GET /api/talents/me:", error);
+    logger.error("Error GET /api/talents/me", { error: error instanceof Error ? error.message : "Unknown", context: "api/talents/me/GET" });
     return NextResponse.json({ error: "Erreur serveur" }, { status: 500 });
   }
 }
 
-export async function PUT(req: Request) {
+export async function PUT(req: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
+    const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET });
     
-    if (!session || !session.user) {
+    if (!token?.sub) {
       return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
     }
 
-    const userId = (session.user as any).id;
+    const userId = token.sub;
     const data = await req.json();
 
     const {
@@ -88,14 +93,6 @@ export async function PUT(req: Request) {
       username
     } = data;
 
-    // Mise à jour du User
-    if (name) {
-      await prisma.user.update({
-        where: { id: userId },
-        data: { name }
-      });
-    }
-
     // Prepare talent profile data
     const talentData: any = {};
     if (username !== undefined) talentData.username = username;
@@ -114,22 +111,32 @@ export async function PUT(req: Request) {
     if (other1 !== undefined) talentData.other1 = other1;
     if (other2 !== undefined) talentData.other2 = other2;
 
-    const talentProfile = await prisma.talentProfile.upsert({
-      where: { userId },
-      update: talentData,
-      create: {
-        userId,
-        ...talentData
-      }
-    });
+    // Utilisation d'une transaction Prisma (Point 19)
+    const [updatedUser, talentProfile] = await prisma.$transaction([
+      ...(name ? [
+        prisma.user.update({
+          where: { id: userId },
+          data: { name }
+        })
+      ] : []),
+      prisma.talentProfile.upsert({
+        where: { userId },
+        update: talentData,
+        create: {
+          userId,
+          ...talentData
+        }
+      })
+    ]);
 
+    logger.info("Talent profile updated", { userId });
     return NextResponse.json({
       success: true,
       talentProfile
     });
 
   } catch (error) {
-    console.error("Erreur PUT /api/talents/me:", error);
+    logger.error("Erreur PUT /api/talents/me:", { error: error instanceof Error ? error.message : "Unknown", context: "api/talents/me/PUT" });
     return NextResponse.json({ error: "Erreur lors de la mise à jour du profil" }, { status: 500 });
   }
 }

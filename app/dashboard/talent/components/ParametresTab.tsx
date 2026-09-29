@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Eye, EyeOff, Shield, Bell, Globe2, AlertTriangle } from "lucide-react";
 import { useLang, LOCALES } from "../../../context/LangContext";
 import { useRouter } from "next/navigation";
+import { signOut } from "next-auth/react";
 
 export default function ParametresTab() {
   const [emailNotif, setEmailNotif] = useState(true);
@@ -204,7 +205,7 @@ export default function ParametresTab() {
                     });
                     if (res.ok) {
                       setDeleteModal(false);
-                      import("next-auth/react").then((mod) => mod.signOut({ callbackUrl: "/" }));
+                      await signOut({ callbackUrl: "/?account_deleted=true" });
                     } else {
                       alert("Erreur lors de la suppression.");
                     }

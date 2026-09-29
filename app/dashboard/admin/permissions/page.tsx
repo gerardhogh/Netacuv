@@ -214,7 +214,7 @@ export default function AdminPermissions() {
 
   // Filtered lists
   const filteredRoles = roles.filter(r => r.name.toLowerCase().includes(searchPR.toLowerCase()));
-  const filteredUsers = users.filter(u => u.name.toLowerCase().includes(searchGU.toLowerCase()) || u.email.toLowerCase().includes(searchGU.toLowerCase()));
+  const filteredUsers = users.filter(u => (u.name || "").toLowerCase().includes(searchGU.toLowerCase()) || (u.email || "").toLowerCase().includes(searchGU.toLowerCase()));
   const filteredLogs = logs.filter(l => l.action.toLowerCase().includes(searchHM.toLowerCase()));
   
   // Paginated logs
@@ -229,6 +229,18 @@ export default function AdminPermissions() {
   return (
     <div className="space-y-8 animate-fade-in-up pb-10">
       <Toaster position="top-right" />
+
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-slate-900 flex items-center gap-2">
+            <Shield className="text-[#32A8D7]" /> Permissions & Rôles
+          </h1>
+          <p className="text-sm text-slate-500 mt-1">
+            Gérez les rôles, attribuez des permissions aux utilisateurs et consultez l'historique d'audit.
+          </p>
+        </div>
+      </div>
 
       {/* Permissions et Rôles */}
       <div className="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden">
@@ -347,7 +359,11 @@ export default function AdminPermissions() {
                     <td className="px-6 py-4 text-[#1e4869] align-top pt-6">{formatDate(u.updatedAt)}</td>
                     <td className="px-6 py-4 text-[#1e4869] align-top pt-6">
                       <span className="bg-slate-100 text-slate-700 px-3 py-1 rounded-full text-xs font-semibold">
-                        {u.role ? u.role.name : "Aucun rôle"}
+                        {u.role ? u.role.name : (
+                          (u as any).talentProfile ? "TALENT" :
+                          (u as any).recruiterProfile ? "RECRUTEUR" :
+                          "Aucun rôle"
+                        )}
                       </span>
                     </td>
                     <td className="px-6 py-4 align-top pt-6">
@@ -355,7 +371,9 @@ export default function AdminPermissions() {
                         <button 
                           onClick={() => {
                             setUserToAssign(u);
-                            setSelectedRoleIdForUser(u.roleId || "none");
+                            const inferredRoleName = u.role?.name || ((u as any).talentProfile ? "TALENT" : (u as any).recruiterProfile ? "RECRUTEUR" : null);
+                            const matchingRole = roles.find(r => r.name === inferredRoleName);
+                            setSelectedRoleIdForUser(u.roleId || matchingRole?.id || "none");
                             setIsAssignRoleModalOpen(true);
                           }} 
                           className="text-[#32A8D7] hover:underline flex items-center gap-1"

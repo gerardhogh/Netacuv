@@ -1,7 +1,8 @@
-import { NextResponse } from "next/server";
+ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { logger } from "@/lib/logger";
 
 export async function GET(req: Request) {
   try {
@@ -22,15 +23,43 @@ export async function GET(req: Request) {
       }
     }
 
-    const jobs = await prisma.jobOffer.findMany({
-      where: whereClause,
-      orderBy: { createdAt: "desc" },
-      include: {
-        recruiter: true,
-      }
-    });
-    return NextResponse.json(jobs);
+    const page = parseInt(searchParams.get("page") || "1");
+    const limit = parseInt(searchParams.get("limit") || "50");
+    const skip = (page - 1) * limit;
+
+    const [jobs, total] = await Promise.all([
+      prisma.jobOffer.findMany({
+        where: whereClause,
+        orderBy: { createdAt: "desc" },
+        skip,
+        take: limit,
+        select: {
+          id: true,
+          title: true,
+          description: true,
+          location: true,
+          salary: true,
+          contractType: true,
+          status: true,
+          createdAt: true,
+          recruiter: {
+            select: {
+              id: true,
+              companyName: true,
+              companyLogo: true,
+            }
+          },
+          _count: {
+            select: { applications: true }
+          }
+        }
+      }),
+      prisma.jobOffer.count({ where: whereClause })
+    ]);
+
+    return NextResponse.json({ jobs, total, page, totalPages: Math.ceil(total / limit) });
   } catch (error) {
+    logger.error("Failed to fetch jobs", { error: error instanceof Error ? error.message : "Unknown", context: "api/jobs/GET" });
     return NextResponse.json(
       { error: "Erreur lors de la récupération des offres." },
       { status: 500 }
@@ -92,8 +121,10 @@ export async function POST(req: Request) {
       }
     });
 
+    logger.info("Job offer created", { userId, jobId: newJob.id });
     return NextResponse.json(newJob, { status: 201 });
   } catch (error) {
+    logger.error("Failed to create job offer", { error: error instanceof Error ? error.message : "Unknown", context: "api/jobs/POST" });
     return NextResponse.json(
       { error: "Erreur lors de la création de l'offre." },
       { status: 500 }

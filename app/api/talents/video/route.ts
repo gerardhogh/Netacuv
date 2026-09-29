@@ -23,6 +23,18 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Aucun fichier valide fourni" }, { status: 400 });
     }
 
+    // --- SÉCURITÉ : Validation MIME Type et Taille ---
+    const allowedMimeTypes = ['video/mp4', 'video/webm', 'video/quicktime'];
+    if (!allowedMimeTypes.includes(file.type)) {
+      return NextResponse.json({ error: "Format vidéo non autorisé. Seuls les MP4, WebM et MOV sont acceptés." }, { status: 400 });
+    }
+
+    const MAX_SIZE = 50 * 1024 * 1024; // 50 Mo
+    if (file.size > MAX_SIZE) {
+      return NextResponse.json({ error: "Vidéo trop volumineuse. La taille maximale est de 50 Mo." }, { status: 400 });
+    }
+    // -------------------------------------------------
+
     // Nom de fichier unique pour éviter les collisions
     const fileExt = file.name.split('.').pop() || 'webm';
     const fileName = `${userId}-${Date.now()}-interview.${fileExt}`;

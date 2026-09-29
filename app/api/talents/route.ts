@@ -12,29 +12,37 @@ export async function GET(request: Request) {
     const country = searchParams.get('country') || '';
     const city = searchParams.get('city') || '';
 
+    const session = await getServerSession(authOptions);
+    const isPremium = session?.user?.isPremium === true;
+    const isAdmin = session?.user?.role === "ADMIN";
+
     const filters: any = { isNot: null };
     if (degree) filters.degree = degree;
     if (gender) filters.gender = gender;
     if (country) filters.country = country;
     if (city) filters.city = city;
 
+    // Build the query where clause
+    const whereClause: any = {
+      talentProfile: filters,
+      ...(query ? {
+        OR: [
+          { name: { contains: query, mode: 'insensitive' } },
+          { talentProfile: { bio: { contains: query, mode: 'insensitive' } } },
+          { talentProfile: { skills: { contains: query, mode: 'insensitive' } } },
+          { talentProfile: { degree: { contains: query, mode: 'insensitive' } } },
+        ]
+      } : {})
+    };
+
+    // Only filter by active if not admin
+    if (!isAdmin) {
+      whereClause.active = true;
+    }
+
     // Return users that have a TalentProfile and role TALENT
     const talents = await prisma.user.findMany({
-      where: {
-        role: {
-          name: 'TALENT'
-        },
-        active: true,
-        talentProfile: filters,
-        ...(query ? {
-          OR: [
-            { name: { contains: query, mode: 'insensitive' } },
-            { talentProfile: { bio: { contains: query, mode: 'insensitive' } } },
-            { talentProfile: { skills: { contains: query, mode: 'insensitive' } } },
-            { talentProfile: { degree: { contains: query, mode: 'insensitive' } } },
-          ]
-        } : {})
-      },
+      where: whereClause,
       include: {
         talentProfile: true,
         role: true,
@@ -43,10 +51,6 @@ export async function GET(request: Request) {
         createdAt: 'desc'
       }
     });
-
-    const session = await getServerSession(authOptions);
-    const isPremium = session?.user?.isPremium === true;
-    const isAdmin = session?.user?.role === "ADMIN";
     
     // Si c'est un recruteur non-premium, on masque certaines données
     const shouldHideSensitive = !isAdmin && !isPremium;

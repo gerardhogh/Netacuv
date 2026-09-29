@@ -14,9 +14,15 @@ export default async function PublicProfilePage({
 }) {
   const { username } = await params;
 
-  // Récupérer le talent via le nom d'utilisateur
-  const talentProfile = await prisma.talentProfile.findUnique({
-    where: { username },
+  // Récupérer le talent via le nom d'utilisateur, ID du profil ou ID du user
+  const talentProfile = await prisma.talentProfile.findFirst({
+    where: {
+      OR: [
+        { username },
+        { id: username },
+        { userId: username }
+      ]
+    },
     include: { user: true },
   });
 

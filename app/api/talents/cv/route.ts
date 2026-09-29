@@ -25,6 +25,18 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Aucun fichier valide fourni" }, { status: 400 });
     }
 
+    // --- SÉCURITÉ : Validation MIME Type et Taille ---
+    const allowedMimeTypes = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
+    if (!allowedMimeTypes.includes(file.type)) {
+      return NextResponse.json({ error: "Format de fichier non autorisé. Seuls les PDF et Word sont acceptés." }, { status: 400 });
+    }
+
+    const MAX_SIZE = 5 * 1024 * 1024; // 5 Mo
+    if (file.size > MAX_SIZE) {
+      return NextResponse.json({ error: "Fichier trop volumineux. La taille maximale est de 5 Mo." }, { status: 400 });
+    }
+    // -------------------------------------------------
+
     // Nom de fichier unique pour éviter les collisions
     const fileName = `${userId}-${Date.now()}-${file.name.replace(/\s+/g, '_')}`;
     

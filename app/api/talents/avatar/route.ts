@@ -23,6 +23,18 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Aucun fichier valide fourni" }, { status: 400 });
     }
 
+    // --- SÉCURITÉ : Validation MIME Type et Taille ---
+    const allowedMimeTypes = ['image/jpeg', 'image/png', 'image/webp'];
+    if (!allowedMimeTypes.includes(file.type)) {
+      return NextResponse.json({ error: "Format d'image non autorisé. Seuls les JPEG, PNG et WebP sont acceptés." }, { status: 400 });
+    }
+
+    const MAX_SIZE = 5 * 1024 * 1024; // 5 Mo
+    if (file.size > MAX_SIZE) {
+      return NextResponse.json({ error: "Image trop volumineuse. La taille maximale est de 5 Mo." }, { status: 400 });
+    }
+    // -------------------------------------------------
+
     // Nom de fichier unique pour éviter les collisions (sans sous-dossier au cas où les règles Supabase le bloqueraient)
     const fileExt = file.name.split('.').pop() || 'png';
     const fileName = `avatar-${userId}-${Date.now()}.${fileExt}`;
