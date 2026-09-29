@@ -84,7 +84,7 @@ export async function POST(req: NextRequest) {
     return new NextResponse("OK", { status: 200 });
     
   } catch (error) {
-    logger.error("CinetPay Webhook Error", error);
+    logger.error("CinetPay Webhook Error", { error: error instanceof Error ? error.message : String(error) });
     // Returning 200 here might prevent retries, but returning 500 ensures CinetPay will retry if there's a DB crash
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }

@@ -93,7 +93,7 @@ export async function POST(req: NextRequest) {
     }
 
   } catch (error) {
-    logger.error("Payment init error", error);
+    logger.error("Payment init error", { error: error instanceof Error ? error.message : String(error) });
     return NextResponse.json({ error: "Erreur interne" }, { status: 500 });
   }
 }
