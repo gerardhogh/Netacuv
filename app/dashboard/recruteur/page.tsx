@@ -117,7 +117,7 @@ export default function RecruteurDashboard() {
   const companyName = (user as any)?.company || user?.name || "Grand-G Corp";
   const companyEmail = user?.email || "recruteur@grand-g.com";
   const unreadCount = notifications.filter((n) => !n.read).length;
-  const isPremium = user?.premiumType && user.premiumType !== "gratuit";
+  const isPremium = user?.isPremium;
 
   const showToast = (msg: string) => {
     setToastMessage(msg);

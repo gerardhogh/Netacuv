@@ -44,10 +44,11 @@ export async function POST(req: NextRequest) {
     // Get user details
     const user = await prisma.user.findUnique({ 
       where: { id: session.user.id }, 
-      select: { name: true, email: true, talentProfile: true } 
+      select: { name: true, email: true, talentProfile: true, role: true } 
     });
 
-    const returnUrl = `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/dashboard/talent#premium`;
+    const isRecruteur = user?.role?.name === "RECRUTEUR";
+    const returnUrl = `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/dashboard/${isRecruteur ? 'recruteur' : 'talent'}#premium`;
     const notifyUrl = `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/api/payments/cinetpay/webhook`;
 
     const cinetpayPayload = {
