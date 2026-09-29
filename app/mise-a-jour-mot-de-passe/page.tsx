@@ -1,14 +1,17 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 import { Lock, Eye, EyeOff, CheckCircle2, XCircle, AlertCircle } from "lucide-react";
-import { supabase } from "@/lib/supabase";
 
-export default function UpdatePasswordPage() {
+function UpdatePasswordForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  
+  const token = searchParams?.get("token");
+  const emailParam = searchParams?.get("email");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPwd, setShowPwd] = useState(false);
@@ -20,39 +23,12 @@ export default function UpdatePasswordPage() {
   const [checkingSession, setCheckingSession] = useState(true);
 
   useEffect(() => {
-    let mounted = true;
-
-    // Supabase intercepte automatiquement le hash #access_token=... dans l'URL
-    // et déclenche un événement onAuthStateChange
-    const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
-      if (!mounted) return;
-      
-      if (event === "PASSWORD_RECOVERY" || session) {
-        setCheckingSession(false);
-      }
-    });
-
-    // Cas où on ouvre la page avec une session déjà active, ou si l'event ne se lance pas
-    const checkInitialSession = async () => {
-      const { data } = await supabase.auth.getSession();
-      
-      // Laisser le temps à l'event listener de catcher le hash (PKCE ou implicite)
-      setTimeout(() => {
-        if (!mounted) return;
-        if (!data.session && window.location.hash.indexOf("type=recovery") === -1 && window.location.hash.indexOf("access_token=") === -1) {
-          setError("Le lien de réinitialisation est invalide ou a expiré. Veuillez refaire la demande.");
-          setCheckingSession(false);
-        }
-      }, 1500);
-    };
-
-    checkInitialSession();
-
-    return () => {
-      mounted = false;
-      authListener.subscription.unsubscribe();
-    };
-  }, []);
+    // Si pas de token ou d'email dans l'URL, c'est invalide
+    if (!token || !emailParam) {
+      setError("Le lien de réinitialisation est invalide ou a expiré. Veuillez refaire la demande.");
+    }
+    setCheckingSession(false);
+  }, [token, emailParam]);
 
   const hasMinLength = password.length >= 8;
   const hasUppercase = /[A-Z]/.test(password);
@@ -69,51 +45,40 @@ export default function UpdatePasswordPage() {
       return;
     }
 
+    if (!token || !emailParam) {
+      setError("Lien invalide.");
+      return;
+    }
+
     setIsLoading(true);
 
-    const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
-    if (sessionError || !sessionData.session) {
-      setError("Session expirée. Veuillez refaire la demande.");
-      setIsLoading(false);
-      return;
-    }
-
-    // 1. Update password in Supabase Auth
-    const { error: updateError } = await supabase.auth.updateUser({
-      password: password
-    });
-
-    if (updateError) {
-      setError(updateError.message);
-      setIsLoading(false);
-      return;
-    }
-
-    // 2. Sync new password hash to Prisma DB for NextAuth Credentials
     try {
       const res = await fetch("/api/auth/update-password", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          access_token: sessionData.session.access_token,
+          token: token,
+          email: emailParam,
           password: password,
         }),
       });
 
+      const data = await res.json();
+
       if (!res.ok) {
-        throw new Error("Erreur lors de la synchronisation de la base de données");
+        setError(data.error || "Erreur lors de la synchronisation de la base de données");
+        setIsLoading(false);
+        return;
       }
+      
+      setSuccess(true);
+      router.push("/connexion?message=Mot+de+passe+mis+%C3%A0+jour+avec+succ%C3%A8s.+Veuillez+vous+connecter.");
     } catch (err: any) {
       console.error(err);
       setError("Une erreur est survenue lors de l'enregistrement de votre nouveau mot de passe.");
+    } finally {
       setIsLoading(false);
-      return;
     }
-
-    // Supabase will automatically sign in the user after password update (if they aren't already), 
-    // but the flow requires redirecting them to login to re-enter credentials for security.
-    await supabase.auth.signOut();
-    router.push("/connexion?message=Mot+de+passe+mis+%C3%A0+jour+avec+succ%C3%A8s.+Veuillez+vous+connecter.");
   };
 
   return (

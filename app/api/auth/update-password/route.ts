@@ -1,40 +1,41 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcrypt";
 
 export async function POST(request: NextRequest) {
   try {
-    const { access_token, password } = await request.json();
+    const { token, email, password } = await request.json();
 
-    if (!access_token || !password) {
+    if (!token || !email || !password) {
       return NextResponse.json(
-        { error: "Access token ou mot de passe manquant" },
+        { error: "Paramètres manquants (token, email, ou mot de passe)" },
         { status: 400 }
       );
     }
 
-    // Initialiser le client Supabase serveur
-    const supabaseServer = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-    );
+    // Vérifier le token dans la base de données
+    const verificationToken = await prisma.verificationToken.findUnique({
+      where: {
+        identifier_token: {
+          identifier: email,
+          token: token,
+        },
+      },
+    });
 
-    // Récupérer l'utilisateur avec le token pour vérifier son authenticité
-    const {
-      data: { user: supabaseUser },
-      error: authError,
-    } = await supabaseServer.auth.getUser(access_token);
-
-    if (authError || !supabaseUser) {
-      console.error("Erreur vérification token Supabase:", authError);
+    if (!verificationToken) {
       return NextResponse.json(
-        { error: "Token invalide ou expiré" },
+        { error: "Lien invalide. Veuillez refaire la demande." },
         { status: 401 }
       );
     }
 
-    const email = supabaseUser.email!;
+    if (verificationToken.expires < new Date()) {
+      return NextResponse.json(
+        { error: "Lien expiré. Veuillez refaire la demande." },
+        { status: 401 }
+      );
+    }
 
     // Hacher le nouveau mot de passe
     const passwordHash = await bcrypt.hash(password, 10);
@@ -43,6 +44,16 @@ export async function POST(request: NextRequest) {
     await prisma.user.update({
       where: { email },
       data: { passwordHash },
+    });
+
+    // Supprimer le token utilisé
+    await prisma.verificationToken.delete({
+      where: {
+        identifier_token: {
+          identifier: email,
+          token: token,
+        },
+      },
     });
 
     return NextResponse.json({ success: true });
