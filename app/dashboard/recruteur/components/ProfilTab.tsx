@@ -161,7 +161,7 @@ export default function ProfilTab() {
   }
 
   return (
-    <div className="max-w-2xl mx-auto space-y-6">
+    <div className="w-full space-y-6">
       {/* Toast */}
       {toast && (
         <div className={`fixed top-6 right-6 z-50 text-white px-5 py-3 rounded-2xl shadow-2xl flex items-center gap-3 text-sm border ${toast.type === "success" ? "bg-slate-900 border-slate-700" : "bg-red-500 border-red-600"}`}>
@@ -172,13 +172,17 @@ export default function ProfilTab() {
 
       {/* Avatar section */}
       <div className="flex justify-center">
-        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6 flex flex-col items-center gap-3 w-48">
-          <div className="relative w-24 h-24 rounded-full overflow-hidden bg-blue-100 border-2 border-blue-200">
-            {avatarSrc ? (
-              <Image src={avatarSrc} alt="Avatar" fill className="object-cover" />
-            ) : (
-              /* Default recruiter avatar illustration */
-              <div className="w-full h-full flex items-center justify-center bg-gradient-to-b from-blue-100 to-blue-200">
+        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6 flex flex-col items-center gap-4 w-60">
+          {/* Avatar Cliquable */}
+          <div
+            onClick={() => fileInputRef.current?.click()}
+            className="w-28 h-28 rounded-full bg-blue-50 border-4 border-white shadow-md relative cursor-pointer group transition-all"
+            title="Cliquer pour modifier la photo de profil"
+          >
+            <div className="w-full h-full rounded-full overflow-hidden relative bg-gradient-to-b from-blue-100 to-blue-200 flex items-center justify-center">
+              {avatarSrc ? (
+                <Image src={avatarSrc} alt="Avatar" fill className="object-cover object-center w-full h-full group-hover:scale-105 transition-transform duration-300" />
+              ) : (
                 <svg viewBox="0 0 80 80" className="w-20 h-20">
                   <circle cx="40" cy="30" r="16" fill="#94C7EA" />
                   <path d="M10 70 Q40 48 70 70" fill="#5B8DB8" />
@@ -186,15 +190,29 @@ export default function ProfilTab() {
                   <rect x="28" y="38" width="24" height="6" rx="3" fill="#2B5F8E" />
                   <path d="M22 44 Q40 36 58 44 L62 70 H18 Z" fill="#1E4D7B" />
                 </svg>
-              </div>
-            )}
+              )}
+            </div>
+
+            {/* Overlay hover */}
+            <div className="absolute inset-0 rounded-full bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center text-white text-[11px] font-bold">
+              <Camera size={20} className="mb-0.5" />
+              <span>Modifier</span>
+            </div>
+
+            {/* Badge Camera Icon */}
+            <div className="absolute bottom-0 right-0 w-8 h-8 rounded-full bg-[#008de4] text-white flex items-center justify-center shadow-md border-2 border-white group-hover:bg-blue-600 transition-colors">
+              <Camera size={14} />
+            </div>
           </div>
+          
           <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleAvatarChange} />
+          
           <button
             onClick={() => fileInputRef.current?.click()}
-            className="flex items-center gap-1.5 px-4 py-1.5 rounded-lg border border-slate-200 text-xs text-slate-600 hover:bg-slate-50 transition-colors"
+            className="flex items-center justify-center gap-1.5 px-3 py-2 w-full rounded-lg border border-slate-200 text-xs text-slate-600 font-medium hover:bg-slate-50 transition-colors whitespace-nowrap"
           >
-            <Camera size={12} /> Enregistrer une photo
+            <Camera size={14} className="shrink-0" />
+            <span className="text-center leading-tight">Enregistrer une photo</span>
           </button>
         </div>
       </div>

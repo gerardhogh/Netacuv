@@ -67,7 +67,8 @@ export default function OffresEmplois({
   const [applying, setApplying] = useState(false);
   const [applySuccess, setApplySuccess] = useState(false);
 
-  const { data: jobs = [], error, isLoading } = useSWR("/api/jobs", fetcher);
+  const { data, error, isLoading } = useSWR("/api/jobs", fetcher);
+  const jobs = data?.jobs || [];
 
   const handleViewDetail = (job: any) => {
     setSelectedJob(job);

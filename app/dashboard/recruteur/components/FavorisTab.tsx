@@ -11,27 +11,18 @@ import {
 import TalentCard from "@/app/components/TalentCard";
 import { useAuth } from "../../../context/AuthContext";
 
-interface CandidatFavori {
-  id: string;
-  name: string;
-  profession: string;
-  location: string;
-  savedAgo: string;
-  imageUrl: string;
-  isVerified: boolean;
-}
-
-const MOCK_FAVORIS: CandidatFavori[] = [];
-
 interface FavorisTabProps {
+  favorites: string[];
+  talents: any[];
+  toggleFavorite: (id: string) => void;
   onViewProfile?: (id: string) => void;
   onSendEmail?: (name: string) => void;
 }
 
-export default function FavorisTab({ onViewProfile, onSendEmail }: FavorisTabProps) {
+
+export default function FavorisTab({ favorites, talents, toggleFavorite, onViewProfile, onSendEmail }: FavorisTabProps) {
   const { user } = useAuth();
   const [searchQuery, setSearchQuery] = useState("");
-  const [favoris, setFavoris] = useState<CandidatFavori[]>(MOCK_FAVORIS);
   const [toastMsg, setToastMsg] = useState<string | null>(null);
 
   const showToast = (msg: string) => {
@@ -40,7 +31,7 @@ export default function FavorisTab({ onViewProfile, onSendEmail }: FavorisTabPro
   };
 
   const removeFavori = (id: string) => {
-    setFavoris(favoris.filter((f) => f.id !== id));
+    toggleFavorite(id);
     showToast("Profil retiré des favoris.");
   };
 
@@ -49,11 +40,13 @@ export default function FavorisTab({ onViewProfile, onSendEmail }: FavorisTabPro
     showToast(`Lien du profil de ${name} copié !`);
   };
 
-  const filtered = favoris.filter(
-    (f) =>
-      f.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      f.profession.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      f.location.toLowerCase().includes(searchQuery.toLowerCase())
+  const favorisObjects = talents.filter((t: any) => favorites.includes(t.id));
+
+  const filtered = favorisObjects.filter(
+    (f: any) =>
+      (f.name || "Candidat Anonyme").toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (f.profession || "Professionnel").toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (f.location || "Non précisé").toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   return (
@@ -102,22 +95,23 @@ export default function FavorisTab({ onViewProfile, onSendEmail }: FavorisTabPro
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
-          {filtered.map((candidat) => (
+          {filtered.map((candidat: any) => (
             <div key={candidat.id} className="flex flex-col gap-1.5">
               <span className="text-[10px] text-slate-400 font-medium px-1">
-                {candidat.savedAgo}
+                Dans vos favoris
               </span>
               <TalentCard
                 id={candidat.id}
-                name={candidat.name}
+                name={candidat.name || "Candidat Anonyme"}
                 location={candidat.location}
                 profession={candidat.profession}
-                imageUrl={candidat.imageUrl}
-                isVerified={candidat.isVerified}
+                imageUrl={candidat.avatar || "/assets/avatar_africain.jpg"}
+                isVerified={candidat.isVerified ?? true}
                 isFavorite={true}
                 onFavorite={() => removeFavori(candidat.id)}
-                onViewProfile={() => onViewProfile?.(candidat.id)}
                 blurSensitive={!user?.isPremium}
+                isPremium={candidat.isPremium}
+                hasVideo={candidat.videoOk}
               />
             </div>
           ))}

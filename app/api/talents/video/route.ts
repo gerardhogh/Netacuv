@@ -8,30 +8,41 @@ export const dynamic = 'force-dynamic';
 
 export async function POST(req: Request) {
   try {
-    const session = await getServerSession(authOptions);
-    
-    if (!session || !session.user) {
-      return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
-    }
-
-    const userId = (session.user as any).id;
-    
     const formData = await req.formData();
     const file = formData.get("video") as File;
+    const formUserId = formData.get("userId") as string | null;
+
+    // Try session first, fall back to formData userId (for /interview page outside auth layout)
+    const session = await getServerSession(authOptions);
+    let userId = (session?.user as any)?.id || null;
+
+    if (!userId && formUserId) {
+      // Validate the userId exists and has a TalentProfile (security check)
+      const profile = await prisma.talentProfile.findUnique({ where: { userId: formUserId }, select: { userId: true } });
+      if (profile) {
+        userId = formUserId;
+      }
+    }
+
+    if (!userId) {
+      return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
+    }
 
     if (!file || typeof file === 'string' || typeof file.arrayBuffer !== 'function') {
       return NextResponse.json({ error: "Aucun fichier valide fourni" }, { status: 400 });
     }
 
     // --- SÉCURITÉ : Validation MIME Type et Taille ---
-    const allowedMimeTypes = ['video/mp4', 'video/webm', 'video/quicktime'];
-    if (!allowedMimeTypes.includes(file.type)) {
+    const allowedMimeTypes = ['video/mp4', 'video/webm', 'video/quicktime', 'video/x-matroska'];
+    // file.type can be empty when uploaded via FormData from MediaRecorder
+    const effectiveMime = file.type || (file.name.endsWith('.mp4') ? 'video/mp4' : 'video/webm');
+    if (file.type && !allowedMimeTypes.includes(file.type)) {
       return NextResponse.json({ error: "Format vidéo non autorisé. Seuls les MP4, WebM et MOV sont acceptés." }, { status: 400 });
     }
 
-    const MAX_SIZE = 50 * 1024 * 1024; // 50 Mo
+    const MAX_SIZE = 100 * 1024 * 1024; // 100 Mo (vidéos peuvent être volumineuses)
     if (file.size > MAX_SIZE) {
-      return NextResponse.json({ error: "Vidéo trop volumineuse. La taille maximale est de 50 Mo." }, { status: 400 });
+      return NextResponse.json({ error: "Vidéo trop volumineuse. La taille maximale est de 100 Mo." }, { status: 400 });
     }
     // -------------------------------------------------
 
@@ -53,9 +64,11 @@ export async function POST(req: Request) {
           .storage
           .from('cvs')
           .upload(fileName, file, {
-            contentType: file.type,
+            contentType: effectiveMime,
             upsert: true
           });
+
+        console.log("Supabase upload result:", { data: uploadData, error: uploadError?.message, fileName, size: file.size, mime: effectiveMime });
 
         if (uploadError) {
           console.error("Supabase upload error:", uploadError);

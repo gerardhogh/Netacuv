@@ -54,3 +54,81 @@ export async function DELETE(
     );
   }
 }
+
+export async function PATCH(
+  req: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const { id } = await params;
+  const session = await getServerSession(authOptions);
+
+  if (!session) {
+    return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
+  }
+
+  try {
+    const body = await req.json();
+    const { status } = body;
+
+    const job = await prisma.jobOffer.findUnique({ where: { id }, include: { recruiter: true } });
+    if (!job) return NextResponse.json({ error: "Offre introuvable." }, { status: 404 });
+
+    const isOwner = job.recruiter?.userId === session.user.id;
+    const isAdmin = session.user.role === "ADMIN";
+
+    if (!isOwner && !isAdmin) {
+      return NextResponse.json({ error: "Interdit" }, { status: 403 });
+    }
+
+    const updated = await prisma.jobOffer.update({
+      where: { id },
+      data: { status }
+    });
+
+    return NextResponse.json(updated);
+  } catch (error) {
+    return NextResponse.json({ error: "Erreur de mise à jour" }, { status: 500 });
+  }
+}
+
+export async function PUT(
+  req: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const { id } = await params;
+  const session = await getServerSession(authOptions);
+
+  if (!session) {
+    return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
+  }
+
+  try {
+    const body = await req.json();
+    
+    const job = await prisma.jobOffer.findUnique({ where: { id }, include: { recruiter: true } });
+    if (!job) return NextResponse.json({ error: "Offre introuvable." }, { status: 404 });
+
+    const isOwner = job.recruiter?.userId === session.user.id;
+    const isAdmin = session.user.role === "ADMIN";
+
+    if (!isOwner && !isAdmin) {
+      return NextResponse.json({ error: "Interdit" }, { status: 403 });
+    }
+
+    const { title, description, location, contractType } = body;
+
+    const updated = await prisma.jobOffer.update({
+      where: { id },
+      data: { 
+        title: title || job.title, 
+        description: description || job.description, 
+        location: location || job.location, 
+        contractType: contractType || job.contractType 
+      }
+    });
+
+    return NextResponse.json(updated);
+  } catch (error) {
+    return NextResponse.json({ error: "Erreur de mise à jour" }, { status: 500 });
+  }
+}

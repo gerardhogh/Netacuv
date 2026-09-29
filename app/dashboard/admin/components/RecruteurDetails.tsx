@@ -16,62 +16,80 @@ export function RecruteurDetails({ recruteur, onBack }: { recruteur: any, onBack
         <span className="text-slate-800 font-semibold">Détails</span>
       </div>
 
-      <div className="max-w-2xl mx-auto flex flex-col gap-6">
-        <div className="bg-white rounded-xl border border-slate-200 p-8 shadow-sm flex flex-col items-center">
-          <div className="w-24 h-24 rounded-2xl overflow-hidden border border-slate-100 shadow-sm mb-6 relative bg-slate-50 flex items-center justify-center p-2">
-            {recruteur.logo ? (
-              <Image src={recruteur.logo} alt={recruteur.name} fill className="object-contain" />
-            ) : (
-              <div className="text-3xl font-black text-slate-300">{recruteur.name.substring(0, 1)}</div>
-            )}
-          </div>
-          
-          <div className="w-full">
-            <div className="flex bg-slate-50 p-1 rounded-xl mb-6">
-              {["Informations", "Réseaux"].map(tab => (
-                <button
-                  key={tab}
-                  onClick={() => setActiveTab(tab)}
-                  className={`flex-1 py-2.5 text-sm font-semibold rounded-lg transition-colors ${activeTab === tab ? "bg-white text-slate-800 shadow-sm" : "text-slate-500 hover:text-slate-700"}`}
-                >
-                  {tab}
-                </button>
-              ))}
+      <div className="w-full space-y-6">
+        {/* Avatar section */}
+        <div className="flex justify-center">
+          <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6 flex flex-col items-center gap-4 w-60">
+            <div className="w-28 h-28 rounded-full bg-blue-50 border-4 border-white shadow-md relative flex items-center justify-center">
+              <div className="w-full h-full rounded-full overflow-hidden relative bg-gradient-to-b from-blue-100 to-blue-200 flex items-center justify-center">
+                {recruteur.logo ? (
+                  <Image src={recruteur.logo} alt={recruteur.name} fill className="object-cover object-center w-full h-full" />
+                ) : (
+                  <div className="text-4xl font-black text-[#1E4D7B]">{recruteur.name.substring(0, 1).toUpperCase()}</div>
+                )}
+              </div>
             </div>
+            <div className="text-center">
+              <h2 className="text-lg font-bold text-slate-800">{recruteur.name}</h2>
+              <p className="text-sm text-slate-500 font-medium">Recruteur</p>
+            </div>
+          </div>
+        </div>
+        
+        {/* Tab card */}
+        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden w-full">
+          {/* Tab nav */}
+          <div className="flex border-b border-slate-100">
+            {["Informations", "Réseaux"].map((tab) => (
+              <button
+                key={tab}
+                onClick={() => setActiveTab(tab)}
+                className={`flex-1 py-3.5 text-sm font-semibold transition-colors capitalize ${
+                  activeTab === tab
+                    ? "bg-white text-slate-900 border-b-2 border-[#32A8D7]"
+                    : "bg-slate-50 text-slate-400 hover:text-slate-600"
+                }`}
+              >
+                {tab}
+              </button>
+            ))}
+          </div>
 
+          {/* Tab content */}
+          <div className="p-6">
             {activeTab === "Informations" && (
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-semibold text-slate-700 mb-1">Nom de l'entreprise</label>
-                  <input readOnly type="text" value={recruteur.name} className="w-full bg-slate-50 border-none rounded-lg p-3 text-sm text-slate-600 focus:ring-0" />
+                  <label className="block text-sm text-slate-600 mb-1.5">Nom de l'entreprise</label>
+                  <input readOnly type="text" value={recruteur.name} className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-white text-sm text-slate-800 outline-none" />
                 </div>
                 <div>
-                  <label className="block text-sm font-semibold text-slate-700 mb-1">Secteur d'activité</label>
-                  <input readOnly type="text" value={recruteur.secteur || "Non renseigné"} className="w-full bg-slate-50 border-none rounded-lg p-3 text-sm text-slate-600 focus:ring-0" />
+                  <label className="block text-sm text-slate-600 mb-1.5">Secteur d'activité</label>
+                  <input readOnly type="text" value={recruteur.secteur || "Non renseigné"} className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-white text-sm text-slate-800 outline-none" />
                 </div>
                 <div>
-                  <label className="block text-sm font-semibold text-slate-700 mb-1">Email de contact</label>
-                  <input readOnly type="text" value={recruteur.email} className="w-full bg-slate-50 border-none rounded-lg p-3 text-sm text-slate-600 focus:ring-0" />
+                  <label className="block text-sm text-slate-600 mb-1.5">Email de contact</label>
+                  <input readOnly type="text" value={recruteur.email} className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-white text-sm text-slate-800 outline-none" />
                 </div>
                 <div>
-                  <label className="block text-sm font-semibold text-slate-700 mb-1">Téléphone</label>
-                  <input readOnly type="text" value={recruteur.contact} className="w-full bg-slate-50 border-none rounded-lg p-3 text-sm text-slate-600 focus:ring-0" />
+                  <label className="block text-sm text-slate-600 mb-1.5">Téléphone</label>
+                  <input readOnly type="text" value={recruteur.contact} className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-white text-sm text-slate-800 outline-none" />
                 </div>
                 <div>
-                  <label className="block text-sm font-semibold text-slate-700 mb-1">Site web</label>
-                  <input readOnly type="text" value={recruteur.website || "Non renseigné"} className="w-full bg-slate-50 border-none rounded-lg p-3 text-sm text-slate-600 focus:ring-0" />
+                  <label className="block text-sm text-slate-600 mb-1.5">Site web</label>
+                  <input readOnly type="text" value={recruteur.website || "Non renseigné"} className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-white text-sm text-slate-800 outline-none" />
                 </div>
                 <div>
-                  <label className="block text-sm font-semibold text-slate-700 mb-1">Adresse</label>
-                  <input readOnly type="text" value={recruteur.address || "Non renseigné"} className="w-full bg-slate-50 border-none rounded-lg p-3 text-sm text-slate-600 focus:ring-0" />
+                  <label className="block text-sm text-slate-600 mb-1.5">Adresse</label>
+                  <input readOnly type="text" value={recruteur.address || "Non renseigné"} className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-white text-sm text-slate-800 outline-none" />
                 </div>
                 <div>
-                  <label className="block text-sm font-semibold text-slate-700 mb-1">Description de l'entreprise</label>
-                  <textarea readOnly value={recruteur.description || "Non renseigné"} rows={3} className="w-full bg-slate-50 border-none rounded-lg p-3 text-sm text-slate-600 focus:ring-0 resize-none" />
+                  <label className="block text-sm text-slate-600 mb-1.5">Description de l'entreprise</label>
+                  <textarea readOnly value={recruteur.description || "Non renseigné"} rows={3} className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-white text-sm text-slate-800 outline-none resize-none" />
                 </div>
                 <div>
-                  <label className="block text-sm font-semibold text-slate-700 mb-1">Compétences clés</label>
-                  <input readOnly type="text" value={recruteur.skills || "Non renseigné"} className="w-full bg-slate-50 border-none rounded-lg p-3 text-sm text-slate-600 focus:ring-0" />
+                  <label className="block text-sm text-slate-600 mb-1.5">Compétences clés</label>
+                  <input readOnly type="text" value={recruteur.skills || "Non renseigné"} className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-white text-sm text-slate-800 outline-none" />
                 </div>
               </div>
             )}

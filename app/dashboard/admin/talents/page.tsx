@@ -11,13 +11,34 @@ interface TalentData {
   id: string;
   no: string;
   name: string;
+  firstName: string;
+  lastName: string;
+  username: string;
   domaine: string;
   date: string;
   location: string;
+  country: string;
   contact: string;
   email: string;
   status: string;
   videoOk: boolean;
+  videoUrl?: string;
+  bio: string;
+  skills: string;
+  gender: string;
+  opportunity: string;
+  avatar: string;
+  cvUrl: string;
+  certifie?: boolean;
+  isVerified?: boolean;
+  isPremium?: boolean;
+  socials?: {
+    facebook?: string;
+    linkedin?: string;
+    twitter?: string;
+    pinterest?: string;
+    behance?: string;
+  };
 }
 
 export default function AdminTalents() {
@@ -127,7 +148,8 @@ export default function AdminTalents() {
                   <th className="px-5 py-4 font-semibold text-slate-500">Contact</th>
                   <th className="px-5 py-4 font-semibold text-slate-500">Email</th>
                   <th className="px-5 py-4 font-semibold text-slate-500">Statut</th>
-                  <th className="px-5 py-4 font-semibold text-slate-500">Video test</th>
+                  <th className="px-5 py-4 font-semibold text-slate-500 whitespace-nowrap">Abonnement</th>
+                  <th className="px-5 py-4 font-semibold text-slate-500 whitespace-nowrap">Vidéo test</th>
                   <th className="px-5 py-4 font-semibold text-slate-500">Action admin</th>
                 </tr>
               </thead>
@@ -158,10 +180,25 @@ export default function AdminTalents() {
                       </div>
                     </td>
                     <td className="px-5 py-4">
-                      {t.videoOk ? (
-                        <span className="text-slate-700">Oui <button className="text-[#32A8D7] font-semibold hover:underline ml-1">Voir</button></span>
+                      {t.isPremium ? (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-amber-50 border border-amber-200 text-amber-700 text-xs font-bold rounded-full whitespace-nowrap">
+                          ★ Premium
+                        </span>
                       ) : (
-                        <span className="text-slate-700">Non</span>
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-slate-50 border border-slate-200 text-slate-500 text-xs font-semibold rounded-full whitespace-nowrap">
+                          Gratuit
+                        </span>
+                      )}
+                    </td>
+                    <td className="px-5 py-4">
+                      {t.videoOk ? (
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-green-50 border border-green-200 text-green-700 text-xs font-bold rounded-full whitespace-nowrap">
+                          <span className="w-1.5 h-1.5 rounded-full bg-green-500"></span> Oui
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-slate-50 border border-slate-200 text-slate-400 text-xs font-semibold rounded-full whitespace-nowrap">
+                          <span className="w-1.5 h-1.5 rounded-full bg-slate-300"></span> Non
+                        </span>
                       )}
                     </td>
                     <td className="px-5 py-4">

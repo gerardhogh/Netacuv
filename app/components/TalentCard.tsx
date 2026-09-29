@@ -18,6 +18,8 @@ export interface TalentCardProps {
   /** Override the destination URL for "Voir profil". Defaults to /dashboard/recruteur/talents/[id] */
   profileHref?: string;
   blurSensitive?: boolean;
+  isPremium?: boolean;
+  hasVideo?: boolean;
 }
 
 export default function TalentCard({
@@ -33,6 +35,8 @@ export default function TalentCard({
   onViewProfile,
   profileHref,
   blurSensitive = false,
+  isPremium = false,
+  hasVideo = false,
 }: TalentCardProps) {
   const destination = profileHref ?? (id ? `/dashboard/recruteur/talents/${id}` : undefined);
 

@@ -223,7 +223,7 @@ export default function TalentDashboard() {
     fetchDashboardData();
   }, []);
 
-  const [userTitle, setUserTitle] = useState("Développeur Full-Stack & UI");
+  const [userTitle, setUserTitle] = useState("Aucun profil");
   const [userPhone, setUserPhone] = useState((user as any)?.phone || "+229 97 00 00 00");
   const [userBio, setUserBio] = useState(
     "Passionné par le développement web moderne, l'architecture logicielle et les interfaces fluides."
@@ -417,9 +417,9 @@ export default function TalentDashboard() {
                   <span className="text-[10px] text-slate-500 font-medium leading-none mb-0.5">Candidatures ce mois</span>
                   <span className="text-xs font-bold text-slate-800 leading-none">{applicationsCount} / 1</span>
                 </div>
-                <Link href="/dashboard/talent/premium" className="text-[10px] font-bold text-blue-600 hover:text-blue-800 bg-blue-50 hover:bg-blue-100 px-2 py-1 rounded-full transition-colors ml-2">
+                <button onClick={() => setActiveTab("premium")} className="text-[10px] font-bold text-blue-600 hover:text-blue-800 bg-blue-50 hover:bg-blue-100 px-2 py-1 rounded-full transition-colors ml-2">
                   Passer au Premium
-                </Link>
+                </button>
               </div>
             )}
 

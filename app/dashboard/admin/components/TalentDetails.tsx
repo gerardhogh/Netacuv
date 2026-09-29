@@ -94,11 +94,11 @@ export function TalentDetails({ talent, onBack }: { talent: any, onBack: () => v
             <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
               <div>
                 <label className="block text-sm font-semibold text-slate-700 mb-1">Prénom</label>
-                <input readOnly type="text" value={talent.firstName} className="w-full bg-slate-50 border-none rounded-lg p-3 text-sm text-slate-600 focus:ring-0" />
+                <input readOnly type="text" value={talent.firstName || talent.name?.split(" ")[0] || ""} className="w-full bg-slate-50 border-none rounded-lg p-3 text-sm text-slate-600 focus:ring-0" />
               </div>
               <div>
                 <label className="block text-sm font-semibold text-slate-700 mb-1">Nom</label>
-                <input readOnly type="text" value={talent.lastName} className="w-full bg-slate-50 border-none rounded-lg p-3 text-sm text-slate-600 focus:ring-0" />
+                <input readOnly type="text" value={talent.lastName || talent.name?.split(" ").slice(1).join(" ") || ""} className="w-full bg-slate-50 border-none rounded-lg p-3 text-sm text-slate-600 focus:ring-0" />
               </div>
 
               <div>
@@ -107,21 +107,21 @@ export function TalentDetails({ talent, onBack }: { talent: any, onBack: () => v
               </div>
               <div>
                 <label className="block text-sm font-semibold text-slate-700 mb-1">Nom d&apos;utilisateur</label>
-                <input readOnly type="text" value={talent.username} className="w-full bg-slate-50 border-none rounded-lg p-3 text-sm text-slate-600 focus:ring-0" />
+                <input readOnly type="text" value={talent.username || ""} className="w-full bg-slate-50 border-none rounded-lg p-3 text-sm text-slate-600 focus:ring-0" />
               </div>
 
               <div>
                 <label className="block text-sm font-semibold text-slate-700 mb-1">Sexe H/F</label>
-                <input readOnly type="text" value={talent.gender} className="w-full bg-slate-50 border-none rounded-lg p-3 text-sm text-slate-600 focus:ring-0" />
+                <input readOnly type="text" value={talent.gender || "Non précisé"} className="w-full bg-slate-50 border-none rounded-lg p-3 text-sm text-slate-600 focus:ring-0" />
               </div>
               <div>
                 <label className="block text-sm font-semibold text-slate-700 mb-1">Types d&apos;opportunités recherchées</label>
-                <input readOnly type="text" value={talent.opportunity} className="w-full bg-slate-50 border-none rounded-lg p-3 text-sm text-slate-600 focus:ring-0" />
+                <input readOnly type="text" value={talent.opportunity || "Emploi"} className="w-full bg-slate-50 border-none rounded-lg p-3 text-sm text-slate-600 focus:ring-0" />
               </div>
 
               <div>
                 <label className="block text-sm font-semibold text-slate-700 mb-1">Pays/Nationalité</label>
-                <input readOnly type="text" value={talent.country} className="w-full bg-slate-50 border-none rounded-lg p-3 text-sm text-slate-600 focus:ring-0" />
+                <input readOnly type="text" value={talent.country || "Non précisé"} className="w-full bg-slate-50 border-none rounded-lg p-3 text-sm text-slate-600 focus:ring-0" />
               </div>
               <div>
                 <label className="block text-sm font-semibold text-slate-700 mb-1">Ville</label>
@@ -139,12 +139,12 @@ export function TalentDetails({ talent, onBack }: { talent: any, onBack: () => v
 
               <div className="md:col-span-2">
                 <label className="block text-sm font-semibold text-slate-700 mb-1">Biographie</label>
-                <textarea readOnly value={talent.bio} rows={3} className="w-full bg-slate-50 border-none rounded-lg p-3 text-sm text-slate-600 focus:ring-0 resize-none" />
+                <textarea readOnly value={talent.bio || "Aucune biographie"} rows={3} className="w-full bg-slate-50 border-none rounded-lg p-3 text-sm text-slate-600 focus:ring-0 resize-none" />
               </div>
 
               <div className="md:col-span-2">
                 <label className="block text-sm font-semibold text-slate-700 mb-1">Compétences clés</label>
-                <input readOnly type="text" value={talent.skills} className="w-full bg-slate-50 border-none rounded-lg p-3 text-sm text-slate-600 focus:ring-0" />
+                <input readOnly type="text" value={talent.skills || ""} className="w-full bg-slate-50 border-none rounded-lg p-3 text-sm text-slate-600 focus:ring-0" />
               </div>
             </div>
           )}
@@ -199,11 +199,20 @@ export function TalentDetails({ talent, onBack }: { talent: any, onBack: () => v
                     src={talent.videoUrl} 
                     controls 
                     className="w-full h-full object-contain"
+                    onError={(e) => {
+                      const target = e.currentTarget;
+                      target.style.display = 'none';
+                    }}
                   />
                 </div>
               ) : (
                 <div className="text-center text-slate-500 py-20 bg-slate-50 rounded-xl border border-slate-100 w-full">
-                  <p className="font-medium text-sm">Aucune vidéo d'entretien disponible</p>
+                  <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" className="mx-auto mb-3 text-slate-300">
+                    <path d="m22 8-6 4 6 4V8z"/>
+                    <rect width="14" height="12" x="2" y="6" rx="2" ry="2"/>
+                  </svg>
+                  <p className="font-medium text-sm">Aucune vidéo d&apos;entretien disponible</p>
+                  <p className="text-xs text-slate-400 mt-1">Ce talent n&apos;a pas encore soumis de vidéo d&apos;entretien.</p>
                 </div>
               )}
             </div>

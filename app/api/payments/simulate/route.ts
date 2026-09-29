@@ -16,7 +16,24 @@ export async function POST(req: Request) {
     const updatedUser = await prisma.user.update({
       where: { id: userId },
       data: { isPremium: true },
+      include: { role: true },
     });
+
+    const roleName = updatedUser.role?.name;
+    const amount = roleName === "RECRUTEUR" ? 1000 : 700;
+
+    if (prisma.transaction) {
+      await prisma.transaction.create({
+        data: {
+          userId,
+          amount,
+          currency: "CFA",
+          type: "SUBSCRIPTION_PREMIUM",
+          status: "SUCCESS",
+          paymentMethod: "SIMULATION"
+        }
+      });
+    }
 
     return NextResponse.json({ success: true, user: updatedUser });
   } catch (error) {

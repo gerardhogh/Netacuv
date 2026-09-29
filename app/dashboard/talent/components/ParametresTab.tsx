@@ -76,7 +76,7 @@ export default function ParametresTab() {
           <Shield size={18} className="text-[#008de4]" />
           <h3 className="text-base font-bold text-slate-800">Changer le mot de passe</h3>
         </div>
-        <form onSubmit={handlePasswordUpdate} className="space-y-4 max-w-lg">
+        <form onSubmit={handlePasswordUpdate} className="space-y-4">
           <PasswordField
             label="Mot de passe actuel"
             value={currentPwd}
@@ -117,7 +117,7 @@ export default function ParametresTab() {
           <Globe2 size={18} className="text-[#008de4]" />
           <h3 className="text-base font-bold text-slate-800">Langue de la plateforme</h3>
         </div>
-        <div className="max-w-lg">
+        <div>
           <div className="relative">
             <select
               value={lang}

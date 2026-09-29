@@ -16,7 +16,12 @@ export async function POST() {
     const updatedUser = await prisma.user.update({
       where: { id: userId },
       data: { isPremium: true },
+      include: { role: true }
     });
+
+    // Déterminer le montant en fonction du rôle
+    const roleName = updatedUser.role?.name;
+    const amount = roleName === "RECRUTEUR" ? 1000 : 700;
 
     // Enregistrez un log d'audit ou de transaction si nécessaire
     try {
@@ -24,7 +29,8 @@ export async function POST() {
         await prisma.transaction.create({
           data: {
             userId,
-            amount: 99.99, // Montant fictif
+            amount,
+            currency: "CFA",
             type: "SUBSCRIPTION_PREMIUM",
             status: "SUCCESS",
             paymentMethod: "SIMULATION"

@@ -12,7 +12,7 @@ export default function AdminParametres() {
   const [showPassword3, setShowPassword3] = useState(false);
 
   return (
-    <div className="space-y-6 animate-fade-in-up max-w-4xl">
+    <div className="space-y-6 animate-fade-in-up w-full">
       
       {/* Préférences de notification */}
       <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
@@ -96,7 +96,7 @@ export default function AdminParametres() {
       {/* Langue de la plateforme */}
       <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
         <h3 className="text-lg font-bold text-slate-800 mb-6">Langue de la plateforme</h3>
-        <div className="relative w-full max-w-sm">
+        <div className="relative w-full">
           <select
             value={locale}
             onChange={(e) => setLocale(e.target.value as typeof locale)}

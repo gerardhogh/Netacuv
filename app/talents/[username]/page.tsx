@@ -84,7 +84,7 @@ export default async function PublicProfilePage({
               className="w-full flex items-center justify-center gap-2 py-3 px-4 bg-orange-500 hover:bg-orange-600 text-white font-medium rounded-xl transition-all shadow-md hover:shadow-lg"
             >
               <UserPlus className="w-5 h-5" />
-              S'inscrire en tant que recruteur
+              S&apos;inscrire en tant que recruteur
             </Link>
           </div>
         </div>

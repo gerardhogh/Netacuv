@@ -48,7 +48,7 @@ function ProfilTalentContent({ initialTab = "informations" }: { initialTab?: Sub
   const [stars, setStars] = useState(0);
   const [userAvatar, setUserAvatar] = useState<string>(user?.avatar || "/assets/avatar_africain.jpg");
   const [userName, setUserName] = useState<string>(user?.name || "Candidat");
-  const [userTitle, setUserTitle] = useState<string>("Développeur");
+  const [userTitle, setUserTitle] = useState<string>("Aucun profil");
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
@@ -1093,12 +1093,31 @@ function VideoTab() {
 
   useEffect(() => {
     let isMounted = true;
-    const isRecorded = typeof window !== "undefined" && localStorage.getItem("interview_recorded") === "true";
 
-    if (isRecorded) {
+    const loadVideo = async () => {
       setIsLoading(true);
-      getVideoFromDB()
-        .then((blob) => {
+      try {
+        // 1. Check if video URL exists in DB (Supabase) via API
+        const res = await fetch("/api/talents/me", { credentials: "include" });
+        if (res.ok) {
+          const data = await res.json();
+          const dbVideoUrl = data.talentProfile?.videoUrl;
+          if (dbVideoUrl && isMounted) {
+            setVideoUrl(dbVideoUrl);
+            setHasVideo(true);
+            setIsLoading(false);
+            return; // Supabase URL found — no need to check IndexedDB
+          }
+        }
+      } catch (e) {
+        console.warn("Could not fetch profile videoUrl from API", e);
+      }
+
+      // 2. Fallback: check IndexedDB (local blob)
+      const isRecorded = typeof window !== "undefined" && localStorage.getItem("interview_recorded") === "true";
+      if (isRecorded) {
+        try {
+          const blob = await getVideoFromDB();
           if (!isMounted) return;
           if (blob && blob.size > 0) {
             setVideoBlob(blob);
@@ -1109,24 +1128,25 @@ function VideoTab() {
             setHasVideo(false);
             setVideoUrl(null);
           }
-        })
-        .catch((err) => {
+        } catch (err) {
           console.error("Error loading video from DB:", err);
           if (isMounted) setHasVideo(false);
-        })
-        .finally(() => {
-          if (isMounted) setIsLoading(false);
-        });
-    } else {
-      setHasVideo(false);
-      setVideoUrl(null);
-      setIsLoading(false);
-    }
+        }
+      } else {
+        setHasVideo(false);
+        setVideoUrl(null);
+      }
+
+      if (isMounted) setIsLoading(false);
+    };
+
+    loadVideo();
 
     return () => {
       isMounted = false;
     };
   }, []);
+
 
   useEffect(() => {
     return () => {

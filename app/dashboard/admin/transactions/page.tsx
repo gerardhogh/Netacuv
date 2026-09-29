@@ -1,6 +1,6 @@
 "use client";
 import React, { useState, useEffect } from "react";
-import { Search, ChevronDown } from "lucide-react";
+import { Search, ChevronDown, X } from "lucide-react";
 
 interface UserData {
   name: string | null;
@@ -22,6 +22,7 @@ export default function AdminTransactions() {
   const [search, setSearch] = useState("");
   const [transactions, setTransactions] = useState<TransactionData[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedTx, setSelectedTx] = useState<TransactionData | null>(null);
 
   useEffect(() => {
     const fetchTransactions = async () => {
@@ -29,7 +30,15 @@ export default function AdminTransactions() {
         const response = await fetch('/api/transactions');
         if (response.ok) {
           const data = await response.json();
-          setTransactions(data.transactions || []);
+          // Normaliser les anciennes transactions fictives pour l'affichage correct
+          const normalizedTx = (data.transactions || []).map((t: any) => {
+            if (t.amount === 99.99) {
+              const isRecruteur = t.user?.role?.name === 'RECRUTEUR';
+              return { ...t, amount: isRecruteur ? 1000 : 700, currency: 'CFA' };
+            }
+            return t;
+          });
+          setTransactions(normalizedTx);
         } else {
           console.error("Erreur lors de la récupération des transactions");
         }
@@ -195,7 +204,7 @@ export default function AdminTransactions() {
                         </div>
                       </td>
                       <td className="px-4 py-3">
-                        <button className="text-[#32A8D7] font-semibold hover:underline">Voir</button>
+                        <button onClick={() => setSelectedTx(t)} className="text-[#32A8D7] font-semibold hover:underline">Voir</button>
                       </td>
                     </tr>
                   );
@@ -216,6 +225,75 @@ export default function AdminTransactions() {
         )}
       </div>
       
+      {/* Modal Details */}
+      {selectedTx && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm animate-fade-in">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden flex flex-col scale-in">
+            <div className="flex items-center justify-between p-5 border-b border-slate-100">
+              <h3 className="font-bold text-lg text-[#08304c]">Détails de la transaction</h3>
+              <button onClick={() => setSelectedTx(null)} className="p-2 hover:bg-slate-100 rounded-full transition-colors">
+                <X size={20} className="text-slate-500" />
+              </button>
+            </div>
+            <div className="p-6 space-y-4">
+              <div className="flex flex-col">
+                <span className="text-slate-500 text-xs font-semibold uppercase tracking-wider mb-1">Référence</span>
+                <span className="font-mono text-sm text-slate-800 bg-slate-50 p-2 rounded-lg border border-slate-100 break-all">{selectedTx.id}</span>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div className="flex flex-col">
+                  <span className="text-slate-500 text-xs font-semibold uppercase tracking-wider mb-1">Date</span>
+                  <span className="text-sm text-slate-800 font-medium">{new Date(selectedTx.createdAt).toLocaleString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }).replace(',', ' à')}</span>
+                </div>
+                <div className="flex flex-col">
+                  <span className="text-slate-500 text-xs font-semibold uppercase tracking-wider mb-1">Statut</span>
+                  <div>
+                    <span className={`px-2.5 py-1 rounded-full text-xs font-bold ${selectedTx.status === 'SUCCESS' ? 'bg-green-100 text-green-700' : selectedTx.status === 'PENDING' ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700'}`}>
+                      {getStatusInFrench(selectedTx.status)}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="flex flex-col">
+                  <span className="text-slate-500 text-xs font-semibold uppercase tracking-wider mb-1">Utilisateur</span>
+                  <span className="text-sm font-semibold text-[#008de4]">{selectedTx.user?.name || "Inconnu"}</span>
+                </div>
+                <div className="flex flex-col">
+                  <span className="text-slate-500 text-xs font-semibold uppercase tracking-wider mb-1">Profil</span>
+                  <span className="text-sm text-slate-800 font-medium">{selectedTx.user?.role?.name || "Non défini"}</span>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="flex flex-col">
+                  <span className="text-slate-500 text-xs font-semibold uppercase tracking-wider mb-1">Moyen de paiement</span>
+                  <span className="text-sm text-slate-800 font-medium">{selectedTx.paymentMethod}</span>
+                </div>
+                <div className="flex flex-col">
+                  <span className="text-slate-500 text-xs font-semibold uppercase tracking-wider mb-1">Service</span>
+                  <span className="text-sm text-slate-800 font-medium">{getTypeInFrench(selectedTx.type)}</span>
+                </div>
+              </div>
+
+              <div className="pt-4 mt-2 border-t border-slate-100 flex items-center justify-between">
+                <span className="text-slate-600 font-bold">Montant Total</span>
+                <span className="text-2xl font-black text-[#32A8D7]">{selectedTx.amount} {selectedTx.currency}</span>
+              </div>
+            </div>
+            <div className="p-4 bg-slate-50 border-t border-slate-100 flex justify-end">
+              <button 
+                onClick={() => setSelectedTx(null)}
+                className="px-5 py-2.5 bg-slate-200 hover:bg-slate-300 text-slate-700 text-sm font-semibold rounded-xl transition-colors"
+              >
+                Fermer
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

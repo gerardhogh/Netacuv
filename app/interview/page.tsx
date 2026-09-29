@@ -536,11 +536,24 @@ export default function InterviewPage() {
           // Upload to Supabase so recruiter/admin can view it
           try {
             const formData = new FormData();
-            formData.append("video", videoBlob, "interview." + (mimeType.includes("mp4") ? "mp4" : "webm"));
-            await fetch("/api/talents/video", {
+            const ext = mimeType.includes("mp4") ? "mp4" : "webm";
+            formData.append("video", videoBlob, `interview.${ext}`);
+            // Pass userId explicitly so the API can identify the user even without session cookie
+            if ((user as any)?.id) {
+              formData.append("userId", (user as any).id);
+            }
+            const uploadRes = await fetch("/api/talents/video", {
               method: "POST",
               body: formData,
+              credentials: "include", // Pass auth session cookies
             });
+            if (!uploadRes.ok) {
+              const errData = await uploadRes.json().catch(() => ({}));
+              console.error("Video upload failed:", uploadRes.status, errData);
+            } else {
+              const result = await uploadRes.json();
+              console.log("Video uploaded successfully:", result.videoUrl);
+            }
           } catch (e) {
             console.error("Failed to upload video to Supabase", e);
           }

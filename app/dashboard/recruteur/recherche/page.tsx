@@ -300,11 +300,13 @@ export default function RechercheProfil() {
                 name={talent.name}
                 location={talent.location}
                 profession={talent.profession}
-                imageUrl={talent.imageUrl}
+                imageUrl={talent.avatar || "/assets/avatar_africain.jpg"}
                 isVerified={talent.isVerified}
                 isFavorite={favorites.includes(talent.id)}
                 onFavorite={toggleFavorite}
                 blurSensitive={!user?.isPremium}
+                isPremium={talent.isPremium}
+                hasVideo={talent.videoOk}
               />
             ))}
           </div>

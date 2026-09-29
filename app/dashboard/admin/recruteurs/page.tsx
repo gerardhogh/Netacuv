@@ -26,7 +26,8 @@ export default function AdminRecruteurs() {
       candidats: r.recruiterProfile?.jobOffers?.reduce((acc: number, job: any) => acc + (job.applications?.length || 0), 0) || 0,
       abonnement: "Standard",
       date: new Date(r.createdAt).toLocaleDateString("fr-FR"),
-      status: r.active ? "Actif" : "Suspendu"
+      status: r.active ? "Actif" : "Suspendu",
+      isAdmin: r.role?.name === "ADMIN"
     })) : [];
 
   const filtered = recruteurs.filter(r => 
@@ -155,24 +156,28 @@ export default function AdminRecruteurs() {
                       </div>
                     </td>
                     <td className="px-5 py-4">
-                      <div className="flex flex-col gap-1 text-xs font-semibold items-start">
-                        <button onClick={() => setSelectedRecruteur(r)} className="text-[#32A8D7] hover:underline">Voir profil</button>
-                        
-                        {r.status === 'En attente' && (
-                          <button onClick={() => setConfirmAction({ id: r.id, type: 'activate' })} className="text-green-500 hover:underline">Approuver</button>
-                        )}
-                        {r.status === 'Suspendu' && (
-                          <button onClick={() => setConfirmAction({ id: r.id, type: 'activate' })} className="text-green-500 hover:underline">Réactiver</button>
-                        )}
-                        
-                        <button onClick={() => setSelectedRecruteur(r)} className="text-[#32A8D7] hover:underline">Modifier</button>
-                        
-                        {r.status !== 'Suspendu' && (
-                          <button onClick={() => setConfirmAction({ id: r.id, type: 'suspend' })} className="text-yellow-500 hover:underline">Suspendre</button>
-                        )}
-                        
-                        <button onClick={() => setConfirmAction({ id: r.id, type: 'delete' })} className="text-red-500 hover:underline">Supprimer</button>
-                      </div>
+                      {r.isAdmin ? (
+                        <span className="text-slate-400 text-xs font-medium">Administrateur</span>
+                      ) : (
+                        <div className="flex flex-col gap-1 text-xs font-semibold items-start">
+                          <button onClick={() => setSelectedRecruteur(r)} className="text-[#32A8D7] hover:underline">Voir profil</button>
+                          
+                          {r.status === 'En attente' && (
+                            <button onClick={() => setConfirmAction({ id: r.id, type: 'activate' })} className="text-green-500 hover:underline">Approuver</button>
+                          )}
+                          {r.status === 'Suspendu' && (
+                            <button onClick={() => setConfirmAction({ id: r.id, type: 'activate' })} className="text-green-500 hover:underline">Réactiver</button>
+                          )}
+                          
+                          <button onClick={() => setSelectedRecruteur(r)} className="text-[#32A8D7] hover:underline">Modifier</button>
+                          
+                          {r.status !== 'Suspendu' && (
+                            <button onClick={() => setConfirmAction({ id: r.id, type: 'suspend' })} className="text-yellow-500 hover:underline">Suspendre</button>
+                          )}
+                          
+                          <button onClick={() => setConfirmAction({ id: r.id, type: 'delete' })} className="text-red-500 hover:underline">Supprimer</button>
+                        </div>
+                      )}
                     </td>
                   </tr>
                 ))}

@@ -198,10 +198,17 @@ function PublierModal({ onClose, onPublish }: PublierModalProps) {
             <label className="block text-sm font-bold text-[#32A8D7] mb-2">Lieu du travail</label>
             <div className="grid grid-cols-2 gap-3">
               <div className="relative">
-                <select value={pays} onChange={(e) => setPays(e.target.value)} className={selectClass}>
-                  {["Bénin","Côte d'Ivoire","Sénégal","Togo","Mali","Cameroun","Burkina Faso","Guinée"].map(p => <option key={p}>{p}</option>)}
-                </select>
-                <svg className="w-3.5 h-3.5 text-slate-500 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
+                <input 
+                  type="text"
+                  list="recruiter-countries-list"
+                  value={pays} 
+                  onChange={(e) => setPays(e.target.value)} 
+                  className={inputClass} 
+                  placeholder="Rechercher un pays"
+                />
+                <datalist id="recruiter-countries-list">
+                  {["Bénin","Côte d'Ivoire","Sénégal","Togo","Mali","Cameroun","Burkina Faso","Guinée", "France", "Canada", "États-Unis", "Maroc", "Tunisie"].map(p => <option key={p} value={p} />)}
+                </datalist>
               </div>
               <input type="text" value={ville} onChange={(e) => setVille(e.target.value)} className={inputClass} placeholder="Ville" />
             </div>
@@ -473,7 +480,7 @@ type EmploisView = "grid" | "detail" | "modifier";
 
 export default function EmploisTab() {
   const { data: emploisFetched = [], error, mutate } = useSWR("/api/jobs?mine=true", fetcher);
-  const emplois = Array.isArray(emploisFetched) ? emploisFetched : []; // Assure la compatibilité avec le reste du code
+  const emplois = Array.isArray(emploisFetched) ? emploisFetched : (emploisFetched.jobs || []);
   const [view, setView] = useState<EmploisView>("grid");
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [showModal, setShowModal] = useState(false);
@@ -516,14 +523,15 @@ export default function EmploisTab() {
         }
       } else {
         showToast("Erreur lors de la suppression.");
+        setConfirmDeleteId(null);
       }
     } catch (error) {
       console.error(error);
       showToast("Erreur lors de la suppression.");
+      setConfirmDeleteId(null);
     }
   };
 
-  // Confirmed cloture
   const confirmCloturer = async (id: number) => {
     try {
       const res = await fetch(`/api/jobs/${id}`, {
@@ -537,10 +545,12 @@ export default function EmploisTab() {
         showToast("Offre clôturée.");
       } else {
         showToast("Erreur lors de la clôture.");
+        setConfirmCloturerId(null);
       }
     } catch (error) {
       console.error(error);
       showToast("Erreur lors de la clôture.");
+      setConfirmCloturerId(null);
     }
   };
 

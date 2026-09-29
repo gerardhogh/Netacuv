@@ -61,7 +61,7 @@ export default function ParametresTab() {
   };
 
   return (
-    <div className="max-w-2xl space-y-6">
+    <div className="w-full space-y-6">
       {/* Toast */}
       {toastMsg && (
         <div className="fixed top-6 right-6 z-50 bg-slate-900 text-white px-5 py-3 rounded-2xl shadow-2xl flex items-center gap-3 text-sm animate-fade-in border border-slate-700">

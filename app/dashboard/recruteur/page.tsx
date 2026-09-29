@@ -29,6 +29,7 @@ import {
   Globe,
   CreditCard,
   Crown,
+  Star,
 } from "lucide-react";
 import { useLang, LOCALES } from "../../context/LangContext";
 import TalentCard from "@/app/components/TalentCard";
@@ -65,8 +66,20 @@ export default function RecruteurDashboard() {
   
   const [searchQuery, setSearchQuery] = useState("");
   const { data: talents = [] } = useSWR(`/api/talents?q=${encodeURIComponent(searchQuery)}`, fetcher);
+  const { data: emploisFetched = [] } = useSWR("/api/jobs?mine=true", fetcher);
+  const emplois = Array.isArray(emploisFetched) ? emploisFetched : (emploisFetched.jobs || []);
 
   const [activeTab, setActiveTab] = useState<RecruiterTab>("dashboard");
+
+  const handleTabChange = (tab: RecruiterTab) => {
+    setActiveTab(tab);
+    if (typeof window !== "undefined") {
+      const url = new URL(window.location.href);
+      url.searchParams.set("tab", tab);
+      window.history.pushState({}, "", url.toString());
+    }
+  };
+
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const [notifMenuOpen, setNotifMenuOpen] = useState(false);
@@ -104,6 +117,7 @@ export default function RecruteurDashboard() {
   const companyName = (user as any)?.company || user?.name || "Grand-G Corp";
   const companyEmail = user?.email || "recruteur@grand-g.com";
   const unreadCount = notifications.filter((n) => !n.read).length;
+  const isPremium = user?.premiumType && user.premiumType !== "gratuit";
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
@@ -192,7 +206,7 @@ export default function RecruteurDashboard() {
             return (
               <button
                 key={key}
-                onClick={() => { setActiveTab(key); setSidebarOpen(false); }}
+                onClick={() => { handleTabChange(key); setSidebarOpen(false); }}
                 className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-medium transition-all ${
                   isActive
                     ? "bg-[#32A8D7] text-white shadow-lg shadow-sky-500/25 translate-x-1"
@@ -284,6 +298,24 @@ export default function RecruteurDashboard() {
 
           {/* Right: lang + notifications + avatar */}
           <div className="flex items-center gap-3">
+            {/* Quota Indicator / Premium */}
+            {isPremium ? (
+              <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-yellow-500/20 to-yellow-600/20 rounded-full border border-yellow-500/30 text-yellow-600 shadow-inner">
+                <Star size={14} className="fill-yellow-500 text-yellow-500" />
+                <span className="text-xs font-bold">Premium - Illimité</span>
+              </div>
+            ) : (
+              <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-slate-100 rounded-full border border-slate-200">
+                <div className="flex flex-col">
+                  <span className="text-[10px] text-slate-500 font-medium leading-none mb-0.5">Offres créées ce mois</span>
+                  <span className="text-xs font-bold text-slate-800 leading-none">{emplois.length}</span>
+                </div>
+                <button onClick={() => setActiveTab("premium")} className="text-[10px] font-bold text-[#32A8D7] hover:text-[#2896c2] bg-sky-50 hover:bg-sky-100 px-2 py-1 rounded-full transition-colors ml-2">
+                  Passer au Premium
+                </button>
+              </div>
+            )}
+
             {/* Lang */}
             <div className="relative">
               <button
@@ -378,13 +410,13 @@ export default function RecruteurDashboard() {
                     <p className="text-[11px] text-slate-400 truncate">{companyEmail}</p>
                   </div>
                   <button
-                    onClick={() => { setActiveTab("profil"); setProfileMenuOpen(false); }}
+                    onClick={() => { handleTabChange("profil"); setProfileMenuOpen(false); }}
                     className="w-full text-left px-4 py-2 text-xs text-slate-600 hover:bg-slate-50 font-medium flex items-center gap-2"
                   >
                     <User size={14} /> {t("nav", "myProfile")}
                   </button>
                   <button
-                    onClick={() => { setActiveTab("parametres"); setProfileMenuOpen(false); }}
+                    onClick={() => { handleTabChange("parametres"); setProfileMenuOpen(false); }}
                     className="w-full text-left px-4 py-2 text-xs text-slate-600 hover:bg-slate-50 font-medium flex items-center gap-2"
                   >
                     <Settings size={14} /> {t("nav", "settings")}
@@ -423,7 +455,7 @@ export default function RecruteurDashboard() {
                     </p>
                   </div>
                   <button
-                    onClick={() => setActiveTab("candidatures")}
+                    onClick={() => handleTabChange("candidatures")}
                     className="w-full py-2.5 px-4 rounded-xl font-semibold text-xs text-white bg-[#4bb3e6] hover:bg-[#32a8d7] transition-colors flex items-center justify-center gap-2 shadow-xs"
                   >
                     <FileText size={15} /> Voir les candidatures
@@ -436,7 +468,7 @@ export default function RecruteurDashboard() {
                     <div className="flex items-center justify-between mb-3">
                       <h3 className="font-bold text-slate-900 text-base">Favoris</h3>
                       <span className="text-xs font-bold px-3 py-1 rounded-full bg-slate-100 text-slate-700">
-                        {favorites.length > 0 ? favorites.length : 17}
+                        {favorites.length}
                       </span>
                     </div>
                     <p className="text-xs text-slate-500 mb-6 leading-relaxed">
@@ -444,7 +476,7 @@ export default function RecruteurDashboard() {
                     </p>
                   </div>
                   <button
-                    onClick={() => setActiveTab("favoris")}
+                    onClick={() => handleTabChange("favoris")}
                     className="w-full py-2.5 px-4 rounded-xl font-semibold text-xs text-white bg-[#0088cc] hover:bg-[#0077b3] transition-colors flex items-center justify-center gap-2 shadow-xs"
                   >
                     <Bookmark size={15} /> Voir les favoris
@@ -462,7 +494,7 @@ export default function RecruteurDashboard() {
                     </p>
                   </div>
                   <button
-                    onClick={() => setActiveTab("affiliation")}
+                    onClick={() => handleTabChange("affiliation")}
                     className="w-full py-2.5 px-4 rounded-xl font-semibold text-xs text-white bg-[#08304c] hover:bg-[#062439] transition-colors flex items-center justify-center gap-2 shadow-xs"
                   >
                     <Share2 size={15} /> Voir les détails
@@ -475,18 +507,18 @@ export default function RecruteurDashboard() {
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="font-bold text-slate-900 text-base">Emplois créés</h3>
                   <span className="text-xs font-medium px-3.5 py-1 rounded-full bg-sky-50 text-[#0071a2]">
-                    0 emplois
+                    {emplois.length} emplois
                   </span>
                 </div>
 
                 <div className="space-y-3 mb-5">
                   <div className="p-4 rounded-xl border border-slate-100 bg-slate-50 text-center text-sm text-slate-500">
-                    Vous n'avez pas encore créé d'offre d'emploi.
+                    {emplois.length === 0 ? "Vous n'avez pas encore créé d'offre d'emploi." : `Vous avez créé ${emplois.length} offre(s) d'emploi au total.`}
                   </div>
                 </div>
 
                 <button
-                  onClick={() => setActiveTab("emplois")}
+                  onClick={() => handleTabChange("emplois")}
                   className="w-full py-3 rounded-xl font-semibold text-xs text-white bg-[#60bbf7] hover:bg-[#4aaef5] transition-colors flex items-center justify-center gap-2 shadow-xs"
                 >
                   <Gift size={15} /> Voir toutes les offres d'emplois créés
@@ -504,7 +536,7 @@ export default function RecruteurDashboard() {
                     </p>
                   </div>
                   <button
-                    onClick={() => setActiveTab("emplois")}
+                    onClick={() => handleTabChange("emplois")}
                     className="w-full py-2.5 px-4 rounded-xl font-semibold text-xs text-white bg-[#0071a2] hover:bg-[#005c84] transition-colors flex items-center justify-center gap-2 shadow-xs"
                   >
                     <FileText size={15} /> Commencer
@@ -520,7 +552,7 @@ export default function RecruteurDashboard() {
                     </p>
                   </div>
                   <button
-                    onClick={() => setActiveTab("parametres")}
+                    onClick={() => handleTabChange("parametres")}
                     className="w-full py-2.5 px-4 rounded-xl font-semibold text-xs text-white bg-[#0099e6] hover:bg-[#0088cc] transition-colors flex items-center justify-center gap-2 shadow-xs"
                   >
                     <Settings size={15} /> Accéder
@@ -593,13 +625,15 @@ export default function RecruteurDashboard() {
                         key={tItem.id}
                         id={tItem.id}
                         name={tItem.name || "Candidat Anonyme"}
-                        location={"Non précisé"} // Placeholder until db schema changes
-                        profession={profile.bio ? profile.bio.substring(0, 30) + "..." : "Professionnel"} // Placeholder
-                        imageUrl={tItem.image || "/assets/avatar_africain.jpg"}
-                        isVerified={true}
+                        location={tItem.location}
+                        profession={tItem.profession}
+                        imageUrl={tItem.avatar || "/assets/avatar_africain.jpg"}
+                        isVerified={tItem.isVerified ?? true}
                         isFavorite={favorites.includes(tItem.id)}
                         onFavorite={toggleFavorite}
                         blurSensitive={!user?.isPremium}
+                        isPremium={tItem.isPremium}
+                        hasVideo={tItem.videoOk}
                       />
                     );
                   })
@@ -652,6 +686,9 @@ export default function RecruteurDashboard() {
           {/* TAB: FAVORIS */}
           {activeTab === "favoris" && (
             <FavorisTab
+              favorites={favorites}
+              talents={talents}
+              toggleFavorite={toggleFavorite}
               onViewProfile={(id) => showToast(`Consultation du profil ${id}`)}
               onSendEmail={(name) => showToast(`Email envoyé à ${name}`)}
             />
