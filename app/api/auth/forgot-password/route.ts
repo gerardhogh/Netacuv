@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { supabase } from "@/lib/supabase";
 import { logger } from "@/lib/logger";
+import { prisma } from "@/lib/prisma";
 
 export async function POST(req: Request) {
   try {
@@ -10,6 +11,18 @@ export async function POST(req: Request) {
       return NextResponse.json(
         { error: "L'adresse e-mail est obligatoire." },
         { status: 400 }
+      );
+    }
+
+    const userExists = await prisma.user.findUnique({
+      where: { email },
+      select: { id: true }
+    });
+
+    if (!userExists) {
+      return NextResponse.json(
+        { error: "Aucun compte n'est associé à cette adresse e-mail. Veuillez vous inscrire." },
+        { status: 404 }
       );
     }
 
