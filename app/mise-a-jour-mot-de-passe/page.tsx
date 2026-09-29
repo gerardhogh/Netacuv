@@ -71,7 +71,6 @@ function UpdatePasswordForm() {
         return;
       }
       
-      setSuccess(true);
       router.push("/connexion?message=Mot+de+passe+mis+%C3%A0+jour+avec+succ%C3%A8s.+Veuillez+vous+connecter.");
     } catch (err: any) {
       console.error(err);
@@ -235,5 +234,13 @@ function UpdatePasswordForm() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function UpdatePasswordPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-slate-50 flex items-center justify-center">Chargement...</div>}>
+      <UpdatePasswordForm />
+    </Suspense>
   );
 }
