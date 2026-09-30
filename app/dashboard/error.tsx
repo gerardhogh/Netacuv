@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect } from "react";
-import { AlertCircle, RefreshCw } from "lucide-react";
+import { AlertTriangle, RefreshCw, ArrowLeft } from "lucide-react";
+import { useRouter } from "next/navigation";
 
 export default function DashboardError({
   error,
@@ -10,30 +10,45 @@ export default function DashboardError({
   error: Error & { digest?: string };
   reset: () => void;
 }) {
-  useEffect(() => {
-    // Log the error to our central logger or reporting service
-    console.error("Dashboard caught error:", error);
-  }, [error]);
+  const router = useRouter();
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-[60vh] text-center p-6 bg-slate-50 rounded-2xl border border-slate-100 my-8 shadow-sm max-w-2xl mx-auto">
-      <div className="w-16 h-16 bg-red-100 text-red-500 rounded-full flex items-center justify-center mb-6">
-        <AlertCircle size={32} />
-      </div>
-      <h2 className="text-2xl font-bold text-slate-800 mb-3">
-        Oops ! Une erreur est survenue
-      </h2>
-      <p className="text-slate-500 max-w-md mx-auto mb-8 leading-relaxed">
-        Nous n&apos;avons pas pu charger cette page correctement. Veuillez réessayer ou retourner au tableau de bord.
-      </p>
-      <div className="flex items-center gap-4">
-        <button
-          onClick={() => reset()}
-          className="flex items-center gap-2 bg-[#32A8D7] text-white px-6 py-3 rounded-xl font-semibold shadow-md shadow-sky-500/20 hover:bg-[#2896c2] hover:shadow-lg hover:-translate-y-0.5 transition-all"
-        >
-          <RefreshCw size={18} />
-          Réessayer
-        </button>
+    <div className="min-h-[60vh] flex items-center justify-center p-6">
+      <div className="max-w-md w-full bg-white rounded-2xl shadow-lg border border-slate-100 p-8 text-center">
+        <div className="mx-auto w-14 h-14 bg-amber-50 rounded-2xl flex items-center justify-center mb-5">
+          <AlertTriangle className="w-7 h-7 text-amber-500" />
+        </div>
+
+        <h2 className="text-lg font-bold text-slate-900 mb-2">
+          Erreur de chargement
+        </h2>
+
+        <p className="text-sm text-slate-500 leading-relaxed mb-6">
+          Le tableau de bord a rencontré un problème. Réessayez ou revenez en arrière.
+        </p>
+
+        {process.env.NODE_ENV === "development" && (
+          <p className="text-xs text-red-400 font-mono mb-4 bg-red-50 rounded-lg p-2 break-all text-left">
+            {error.message}
+          </p>
+        )}
+
+        <div className="flex gap-3">
+          <button
+            onClick={() => router.back()}
+            className="flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 text-sm font-semibold transition-colors"
+          >
+            <ArrowLeft size={15} />
+            Retour
+          </button>
+          <button
+            onClick={reset}
+            className="flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl bg-[#32A8D7] hover:bg-[#2896c2] text-white text-sm font-semibold transition-colors shadow-sm"
+          >
+            <RefreshCw size={15} />
+            Réessayer
+          </button>
+        </div>
       </div>
     </div>
   );

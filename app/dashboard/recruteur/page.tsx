@@ -65,7 +65,8 @@ export default function RecruteurDashboard() {
   const { locale, setLocale, t } = useLang();
   
   const [searchQuery, setSearchQuery] = useState("");
-  const { data: talents = [] } = useSWR(`/api/talents?q=${encodeURIComponent(searchQuery)}`, fetcher);
+  const { data: talentsRaw } = useSWR(`/api/talents?q=${encodeURIComponent(searchQuery)}`, fetcher);
+  const talents = Array.isArray(talentsRaw) ? talentsRaw : (talentsRaw?.talents || []);
   const { data: emploisFetched = [] } = useSWR("/api/jobs?mine=true", fetcher);
   const emplois = Array.isArray(emploisFetched) ? emploisFetched : (emploisFetched.jobs || []);
 

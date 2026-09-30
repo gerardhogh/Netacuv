@@ -13,8 +13,17 @@ export async function GET(request: Request) {
     const city = searchParams.get('city') || '';
 
     const session = await getServerSession(authOptions);
-    const isPremium = session?.user?.isPremium === true;
     const isAdmin = session?.user?.role === "ADMIN";
+
+    // AS-03: Vérifier isPremium en BDD (et non via le JWT client)
+    let isPremium = false;
+    if (session?.user?.id) {
+      const dbUser = await prisma.user.findUnique({
+        where: { id: session.user.id as string },
+        select: { isPremium: true },
+      });
+      isPremium = dbUser?.isPremium === true;
+    }
 
     const filters: any = { isNot: null };
     if (degree) filters.degree = degree;
@@ -40,17 +49,27 @@ export async function GET(request: Request) {
       whereClause.active = true;
     }
 
+    // VLT-02: Pagination serveur
+    const page = parseInt(searchParams.get('page') || '1');
+    const limit = Math.min(parseInt(searchParams.get('limit') || '50'), 100); // Cap at 100
+    const skip = (page - 1) * limit;
+
     // Return users that have a TalentProfile and role TALENT
-    const talents = await prisma.user.findMany({
-      where: whereClause,
-      include: {
-        talentProfile: true,
-        role: true,
-      },
-      orderBy: {
-        createdAt: 'desc'
-      }
-    });
+    const [talents, total] = await Promise.all([
+      prisma.user.findMany({
+        where: whereClause,
+        include: {
+          talentProfile: true,
+          role: true,
+        },
+        orderBy: {
+          createdAt: 'desc'
+        },
+        skip,
+        take: limit,
+      }),
+      prisma.user.count({ where: whereClause }),
+    ]);
     
     // Si c'est un recruteur non-premium, on masque certaines données
     const shouldHideSensitive = !isAdmin && !isPremium;
@@ -107,7 +126,12 @@ export async function GET(request: Request) {
       };
     });
 
-    return NextResponse.json(formattedTalents);
+    return NextResponse.json({
+      talents: formattedTalents,
+      total,
+      page,
+      totalPages: Math.ceil(total / limit),
+    });
   } catch (error) {
     console.error("Erreur GET /api/talents:", error);
     return NextResponse.json({ error: "Erreur lors de la récupération des talents" }, { status: 500 });

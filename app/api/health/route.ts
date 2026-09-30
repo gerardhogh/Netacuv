@@ -1,11 +1,9 @@
 import { NextResponse } from "next/server";
-import { PrismaClient } from "@prisma/client";
-
-const prisma = new PrismaClient();
+import { prisma } from "@/lib/prisma";
 
 export async function GET() {
   try {
-    // Check Database connection
+    // Check Database connection using the singleton client
     await prisma.$queryRaw`SELECT 1`;
 
     return NextResponse.json(
@@ -28,7 +26,5 @@ export async function GET() {
       },
       { status: 503 }
     );
-  } finally {
-    await prisma.$disconnect();
   }
 }

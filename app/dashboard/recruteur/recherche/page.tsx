@@ -51,7 +51,7 @@ export default function RechercheProfil() {
 
       const res = await fetch(`/api/talents?${params.toString()}`);
       const data = await res.json();
-      if (res.ok) setTalents(data);
+      if (res.ok) setTalents(Array.isArray(data) ? data : (data.talents || []));
     } catch (e) {
       console.error(e);
       showToast("Erreur lors de la récupération des talents.");

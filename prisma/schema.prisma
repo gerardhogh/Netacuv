@@ -41,6 +41,8 @@ model User {
 
   @@index([roleId])
   @@index([isPremium])
+  @@index([email])
+  @@index([createdAt])
 }
 
 model Account {
@@ -211,6 +213,7 @@ model Application {
   @@index([jobOfferId])
   @@index([talentId])
   @@index([status])
+  @@index([createdAt])
 }
 
 // ==========================================

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
+import { logger } from "@/lib/logger";
 
 export async function POST() {
   try {
@@ -12,41 +13,55 @@ export async function POST() {
 
     const userId = (session.user as any).id;
 
-    // Simulation de la transaction avec mise à jour du statut
-    const updatedUser = await prisma.user.update({
+    // Vérifier si l'utilisateur est déjà Premium (idempotent)
+    const currentUser = await prisma.user.findUnique({
       where: { id: userId },
-      data: { isPremium: true },
-      include: { role: true }
+      select: { isPremium: true, role: true },
     });
 
-    // Déterminer le montant en fonction du rôle
-    const roleName = updatedUser.role?.name;
-    const amount = roleName === "RECRUTEUR" ? 1000 : 700;
-
-    // Enregistrez un log d'audit ou de transaction si nécessaire
-    try {
-      if (prisma.transaction) {
-        await prisma.transaction.create({
-          data: {
-            userId,
-            amount,
-            currency: "CFA",
-            type: "SUBSCRIPTION_PREMIUM",
-            status: "SUCCESS",
-            paymentMethod: "SIMULATION"
-          }
-        });
-      }
-    } catch (err) {
-      console.warn("Transaction log failed, continuing anyway", err);
+    if (currentUser?.isPremium) {
+      return NextResponse.json(
+        { message: "Vous êtes déjà Premium !", isPremium: true },
+        { status: 200 }
+      );
     }
 
+    // Déterminer le montant en fonction du rôle
+    const roleName = currentUser?.role?.name;
+    const amount = roleName === "RECRUTEUR" ? 1000 : 700;
+
+    // AS-05: Transaction atomique — mise à jour User + création Transaction
+    const [updatedUser] = await prisma.$transaction([
+      prisma.user.update({
+        where: { id: userId },
+        data: { isPremium: true },
+      }),
+      prisma.transaction.create({
+        data: {
+          userId,
+          amount,
+          currency: "XOF",
+          type: "SUBSCRIPTION",
+          status: "SUCCESS",
+          paymentMethod: "SIMULATION",
+        },
+      }),
+    ]);
+
+    logger.info("Premium subscription simulated", { userId, amount, role: roleName });
+
     return NextResponse.json(
-      { message: "Félicitations ! Votre abonnement Premium est désormais actif.", isPremium: updatedUser.isPremium },
+      {
+        message: "Félicitations ! Votre abonnement Premium est désormais actif.",
+        isPremium: updatedUser.isPremium,
+      },
       { status: 200 }
     );
   } catch (error) {
-    console.error("Simulation error:", error);
+    logger.error("Simulation error", {
+      error: error instanceof Error ? error.message : "Unknown",
+      context: "api/subscription/simulate-checkout",
+    });
     return NextResponse.json(
       { message: "Une erreur s'est produite lors de la simulation du paiement." },
       { status: 500 }

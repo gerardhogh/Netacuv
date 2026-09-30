@@ -188,5 +188,5 @@ export const authOptions: NextAuthOptions = {
   pages: {
     signIn: "/connexion",
   },
-  debug: true,
+  debug: process.env.NODE_ENV === "development",
 };
