@@ -45,6 +45,18 @@ export const authOptions: NextAuthOptions = {
   session: {
     strategy: "jwt",
   },
+  cookies: {
+    sessionToken: {
+      name: process.env.NODE_ENV === "production" ? "__Secure-next-auth.session-token" : "next-auth.session-token",
+      options: {
+        httpOnly: true,
+        sameSite: "lax",
+        path: "/",
+        secure: process.env.NODE_ENV === "production",
+        domain: process.env.NODE_ENV === "production" ? ".netacuv.com" : undefined,
+      },
+    },
+  },
   providers: [
     // Authentification Google
     GoogleProvider({
@@ -178,8 +190,13 @@ export const authOptions: NextAuthOptions = {
       if (url.startsWith("/")) return new URL(url, baseUrl).toString();
       // Permet les URLs sur le même domaine
       if (new URL(url).origin === baseUrl) return url;
-      // Permet expressément le localhost (pour le dev) et le domaine de prod
-      if (url.startsWith("http://localhost:") || url.startsWith("https://netacuv.com") || url.startsWith("https://www.netacuv.com")) {
+      // Permet expressément le localhost (y compris les sous-domaines) et tous les sous-domaines de netacuv.com
+      if (
+        url.match(/^http:\/\/(.*)?localhost:/i) || 
+        url.startsWith("https://netacuv.com") || 
+        url.startsWith("https://www.netacuv.com") || 
+        url.match(/^https:\/\/[a-z0-9-]+\.netacuv\.com/i)
+      ) {
         return url;
       }
       return baseUrl;

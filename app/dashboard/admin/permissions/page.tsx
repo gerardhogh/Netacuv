@@ -62,9 +62,14 @@ export default function AdminPermissions() {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [roleToDelete, setRoleToDelete] = useState<Role | null>(null);
 
+  const [activeTab, setActiveTab] = useState<'users' | 'roles' | 'logs'>('users');
+
   const [isAssignRoleModalOpen, setIsAssignRoleModalOpen] = useState(false);
   const [userToAssign, setUserToAssign] = useState<User | null>(null);
   const [selectedRoleIdForUser, setSelectedRoleIdForUser] = useState<string>("");
+
+  const [isAddUserModalOpen, setIsAddUserModalOpen] = useState(false);
+  const [newUser, setNewUser] = useState({ name: "", email: "", password: "", roleId: "none" });
 
   // Pagination for logs
   const [logsPage, setLogsPage] = useState(1);
@@ -212,6 +217,43 @@ export default function AdminPermissions() {
     }
   };
 
+  const handleCreateUser = async () => {
+    if (!newUser.name || !newUser.email || !newUser.password) {
+      toast.error("Veuillez remplir tous les champs");
+      return;
+    }
+    if (newUser.password.length < 6) {
+      toast.error("Le mot de passe doit contenir au moins 6 caractères");
+      return;
+    }
+
+    const tid = toast.loading("Création de l'utilisateur...");
+    try {
+      const res = await fetch("/api/users", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: newUser.name,
+          email: newUser.email,
+          password: newUser.password,
+          roleId: newUser.roleId === "none" ? null : newUser.roleId
+        })
+      });
+      
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || "Erreur lors de la création");
+      }
+      
+      toast.success("Utilisateur créé avec succès", { id: tid });
+      setIsAddUserModalOpen(false);
+      setNewUser({ name: "", email: "", password: "", roleId: "none" });
+      fetchData();
+    } catch (err: any) {
+      toast.error(err.message || "Impossible de créer l'utilisateur", { id: tid });
+    }
+  };
+
   // Filtered lists
   const filteredRoles = roles.filter(r => r.name.toLowerCase().includes(searchPR.toLowerCase()));
   const filteredUsers = users.filter(u => (u.name || "").toLowerCase().includes(searchGU.toLowerCase()) || (u.email || "").toLowerCase().includes(searchGU.toLowerCase()));
@@ -242,232 +284,269 @@ export default function AdminPermissions() {
         </div>
       </div>
 
-      {/* Permissions et Rôles */}
-      <div className="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden">
-        <div className="p-4 md:p-6 border-b border-slate-100 flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <h2 className="text-xl font-bold text-[#0c2f4a]">Permissions et Rôles</h2>
-          <div className="flex items-center gap-3">
-            <span className="text-[#32A8D7] text-sm font-semibold bg-[#eaf6fc] px-4 py-2 rounded-lg">
-              {roles.length} rôles au total
-            </span>
-            <div className="relative">
-              <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
-              <input
-                type="text"
-                placeholder="Rechercher"
-                value={searchPR}
-                onChange={e => setSearchPR(e.target.value)}
-                className="pl-10 pr-4 py-2 border border-slate-200 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-[#32A8D7] w-48"
-              />
-            </div>
-            <button 
-              onClick={() => handleOpenRoleModal("create")}
-              className="px-5 py-2 bg-[#009FE3] text-white font-bold text-sm rounded-lg hover:bg-blue-600 transition-colors flex items-center gap-2"
-            >
-              <Plus size={16} /> Créer un rôle
-            </button>
-          </div>
-        </div>
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm text-left">
-            <thead className="bg-[#f4f9fd] border-b border-slate-100">
-              <tr>
-                <th className="px-6 py-4 font-semibold text-[#1e4869]">Nom du rôle</th>
-                <th className="px-6 py-4 font-semibold text-[#1e4869]">Description</th>
-                <th className="px-6 py-4 font-semibold text-[#1e4869]">Utilisateurs</th>
-                <th className="px-6 py-4 font-semibold text-[#1e4869]">Dernière mise à jour</th>
-                <th className="px-6 py-4 font-semibold text-[#1e4869]">Action</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
-              {loading ? (
-                <tr><td colSpan={5} className="p-8 text-center text-slate-500">Chargement des rôles...</td></tr>
-              ) : filteredRoles.length === 0 ? (
-                <tr><td colSpan={5} className="p-8 text-center text-slate-500">Aucun rôle trouvé</td></tr>
-              ) : (
-                filteredRoles.map(p => (
-                  <tr key={p.id} className="hover:bg-slate-50/50">
-                    <td className="px-6 py-4 text-[#1e4869] font-medium">{p.name}</td>
-                    <td className="px-6 py-4 text-[#1e4869] max-w-xs truncate">{p.description}</td>
-                    <td className="px-6 py-4 text-[#1e4869]">{p._count?.users || 0}</td>
-                    <td className="px-6 py-4 text-[#1e4869]">{formatDate(p.updatedAt)}</td>
-                    <td className="px-6 py-4">
-                      {p.name !== "Super Admin" ? (
-                        <div className="flex flex-col gap-1 items-start text-xs font-semibold">
-                          <button onClick={() => handleOpenRoleModal("view", p)} className="text-[#32A8D7] hover:underline flex items-center gap-1"><Eye size={12}/> Voir</button>
-                          <button onClick={() => handleOpenRoleModal("edit", p)} className="text-[#32A8D7] hover:underline flex items-center gap-1"><Edit2 size={12}/> Modifier</button>
-                          <div className="flex items-center gap-1.5 mt-1" onClick={() => handleToggleRoleStatus(p)}>
-                            <div className={`w-8 h-4 rounded-full p-0.5 flex items-center transition-colors cursor-pointer ${p.active ? 'bg-[#10b981]' : 'bg-slate-300'}`}>
-                              <div className={`w-3 h-3 bg-white rounded-full transition-transform ${p.active ? 'translate-x-4' : 'translate-x-0'}`}></div>
-                            </div>
-                            <span className={p.active ? 'text-[#10b981]' : 'text-slate-500 cursor-pointer'}>
-                              {p.active ? 'Activé' : 'Suspendu'}
-                            </span>
-                          </div>
-                          <button onClick={() => { setRoleToDelete(p); setIsDeleteModalOpen(true); }} className="text-red-500 hover:underline mt-1 flex items-center gap-1"><Trash2 size={12}/> Supprimer</button>
-                        </div>
-                      ) : (
-                        <span className="text-slate-400 italic text-xs">Action non permise</span>
-                      )}
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
+      {/* TABS */}
+      <div className="flex border-b border-slate-200 mb-6">
+        <button
+          className={`pb-3 px-4 font-semibold text-sm transition-colors relative ${activeTab === 'users' ? 'text-[#32A8D7]' : 'text-slate-500 hover:text-slate-700'}`}
+          onClick={() => setActiveTab('users')}
+        >
+          Utilisateurs
+          {activeTab === 'users' && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#32A8D7] rounded-t-full" />}
+        </button>
+        <button
+          className={`pb-3 px-4 font-semibold text-sm transition-colors relative ${activeTab === 'roles' ? 'text-[#32A8D7]' : 'text-slate-500 hover:text-slate-700'}`}
+          onClick={() => setActiveTab('roles')}
+        >
+          Rôles
+          {activeTab === 'roles' && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#32A8D7] rounded-t-full" />}
+        </button>
+        <button
+          className={`pb-3 px-4 font-semibold text-sm transition-colors relative ${activeTab === 'logs' ? 'text-[#32A8D7]' : 'text-slate-500 hover:text-slate-700'}`}
+          onClick={() => setActiveTab('logs')}
+        >
+          Historique
+          {activeTab === 'logs' && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#32A8D7] rounded-t-full" />}
+        </button>
       </div>
 
       {/* Gestion des Utilisateurs */}
-      <div className="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden">
-        <div className="p-4 md:p-6 border-b border-slate-100 flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <h2 className="text-xl font-bold text-[#0c2f4a]">Gestion des Utilisateurs et Attribution de Rôles</h2>
-          <div className="flex items-center gap-3">
-            <div className="relative">
-              <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
-              <input
-                type="text"
-                placeholder="Rechercher"
-                value={searchGU}
-                onChange={e => setSearchGU(e.target.value)}
-                className="pl-10 pr-4 py-2 border border-slate-200 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-[#32A8D7] w-48"
-              />
+      {activeTab === 'users' && (
+        <div className="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden animate-fade-in">
+          <div className="p-4 md:p-6 border-b border-slate-100 flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <h2 className="text-xl font-bold text-[#0c2f4a]">Gestion des Utilisateurs et Attribution de Rôles</h2>
+            <div className="flex items-center gap-3">
+              <div className="relative">
+                <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                <input
+                  type="text"
+                  placeholder="Rechercher"
+                  value={searchGU}
+                  onChange={e => setSearchGU(e.target.value)}
+                  className="pl-10 pr-4 py-2 border border-slate-200 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-[#32A8D7] w-48"
+                />
+              </div>
+              <button 
+                onClick={() => setIsAddUserModalOpen(true)}
+                className="px-5 py-2 bg-[#009FE3] text-white font-bold text-sm rounded-lg hover:bg-blue-600 transition-colors flex items-center gap-2"
+              >
+                <Plus size={16} /> Ajouter un utilisateur
+              </button>
             </div>
           </div>
-        </div>
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm text-left">
-            <thead className="bg-[#f4f9fd] border-b border-slate-100">
-              <tr>
-                <th className="px-6 py-4 font-semibold text-[#1e4869]">Utilisateur</th>
-                <th className="px-6 py-4 font-semibold text-[#1e4869]">Email</th>
-                <th className="px-6 py-4 font-semibold text-[#1e4869]">Dernière mise à jour</th>
-                <th className="px-6 py-4 font-semibold text-[#1e4869]">Rôle actuel</th>
-                <th className="px-6 py-4 font-semibold text-[#1e4869]">Action</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
-              {loading ? (
-                <tr><td colSpan={5} className="p-8 text-center text-slate-500">Chargement des utilisateurs...</td></tr>
-              ) : filteredUsers.length === 0 ? (
-                <tr><td colSpan={5} className="p-8 text-center text-slate-500">Aucun utilisateur trouvé</td></tr>
-              ) : (
-                filteredUsers.map(u => (
-                  <tr key={u.id} className="hover:bg-slate-50/50">
-                    <td className="px-6 py-4 text-[#1e4869] font-medium align-top pt-6">{u.name}</td>
-                    <td className="px-6 py-4 text-[#1e4869] align-top pt-6">{u.email}</td>
-                    <td className="px-6 py-4 text-[#1e4869] align-top pt-6">{formatDate(u.updatedAt)}</td>
-                    <td className="px-6 py-4 text-[#1e4869] align-top pt-6">
-                      <span className="bg-slate-100 text-slate-700 px-3 py-1 rounded-full text-xs font-semibold">
-                        {u.role ? u.role.name : (
-                          (u as any).talentProfile ? "TALENT" :
-                          (u as any).recruiterProfile ? "RECRUTEUR" :
-                          "Aucun rôle"
-                        )}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 align-top pt-6">
-                      <div className="flex flex-col gap-1 items-start text-xs font-semibold">
-                        <button 
-                          onClick={() => {
-                            setUserToAssign(u);
-                            const inferredRoleName = u.role?.name || ((u as any).talentProfile ? "TALENT" : (u as any).recruiterProfile ? "RECRUTEUR" : null);
-                            const matchingRole = roles.find(r => r.name === inferredRoleName);
-                            setSelectedRoleIdForUser(u.roleId || matchingRole?.id || "none");
-                            setIsAssignRoleModalOpen(true);
-                          }} 
-                          className="text-[#32A8D7] hover:underline flex items-center gap-1"
-                        >
-                          <Shield size={12}/> Gérer les rôles
-                        </button>
-                        <div className="flex items-center gap-1.5 mt-2" onClick={() => handleToggleUserStatus(u)}>
-                          <div className={`w-8 h-4 rounded-full p-0.5 flex items-center transition-colors cursor-pointer ${u.active ? 'bg-[#10b981]' : 'bg-slate-300'}`}>
-                            <div className={`w-3 h-3 bg-white rounded-full transition-transform ${u.active ? 'translate-x-4' : 'translate-x-0'}`}></div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm text-left">
+              <thead className="bg-[#f4f9fd] border-b border-slate-100">
+                <tr>
+                  <th className="px-6 py-4 font-semibold text-[#1e4869]">Utilisateur</th>
+                  <th className="px-6 py-4 font-semibold text-[#1e4869]">Email</th>
+                  <th className="px-6 py-4 font-semibold text-[#1e4869]">Dernière mise à jour</th>
+                  <th className="px-6 py-4 font-semibold text-[#1e4869]">Rôle actuel</th>
+                  <th className="px-6 py-4 font-semibold text-[#1e4869]">Action</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {loading ? (
+                  <tr><td colSpan={5} className="p-8 text-center text-slate-500">Chargement des utilisateurs...</td></tr>
+                ) : filteredUsers.length === 0 ? (
+                  <tr><td colSpan={5} className="p-8 text-center text-slate-500">Aucun utilisateur trouvé</td></tr>
+                ) : (
+                  filteredUsers.map(u => (
+                    <tr key={u.id} className="hover:bg-slate-50/50">
+                      <td className="px-6 py-4 text-[#1e4869] font-medium align-top pt-6">{u.name}</td>
+                      <td className="px-6 py-4 text-[#1e4869] align-top pt-6">{u.email}</td>
+                      <td className="px-6 py-4 text-[#1e4869] align-top pt-6">{formatDate(u.updatedAt)}</td>
+                      <td className="px-6 py-4 text-[#1e4869] align-top pt-6">
+                        <span className="bg-slate-100 text-slate-700 px-3 py-1 rounded-full text-xs font-semibold">
+                          {u.role ? u.role.name : (
+                            (u as any).talentProfile ? "TALENT" :
+                            (u as any).recruiterProfile ? "RECRUTEUR" :
+                            "Aucun rôle"
+                          )}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 align-top pt-6">
+                        <div className="flex flex-col gap-1 items-start text-xs font-semibold">
+                          <button 
+                            onClick={() => {
+                              setUserToAssign(u);
+                              const inferredRoleName = u.role?.name || ((u as any).talentProfile ? "TALENT" : (u as any).recruiterProfile ? "RECRUTEUR" : null);
+                              const matchingRole = roles.find(r => r.name === inferredRoleName);
+                              setSelectedRoleIdForUser(u.roleId || matchingRole?.id || "none");
+                              setIsAssignRoleModalOpen(true);
+                            }} 
+                            className="text-[#32A8D7] hover:underline flex items-center gap-1"
+                          >
+                            <Shield size={12}/> Gérer les rôles
+                          </button>
+                          <div className="flex items-center gap-1.5 mt-2" onClick={() => handleToggleUserStatus(u)}>
+                            <div className={`w-8 h-4 rounded-full p-0.5 flex items-center transition-colors cursor-pointer ${u.active ? 'bg-[#10b981]' : 'bg-slate-300'}`}>
+                              <div className={`w-3 h-3 bg-white rounded-full transition-transform ${u.active ? 'translate-x-4' : 'translate-x-0'}`}></div>
+                            </div>
+                            <span className={u.active ? 'text-[#10b981]' : 'text-slate-500 cursor-pointer'}>
+                              {u.active ? 'Activé' : 'Suspendu'}
+                            </span>
                           </div>
-                          <span className={u.active ? 'text-[#10b981]' : 'text-slate-500 cursor-pointer'}>
-                            {u.active ? 'Activé' : 'Suspendu'}
-                          </span>
                         </div>
-                      </div>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
-      </div>
+      )}
+
+      {/* Permissions et Rôles */}
+      {activeTab === 'roles' && (
+        <div className="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden animate-fade-in">
+          <div className="p-4 md:p-6 border-b border-slate-100 flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <h2 className="text-xl font-bold text-[#0c2f4a]">Permissions et Rôles</h2>
+            <div className="flex items-center gap-3">
+              <span className="text-[#32A8D7] text-sm font-semibold bg-[#eaf6fc] px-4 py-2 rounded-lg">
+                {roles.length} rôles au total
+              </span>
+              <div className="relative">
+                <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                <input
+                  type="text"
+                  placeholder="Rechercher"
+                  value={searchPR}
+                  onChange={e => setSearchPR(e.target.value)}
+                  className="pl-10 pr-4 py-2 border border-slate-200 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-[#32A8D7] w-48"
+                />
+              </div>
+              <button 
+                onClick={() => handleOpenRoleModal("create")}
+                className="px-5 py-2 bg-[#009FE3] text-white font-bold text-sm rounded-lg hover:bg-blue-600 transition-colors flex items-center gap-2"
+              >
+                <Plus size={16} /> Créer un rôle
+              </button>
+            </div>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm text-left">
+              <thead className="bg-[#f4f9fd] border-b border-slate-100">
+                <tr>
+                  <th className="px-6 py-4 font-semibold text-[#1e4869]">Nom du rôle</th>
+                  <th className="px-6 py-4 font-semibold text-[#1e4869]">Description</th>
+                  <th className="px-6 py-4 font-semibold text-[#1e4869]">Utilisateurs</th>
+                  <th className="px-6 py-4 font-semibold text-[#1e4869]">Dernière mise à jour</th>
+                  <th className="px-6 py-4 font-semibold text-[#1e4869]">Action</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {loading ? (
+                  <tr><td colSpan={5} className="p-8 text-center text-slate-500">Chargement des rôles...</td></tr>
+                ) : filteredRoles.length === 0 ? (
+                  <tr><td colSpan={5} className="p-8 text-center text-slate-500">Aucun rôle trouvé</td></tr>
+                ) : (
+                  filteredRoles.map(p => (
+                    <tr key={p.id} className="hover:bg-slate-50/50">
+                      <td className="px-6 py-4 text-[#1e4869] font-medium">{p.name}</td>
+                      <td className="px-6 py-4 text-[#1e4869] max-w-xs truncate">{p.description}</td>
+                      <td className="px-6 py-4 text-[#1e4869]">{p._count?.users || 0}</td>
+                      <td className="px-6 py-4 text-[#1e4869]">{formatDate(p.updatedAt)}</td>
+                      <td className="px-6 py-4">
+                        {p.name !== "Super Admin" ? (
+                          <div className="flex flex-col gap-1 items-start text-xs font-semibold">
+                            <button onClick={() => handleOpenRoleModal("view", p)} className="text-[#32A8D7] hover:underline flex items-center gap-1"><Eye size={12}/> Voir</button>
+                            <button onClick={() => handleOpenRoleModal("edit", p)} className="text-[#32A8D7] hover:underline flex items-center gap-1"><Edit2 size={12}/> Modifier</button>
+                            <div className="flex items-center gap-1.5 mt-1" onClick={() => handleToggleRoleStatus(p)}>
+                              <div className={`w-8 h-4 rounded-full p-0.5 flex items-center transition-colors cursor-pointer ${p.active ? 'bg-[#10b981]' : 'bg-slate-300'}`}>
+                                <div className={`w-3 h-3 bg-white rounded-full transition-transform ${p.active ? 'translate-x-4' : 'translate-x-0'}`}></div>
+                              </div>
+                              <span className={p.active ? 'text-[#10b981]' : 'text-slate-500 cursor-pointer'}>
+                                {p.active ? 'Activé' : 'Suspendu'}
+                              </span>
+                            </div>
+                            <button onClick={() => { setRoleToDelete(p); setIsDeleteModalOpen(true); }} className="text-red-500 hover:underline mt-1 flex items-center gap-1"><Trash2 size={12}/> Supprimer</button>
+                          </div>
+                        ) : (
+                          <span className="text-slate-400 italic text-xs">Action non permise</span>
+                        )}
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
 
       {/* Historique des Modifications */}
-      <div className="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden">
-        <div className="p-4 md:p-6 border-b border-slate-100 flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <h2 className="text-xl font-bold text-[#0c2f4a]">Historique des Modifications (Logs d'Audit)</h2>
-          <div className="flex items-center gap-3">
-            <div className="relative">
-              <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
-              <input
-                type="text"
-                placeholder="Rechercher"
-                value={searchHM}
-                onChange={e => setSearchHM(e.target.value)}
-                className="pl-10 pr-4 py-2 border border-slate-200 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-[#32A8D7] w-48"
-              />
-            </div>
-            <span className="text-[#32A8D7] text-sm font-semibold bg-[#eaf6fc] px-4 py-2 rounded-lg">
-              {logs.length} modifications au total
-            </span>
-          </div>
-        </div>
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm text-left">
-            <thead className="bg-[#f4f9fd] border-b border-slate-100">
-              <tr>
-                <th className="px-6 py-4 font-semibold text-[#1e4869]">Action</th>
-                <th className="px-6 py-4 font-semibold text-[#1e4869]">Effectué Par</th>
-                <th className="px-6 py-4 font-semibold text-[#1e4869]">Date & Heure</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
-              {loading ? (
-                <tr><td colSpan={3} className="p-8 text-center text-slate-500">Chargement de l'historique...</td></tr>
-              ) : paginatedLogs.length === 0 ? (
-                <tr><td colSpan={3} className="p-8 text-center text-slate-500">Aucun log trouvé</td></tr>
-              ) : (
-                paginatedLogs.map(h => (
-                  <tr key={h.id} className="hover:bg-slate-50/50">
-                    <td className="px-6 py-4 text-[#1e4869] font-medium">{h.action}</td>
-                    <td className="px-6 py-4 text-[#1e4869] whitespace-pre-line text-xs">{h.by}</td>
-                    <td className="px-6 py-4 text-[#1e4869]">{formatDate(h.createdAt)}</td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-        
-        {/* Pagination logs */}
-        {totalLogsPages > 1 && (
-          <div className="p-4 border-t border-slate-100 flex items-center justify-between">
-            <span className="text-sm text-slate-500">Page {logsPage} sur {totalLogsPages}</span>
-            <div className="flex gap-2">
-              <button 
-                onClick={() => setLogsPage(p => Math.max(1, p - 1))}
-                disabled={logsPage === 1}
-                className="p-2 border border-slate-200 rounded-lg hover:bg-slate-50 disabled:opacity-50 text-slate-600"
-              >
-                <ChevronLeft size={16}/>
-              </button>
-              <button 
-                onClick={() => setLogsPage(p => Math.min(totalLogsPages, p + 1))}
-                disabled={logsPage === totalLogsPages}
-                className="p-2 border border-slate-200 rounded-lg hover:bg-slate-50 disabled:opacity-50 text-slate-600"
-              >
-                <ChevronRight size={16}/>
-              </button>
+      {activeTab === 'logs' && (
+        <div className="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden animate-fade-in">
+          <div className="p-4 md:p-6 border-b border-slate-100 flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <h2 className="text-xl font-bold text-[#0c2f4a]">Historique des Modifications (Logs d'Audit)</h2>
+            <div className="flex items-center gap-3">
+              <div className="relative">
+                <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                <input
+                  type="text"
+                  placeholder="Rechercher"
+                  value={searchHM}
+                  onChange={e => setSearchHM(e.target.value)}
+                  className="pl-10 pr-4 py-2 border border-slate-200 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-[#32A8D7] w-48"
+                />
+              </div>
+              <span className="text-[#32A8D7] text-sm font-semibold bg-[#eaf6fc] px-4 py-2 rounded-lg">
+                {logs.length} modifications au total
+              </span>
             </div>
           </div>
-        )}
-      </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm text-left">
+              <thead className="bg-[#f4f9fd] border-b border-slate-100">
+                <tr>
+                  <th className="px-6 py-4 font-semibold text-[#1e4869]">Action</th>
+                  <th className="px-6 py-4 font-semibold text-[#1e4869]">Effectué Par</th>
+                  <th className="px-6 py-4 font-semibold text-[#1e4869]">Date & Heure</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {loading ? (
+                  <tr><td colSpan={3} className="p-8 text-center text-slate-500">Chargement de l'historique...</td></tr>
+                ) : paginatedLogs.length === 0 ? (
+                  <tr><td colSpan={3} className="p-8 text-center text-slate-500">Aucun log trouvé</td></tr>
+                ) : (
+                  paginatedLogs.map(h => (
+                    <tr key={h.id} className="hover:bg-slate-50/50">
+                      <td className="px-6 py-4 text-[#1e4869] font-medium">{h.action}</td>
+                      <td className="px-6 py-4 text-[#1e4869] whitespace-pre-line text-xs">{h.by}</td>
+                      <td className="px-6 py-4 text-[#1e4869]">{formatDate(h.createdAt)}</td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+          
+          {/* Pagination logs */}
+          {totalLogsPages > 1 && (
+            <div className="p-4 border-t border-slate-100 flex items-center justify-between">
+              <span className="text-sm text-slate-500">Page {logsPage} sur {totalLogsPages}</span>
+              <div className="flex gap-2">
+                <button 
+                  onClick={() => setLogsPage(p => Math.max(1, p - 1))}
+                  disabled={logsPage === 1}
+                  className="p-2 border border-slate-200 rounded-lg hover:bg-slate-50 disabled:opacity-50 text-slate-600"
+                >
+                  <ChevronLeft size={16}/>
+                </button>
+                <button 
+                  onClick={() => setLogsPage(p => Math.min(totalLogsPages, p + 1))}
+                  disabled={logsPage === totalLogsPages}
+                  className="p-2 border border-slate-200 rounded-lg hover:bg-slate-50 disabled:opacity-50 text-slate-600"
+                >
+                  <ChevronRight size={16}/>
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* --- MODALES --- */}
 
@@ -633,6 +712,82 @@ export default function AdminPermissions() {
                 className="px-6 py-2.5 rounded-lg bg-[#32A8D7] text-white font-bold text-sm hover:bg-[#1e8ae9] transition-colors"
               >
                 Confirmer
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Add User Modal */}
+      {isAddUserModalOpen && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md">
+            <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
+              <h3 className="text-xl font-bold text-[#0c2f4a]">Ajouter un Utilisateur</h3>
+              <button onClick={() => setIsAddUserModalOpen(false)} className="p-2 hover:bg-slate-100 rounded-full text-slate-400">
+                <X size={20} />
+              </button>
+            </div>
+            <div className="p-6 space-y-4">
+              <div className="space-y-2">
+                <label className="text-sm font-semibold text-slate-700">Nom complet</label>
+                <input 
+                  type="text" 
+                  value={newUser.name}
+                  onChange={e => setNewUser({...newUser, name: e.target.value})}
+                  className="w-full px-4 py-3 bg-[#f8f9fa] border-none rounded-xl text-sm focus:ring-2 focus:ring-[#32A8D7]"
+                  placeholder="Ex: Jean Dupont"
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-semibold text-slate-700">Email</label>
+                <input 
+                  type="email" 
+                  value={newUser.email}
+                  onChange={e => setNewUser({...newUser, email: e.target.value})}
+                  className="w-full px-4 py-3 bg-[#f8f9fa] border-none rounded-xl text-sm focus:ring-2 focus:ring-[#32A8D7]"
+                  placeholder="jean.dupont@exemple.com"
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-semibold text-slate-700">Mot de passe (temporaire)</label>
+                <input 
+                  type="password" 
+                  value={newUser.password}
+                  onChange={e => setNewUser({...newUser, password: e.target.value})}
+                  className="w-full px-4 py-3 bg-[#f8f9fa] border-none rounded-xl text-sm focus:ring-2 focus:ring-[#32A8D7]"
+                  placeholder="Min 6 caractères"
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-semibold text-slate-700">Rôle</label>
+                <div className="relative">
+                  <select 
+                    value={newUser.roleId}
+                    onChange={(e) => setNewUser({...newUser, roleId: e.target.value})}
+                    className="w-full px-4 py-3 bg-[#f8f9fa] border-none rounded-xl text-sm focus:ring-2 focus:ring-[#32A8D7] appearance-none cursor-pointer"
+                  >
+                    <option value="none">Aucun rôle</option>
+                    {roles.map(r => (
+                      <option key={r.id} value={r.id}>{r.name}</option>
+                    ))}
+                  </select>
+                  <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={16} />
+                </div>
+              </div>
+            </div>
+            <div className="p-6 border-t border-slate-100 flex justify-end gap-3">
+              <button 
+                onClick={() => setIsAddUserModalOpen(false)}
+                className="px-6 py-2.5 rounded-lg border border-slate-200 text-slate-600 font-semibold text-sm hover:bg-slate-50 transition-colors"
+              >
+                Annuler
+              </button>
+              <button 
+                onClick={handleCreateUser}
+                className="px-6 py-2.5 rounded-lg bg-[#32A8D7] text-white font-bold text-sm hover:bg-[#1e8ae9] transition-colors"
+              >
+                Créer l'utilisateur
               </button>
             </div>
           </div>
