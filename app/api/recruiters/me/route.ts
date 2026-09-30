@@ -30,6 +30,7 @@ export async function GET(req: NextRequest) {
       name: user.name,
       email: user.email,
       avatar: user.image,
+      isPremium: user.isPremium,
       recruiterProfile: user.recruiterProfile || {}
     });
   } catch (error) {

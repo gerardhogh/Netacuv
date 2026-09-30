@@ -69,6 +69,19 @@ export default function RecruteurDashboard() {
   const { data: emploisFetched = [] } = useSWR("/api/jobs?mine=true", fetcher);
   const emplois = Array.isArray(emploisFetched) ? emploisFetched : (emploisFetched.jobs || []);
 
+  const [isPremium, setIsPremium] = useState<boolean>(false);
+
+  useEffect(() => {
+    fetch("/api/recruiters/me", { cache: "no-store" })
+      .then((res) => res.json())
+      .then((data) => {
+        if (data && !data.error) {
+          if (data.isPremium !== undefined) setIsPremium(data.isPremium);
+        }
+      })
+      .catch((err) => console.error("Erreur chargement profil:", err));
+  }, []);
+
   const [activeTab, setActiveTab] = useState<RecruiterTab>("dashboard");
 
   const handleTabChange = (tab: RecruiterTab) => {
@@ -101,6 +114,7 @@ export default function RecruteurDashboard() {
           "favoris",
           "affiliation",
           "parametres",
+          "premium",
         ].includes(tab)
       ) {
         setActiveTab(tab);
@@ -117,7 +131,6 @@ export default function RecruteurDashboard() {
   const companyName = (user as any)?.company || user?.name || "Grand-G Corp";
   const companyEmail = user?.email || "recruteur@grand-g.com";
   const unreadCount = notifications.filter((n) => !n.read).length;
-  const isPremium = user?.isPremium;
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
@@ -235,7 +248,7 @@ export default function RecruteurDashboard() {
       {/* ── MAIN CONTENT AREA ─────────────────────────────────────────────────── */}
       <div className="flex-1 flex flex-col min-h-screen min-w-0">
         
-        <PremiumBanner />
+        <PremiumBanner isPremium={isPremium} onUpgrade={() => handleTabChange("premium")} />
 
         {/* ── TOP HEADER ──────────────────────────────────────────────────────── */}
         <header className="sticky top-0 z-20 bg-white border-b border-slate-200 h-16 flex items-center justify-between px-4 sm:px-6">
@@ -703,8 +716,7 @@ export default function RecruteurDashboard() {
           {/* TAB: PROFIL */}
           {activeTab === "profil" && <ProfilTab />}
 
-          {/* TAB: PREMIUM */}
-          {activeTab === "premium" && <RecruteurPremium />}
+          {activeTab === "premium" && <RecruteurPremium isPremium={isPremium} />}
 
         </main>
       </div>

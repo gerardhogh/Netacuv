@@ -159,6 +159,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                     <p className="text-xs font-bold text-slate-800 truncate">{user?.name || "Admin"}</p>
                     <p className="text-[11px] text-slate-400 truncate">{user?.email || "admin@check.cv"}</p>
                   </div>
+                  <Link href="/dashboard/admin/profil" className="block px-4 py-2 text-xs text-slate-600 hover:bg-slate-50 font-medium">
+                    Mon profil
+                  </Link>
                   <Link href="/dashboard/admin/parametres" className="block px-4 py-2 text-xs text-slate-600 hover:bg-slate-50 font-medium">
                     Paramètres
                   </Link>

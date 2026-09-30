@@ -5,7 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
 
 // GET : Récupérer les candidatures selon le rôle de l'utilisateur
-export async function GET() {
+export async function GET(req: Request) {
   const session = await getServerSession(authOptions);
 
   if (!session) {
@@ -17,9 +17,19 @@ export async function GET() {
 
   try {
     const role = session.user.role;
+    const { searchParams } = new URL(req.url);
+    const jobOfferId = searchParams.get("jobOfferId");
+    const requestedRole = searchParams.get("role");
+    
+    // Determine effective role: if requestedRole is 'recruiter', and the user has a recruiter profile, we act as recruiter.
+    // Otherwise fallback to session.user.role
+    let effectiveRole = session.user.role;
+    if (requestedRole === "recruiter" || requestedRole === "recruteur") {
+       effectiveRole = "RECRUTEUR";
+    }
 
     // 1. TALENT : ne voit que ses propres candidatures
-    if (role === "TALENT") {
+    if (effectiveRole === "TALENT") {
       const talentProfile = await prisma.talentProfile.findFirst({
         where: { userId: session.user.id },
       });
@@ -38,7 +48,7 @@ export async function GET() {
     }
 
     // 2. RECRUITER : ne voit que les candidatures sur ses offres
-    if (role === "RECRUITER" || role === "RECRUTEUR") {
+    if (effectiveRole === "RECRUITER" || effectiveRole === "RECRUTEUR") {
       const recruiterProfile = await prisma.recruiterProfile.findFirst({
         where: { userId: session.user.id },
       });
@@ -47,12 +57,18 @@ export async function GET() {
         return NextResponse.json([]);
       }
 
-      const applications = await prisma.application.findMany({
-        where: {
-          jobOffer: {
-            recruiterId: recruiterProfile.id,
-          },
+      const whereClause: any = {
+        jobOffer: {
+          recruiterId: recruiterProfile.id,
         },
+      };
+
+      if (jobOfferId) {
+        whereClause.jobOfferId = jobOfferId;
+      }
+
+      const applications = await prisma.application.findMany({
+        where: whereClause,
         include: { 
           talent: {
             include: { user: true }
@@ -66,7 +82,7 @@ export async function GET() {
     }
 
     // 3. ADMIN : accès global
-    if (role === "ADMIN") {
+    if (effectiveRole === "ADMIN") {
       const applications = await prisma.application.findMany({
         include: { talent: true, jobOffer: true },
         orderBy: { createdAt: "desc" },

@@ -257,6 +257,16 @@ interface DetailOffreViewProps {
 }
 
 function DetailOffreView({ emploi, onBack, onModifier, onSupprimer, onCloturer }: DetailOffreViewProps) {
+  const { data: applications = [] } = useSWR(`/api/applications?role=recruiter&jobOfferId=${emploi.id}`, fetcher);
+  const candidates = Array.isArray(applications) ? applications.map((app: any) => ({
+    id: app.talent?.userId || app.id,
+    nom: app.talent?.user?.name || "Talent sans nom",
+    localisation: "Non spécifié",
+    profession: app.talent?.profession || "Candidat",
+    avatar: app.talent?.user?.image || `https://ui-avatars.com/api/?name=${encodeURIComponent(app.talent?.user?.name || "T")}&background=random`,
+    certifie: true,
+  })) : [];
+
   return (
     <div className="space-y-5">
       {/* Breadcrumb */}
@@ -331,7 +341,7 @@ function DetailOffreView({ emploi, onBack, onModifier, onSupprimer, onCloturer }
       <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6">
         <h3 className="text-base font-bold text-[#32A8D7] mb-1">Candidats postulés</h3>
         <p className="text-sm text-slate-500 mb-5">{emploi._count?.applications || emploi.candidatures || 0} candidatures reçues</p>
-        {MOCK_CANDIDATES.length === 0 ? (
+        {candidates.length === 0 ? (
           <div className="text-center py-8">
             <Users size={32} className="text-slate-300 mx-auto mb-3" />
             <p className="text-sm font-medium text-slate-600">Aucun candidat</p>
@@ -339,7 +349,7 @@ function DetailOffreView({ emploi, onBack, onModifier, onSupprimer, onCloturer }
           </div>
         ) : (
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-            {MOCK_CANDIDATES.map((c) => (
+            {candidates.map((c: any) => (
               <CandidateCard key={c.id} c={c} />
             ))}
           </div>

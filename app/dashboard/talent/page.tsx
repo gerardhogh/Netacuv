@@ -119,7 +119,7 @@ export default function TalentDashboard() {
   }, [activeTab]);
 
   const fetchDashboardData = () => {
-    fetch("/api/talents/me")
+    fetch("/api/talents/me", { cache: 'no-store' })
       .then(res => res.json())
       .then(data => {
         if (data && !data.error) {
@@ -380,7 +380,7 @@ export default function TalentDashboard() {
 
       {/* ── MAIN CONTENT AREA ── */}
       <div className="flex-1 flex flex-col min-h-screen min-w-0">
-        <PremiumBanner />
+        <PremiumBanner isPremium={isPremium} />
         {/* Top Header */}
         <header className="sticky top-0 z-20 bg-white/95 backdrop-blur-md border-b border-slate-200 px-6 py-4 flex items-center justify-between shadow-xs">
           <div className="flex items-center gap-4">
@@ -921,7 +921,7 @@ export default function TalentDashboard() {
           )}
 
           {/* TAB: PREMIUM */}
-          {activeTab === "premium" && <TalentPremium />}
+          {activeTab === "premium" && <TalentPremium isPremium={isPremium} />}
 
           {/* TAB: AFFILIATION */}
           {activeTab === "affiliation" && (

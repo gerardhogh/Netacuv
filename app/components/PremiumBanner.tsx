@@ -5,28 +5,37 @@ import { X, Sparkles } from "lucide-react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 
-export default function PremiumBanner() {
+export default function PremiumBanner({ isPremium, onUpgrade }: { isPremium?: boolean; onUpgrade?: () => void }) {
   const { data: session } = useSession();
   const router = useRouter();
   
   const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
+    if (isPremium !== undefined) {
+      setIsVisible(!isPremium);
+      return;
+    }
+    
     if (session === undefined) return;
     if (session?.user?.isPremium) {
       setIsVisible(false);
     } else {
       setIsVisible(true);
     }
-  }, [session]);
+  }, [session, isPremium]);
 
   const handleClose = () => {
     setIsVisible(false);
   };
 
   const handleDiscover = () => {
-    // Navigate to premium tab instead of showing a modal
-    window.location.hash = "premium";
+    if (onUpgrade) {
+      onUpgrade();
+    } else {
+      // Fallback for TalentDashboard or others that use hash
+      window.location.hash = "premium";
+    }
     setIsVisible(false);
   };
 

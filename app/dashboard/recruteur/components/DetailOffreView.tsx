@@ -4,20 +4,23 @@ import { useState } from "react";
 import { ArrowLeft, Share2, Trash2, Edit3, CheckCircle } from "lucide-react";
 import TalentCard from "@/app/components/TalentCard";
 import { useAuth } from "../../../context/AuthContext";
+import useSWR from "swr";
 
 export interface JobDetailData {
   id: string | number;
   title: string;
-  company: string;
+  company?: string;
   location: string;
-  publishDate: string;
-  candidatesCount: number;
-  type: string;
-  employees: string;
-  contract: string;
-  skills: string;
-  status: "Offre en cours" | "Clôturée";
+  publishDate?: string;
+  candidatesCount?: number;
+  type?: string;
+  employees?: string;
+  contract?: string;
+  skills?: string;
+  status: "Offre en cours" | "Clôturée" | "PUBLISHED" | "DRAFT" | string;
   description: string;
+  _count?: { applications: number };
+  candidatures?: number;
 }
 
 interface DetailOffreViewProps {
@@ -43,7 +46,7 @@ export default function DetailOffreView({
   const company = job?.company || "Grand-G";
   const location = job?.location || "Cotonou, Bénin";
   const publishDate = job?.publishDate || "15/01/2025";
-  const candidatesCount = job?.candidatesCount || 18;
+  const candidatesCount = job?._count?.applications || job?.candidatures || 0;
 
   const showToast = (msg: string) => {
     setToastMsg(msg);
@@ -55,14 +58,17 @@ export default function DetailOffreView({
     showToast(isClosed ? "L'offre a été réouverte avec succès." : "L'offre a été clôturée.");
   };
 
-  const candidates = Array.from({ length: 9 }).map((_, i) => ({
-    id: `postulant_${i}`,
-    name: "Alicia PARKER",
-    location: "Cotonou, Bénin",
-    profession: "Designer web",
-    imageUrl: "/assets/candidate-alicia-parker.jpg",
+  const fetcher = (url: string) => fetch(url).then(res => res.json());
+  const { data: candidaturesFetched = [] } = useSWR(job?.id ? `/api/applications?jobOfferId=${job.id}` : null, fetcher);
+  
+  const candidates = Array.isArray(candidaturesFetched) ? candidaturesFetched.map((app: any) => ({
+    id: app.talent?.userId || app.id,
+    name: app.talent?.user?.name || "Talent sans nom",
+    location: "Non spécifié",
+    profession: app.talent?.profession || "Candidat",
+    imageUrl: app.talent?.user?.image || `https://ui-avatars.com/api/?name=${encodeURIComponent(app.talent?.user?.name || "T")}&background=random`,
     isVerified: true,
-  }));
+  })) : [];
 
   return (
     <div className="space-y-6">

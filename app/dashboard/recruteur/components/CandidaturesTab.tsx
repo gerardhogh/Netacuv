@@ -84,7 +84,7 @@ interface ApiApplication {
 export default function CandidaturesTab() {
   type ViewState =
     | { type: "list" }
-    | { type: "detail-offre" }
+    | { type: "detail-offre"; offreId: string }
     | { type: "edit-offre" }
     | { type: "profil-candidat"; candidatId: string | number };
 
@@ -153,9 +153,12 @@ export default function CandidaturesTab() {
 
   // ── Render ──────────────────────────────────────────────────────────────────
   if (view.type === "detail-offre") {
+    const matchedApp = candidaturesFetched.find((app: any) => app.jobOfferId === view.offreId);
+    const selectedJob = matchedApp ? matchedApp.jobOffer : MOCK_JOB;
+
     return (
       <DetailOffreView
-        job={MOCK_JOB}
+        job={selectedJob}
         onBack={() => setView({ type: "list" })}
         onEdit={() => setView({ type: "edit-offre" })}
         onDelete={() => { setView({ type: "list" }); showToast("Offre supprimée."); }}
@@ -167,7 +170,7 @@ export default function CandidaturesTab() {
   if (view.type === "edit-offre") {
     return (
       <ModifierOffreView
-        onBack={() => setView({ type: "detail-offre" })}
+        onBack={() => setView({ type: "list" })}
         onSave={() => { showToast("Offre mise à jour avec succès !"); }}
       />
     );
@@ -288,7 +291,7 @@ export default function CandidaturesTab() {
                     </td>
                     <td className="px-4 py-3.5">
                       <button
-                        onClick={() => setView({ type: "detail-offre" })}
+                        onClick={() => setView({ type: "detail-offre", offreId: c.offreId })}
                         className="text-xs font-semibold text-[#32A8D7] hover:underline whitespace-nowrap"
                       >
                         {c.offre}
