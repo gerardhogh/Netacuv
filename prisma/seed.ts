@@ -18,16 +18,18 @@ async function main() {
   });
 
   // 2. Créer l'utilisateur Admin
-  const passwordHash = await bcrypt.hash('Admin@1234!', 12);
+  const passwordHash = await bcrypt.hash('admin@n01', 12);
 
   const adminUser = await prisma.user.upsert({
-    where: { email: 'admin@gmail.com' },
+    where: { email: 'admin@netacuv.com' },
     update: {
       passwordHash,
+      roleId: adminRole.id,
+      active: true,
     },
     create: {
-      name: 'Super Admin',
-      email: 'admin@gmail.com',
+      name: 'Netacuv Admin',
+      email: 'admin@netacuv.com',
       passwordHash,
       roleId: adminRole.id,
       active: true,
@@ -36,7 +38,7 @@ async function main() {
 
   console.log('✅ Compte Admin créé/mis à jour avec succès !');
   console.log('Email:', adminUser.email);
-  console.log('Mot de passe:', 'Admin@1234!');
+  console.log('Mot de passe:', 'admin@n01');
 }
 
 main()
