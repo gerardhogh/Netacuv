@@ -57,7 +57,7 @@ export default function AdminProfil() {
       showToast("Profil mis à jour avec succès");
       
       if (updateUser) {
-        updateUser(data.user);
+        updateUser({ user: { name } });
       }
     } catch (e: any) {
       showToast(e.message || "Erreur de mise à jour");
@@ -75,30 +75,44 @@ export default function AdminProfil() {
       return;
     }
 
-    try {
-      showToast("Mise à jour de la photo en cours...");
-      const formData = new FormData();
-      formData.append("avatar", file);
+    showToast("Mise à jour de la photo en cours...");
 
-      const res = await fetch("/api/admin/avatar", {
-        method: "POST",
-        body: formData,
-      });
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = async () => {
+      try {
+        const base64 = reader.result;
 
-      const data = await res.json();
+        const res = await fetch("/api/admin/avatar", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ 
+            avatarBase64: base64, 
+            fileName: file.name, 
+            mimeType: file.type 
+          }),
+        });
 
-      if (!res.ok) throw new Error(data.error || "Erreur lors de l'upload");
+        const data = await res.json();
 
-      showToast("Photo de profil mise à jour avec succès !");
-      fetchProfile();
-      
-      if (updateUser && authUser) {
-        updateUser({ ...authUser, image: data.avatarUrl });
+        if (!res.ok) throw new Error(data.error || "Erreur lors de l'upload");
+
+        showToast("Photo de profil mise à jour avec succès !");
+        fetchProfile();
+        
+        if (updateUser && authUser) {
+          updateUser({ user: { image: data.avatarUrl } });
+        }
+      } catch (err: any) {
+        console.error("Erreur sauvegarde avatar", err);
+        showToast(err.message || "Une erreur s'est produite lors de la sauvegarde de la photo.");
       }
-    } catch (err: any) {
-      console.error("Erreur sauvegarde avatar", err);
-      showToast(err.message || "Une erreur s'est produite lors de la sauvegarde de la photo.");
-    }
+    };
+    reader.onerror = () => {
+      showToast("Erreur lors de la lecture du fichier.");
+    };
   };
 
   if (initialLoading) {

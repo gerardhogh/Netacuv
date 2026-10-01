@@ -112,8 +112,10 @@ export const authOptions: NextAuthOptions = {
   callbacks: {
     async jwt({ token, user, trigger, session }) {
       // Si une mise à jour manuelle de la session est déclenchée (update())
-      if (trigger === "update" && session?.isPremium !== undefined) {
-        token.isPremium = session.isPremium;
+      if (trigger === "update") {
+        if (session?.isPremium !== undefined) token.isPremium = session.isPremium;
+        if (session?.user?.image !== undefined) token.picture = session.user.image;
+        if (session?.user?.name !== undefined) token.name = session.user.name;
       }
 
       if (token.sub) {
@@ -167,6 +169,8 @@ export const authOptions: NextAuthOptions = {
         }
 
         token.isPremium = dbUser.isPremium || false;
+        token.picture = dbUser.image || token.picture;
+        token.name = dbUser.name || token.name;
       } else if (user) {
         token.role = (user as any).role || "TALENT";
         token.isPremium = (user as any).isPremium || false;
@@ -182,6 +186,12 @@ export const authOptions: NextAuthOptions = {
         (session.user as any).id = token.sub;
         (session.user as any).role = token.role || "TALENT";
         (session.user as any).isPremium = token.isPremium || false;
+        if (token.picture) {
+          session.user.image = token.picture;
+        }
+        if (token.name) {
+          session.user.name = token.name;
+        }
       }
       return session;
     },

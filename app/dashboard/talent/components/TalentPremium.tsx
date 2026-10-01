@@ -29,21 +29,20 @@ export default function TalentPremium({ isPremium: propIsPremium }: { isPremium?
 
   const bgClass = "min-h-screen bg-slate-50 pt-12 pb-24 px-4 sm:px-6 lg:px-8";
 
-  const handleCinetPayCheckout = async () => {
+  const handleCheckout = async () => {
     setStep("processing");
     setError(null);
     try {
-      const res = await fetch("/api/payments/cinetpay/initialize", {
+      const res = await fetch("/api/payments/simulate", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ amount: 700 })
       });
       const data = await res.json();
       
-      if (res.ok && data.success && data.payment_url) {
-        window.location.href = data.payment_url;
+      if (res.ok && data.success) {
+        // Success: Reload the page to reflect premium status
+        window.location.reload();
       } else {
-        setError(data.error || "Impossible d'initialiser le paiement");
+        setError(data.error || "Impossible de simuler le paiement");
         setStep("plan");
       }
     } catch (e) {
@@ -188,7 +187,7 @@ export default function TalentPremium({ isPremium: propIsPremium }: { isPremium?
 
           <div className="mt-10 py-5 bg-[#F8FAFC] rounded-2xl border border-slate-100">
             <p className="text-center text-sm font-medium text-slate-600 px-6">
-              Paiement sécurisé CinetPay (Mobile Money et Carte). Aucun engagement, résiliable à tout moment.
+              Paiement sécurisé (Mobile Money et Carte). Aucun engagement, résiliable à tout moment.
             </p>
           </div>
         </div>
@@ -271,7 +270,7 @@ export default function TalentPremium({ isPremium: propIsPremium }: { isPremium?
 
             <button
               disabled={phone.length < 8}
-              onClick={handleCinetPayCheckout}
+              onClick={handleCheckout}
               className="w-full py-3.5 rounded-xl bg-[#008de4] hover:bg-blue-600 text-white font-bold text-sm transition-colors shadow-lg shadow-blue-500/20 disabled:opacity-40 disabled:cursor-not-allowed"
             >
               Confirmer et payer 700 FCFA
@@ -288,8 +287,8 @@ export default function TalentPremium({ isPremium: propIsPremium }: { isPremium?
       {step === "processing" && (
         <div className="max-w-md mx-auto py-20 text-center space-y-6">
           <Loader2 size={48} className="mx-auto text-blue-500 animate-spin" />
-          <h3 className="text-xl font-bold text-slate-800">Redirection vers le paiement sécurisé...</h3>
-          <p className="text-slate-500 text-sm">Veuillez patienter quelques instants, vous allez être redirigé vers la page de paiement CinetPay.</p>
+          <h3 className="text-xl font-bold text-slate-800">Initialisation du paiement...</h3>
+          <p className="text-slate-500 text-sm">Veuillez patienter quelques instants.</p>
         </div>
       )}
       </div>

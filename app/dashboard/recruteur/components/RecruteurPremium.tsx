@@ -29,21 +29,20 @@ export default function RecruteurPremium({ isPremium: propIsPremium }: { isPremi
 
   const bgClass = "min-h-screen bg-slate-50 pt-12 pb-24 px-4 sm:px-6 lg:px-8";
 
-  const handleCinetPayCheckout = async () => {
+  const handleCheckout = async () => {
     setStep("processing");
     setError(null);
     try {
-      const res = await fetch("/api/payments/cinetpay/initialize", {
+      const res = await fetch("/api/payments/simulate", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ amount: 1000, description: "Abonnement Recruteur Premium Netacuv" })
       });
       const data = await res.json();
       
-      if (res.ok && data.success && data.payment_url) {
-        window.location.href = data.payment_url;
+      if (res.ok && data.success) {
+        // Success: Reload the page to reflect premium status
+        window.location.reload();
       } else {
-        setError(data.error || "Impossible d'initialiser le paiement");
+        setError(data.error || "Impossible de simuler le paiement");
         setStep("plan");
       }
     } catch (e) {
@@ -164,7 +163,7 @@ export default function RecruteurPremium({ isPremium: propIsPremium }: { isPremi
 
           <div className="mt-10 py-5 bg-[#F8FAFC] rounded-2xl border border-slate-100">
             <p className="text-center text-sm font-medium text-slate-600 px-6">
-              Paiement sécurisé CinetPay (Mobile Money et Carte). Aucun engagement, résiliable à tout moment.
+              Paiement sécurisé (Mobile Money et Carte). Aucun engagement, résiliable à tout moment.
             </p>
           </div>
         </div>
@@ -247,7 +246,7 @@ export default function RecruteurPremium({ isPremium: propIsPremium }: { isPremi
 
             <button
               disabled={phone.length < 8}
-              onClick={handleCinetPayCheckout}
+              onClick={handleCheckout}
               className="w-full py-3.5 rounded-xl bg-[#32A8D7] hover:bg-[#2896c2] text-white font-bold text-sm transition-colors shadow-lg shadow-[#32A8D7]/20 disabled:opacity-40 disabled:cursor-not-allowed"
             >
               Confirmer et payer 1 000 FCFA
@@ -269,9 +268,9 @@ export default function RecruteurPremium({ isPremium: propIsPremium }: { isPremi
               <Loader2 size={40} className="text-[#32A8D7] animate-spin" />
             </div>
           </div>
-          <h3 className="text-2xl font-black text-slate-900 mb-3">Redirection en cours...</h3>
+          <h3 className="text-2xl font-black text-slate-900 mb-3">Initialisation du paiement...</h3>
           <p className="text-slate-500">
-            Veuillez patienter pendant que nous vous redirigeons vers la page de paiement sécurisée CinetPay.
+            Veuillez patienter quelques instants.
           </p>
         </div>
       )}

@@ -14,11 +14,10 @@ export async function middleware(req: NextRequest) {
     secret: process.env.NEXTAUTH_SECRET,
   });
 
-  const hostname = req.headers.get("host") || "";
   const path = req.nextUrl.pathname;
   const ip = req.headers.get("x-forwarded-for") || req.headers.get("x-real-ip") || "unknown";
 
-  // -- 1. RATE LIMITING (Point 11) --
+  // -- 1. RATE LIMITING --
   if (path.startsWith("/api/")) {
     const now = Date.now();
     const rateLimitData = rateLimitMap.get(ip) || { count: 0, lastReset: now };
@@ -40,107 +39,80 @@ export async function middleware(req: NextRequest) {
     }
   }
 
-  // 2. MULTI-SUBDOMAIN ROUTING & RBAC
   const currentHost = req.headers.get("host") || "";
-  let subdomain = "";
-  if (currentHost.startsWith("talent.")) subdomain = "talent";
-  else if (currentHost.startsWith("recruteur.")) subdomain = "recruteur";
-  else if (currentHost.startsWith("admin.")) subdomain = "admin";
-
+  const isAdminSubdomain = currentHost.startsWith("admin.");
   const isLocalhost = currentHost.includes("localhost");
-  const baseDomain = isLocalhost ? currentHost.replace(/^(talent\.|recruteur\.|admin\.)/, "") : "netacuv.com";
   const protocol = isLocalhost ? "http" : "https";
-
-  const getSubdomainUrl = (sub: string) => `${protocol}://${sub}.${baseDomain}`;
+  const baseDomain = isLocalhost ? currentHost.replace(/^admin\./, "") : "netacuv.com";
+  const adminUrl = `${protocol}://admin.${baseDomain}`;
 
   const isApiRoute = path.startsWith("/api");
   const isAuthRoute = path === "/connexion" || path === "/inscription";
-  const isPublicRoute = isApiRoute || isAuthRoute || path.startsWith("/_next") || path.startsWith("/assets");
-
-  // Redirection post-login ou page d'accueil
-  if (!isPublicRoute && (path === "/" || path === "/dashboard")) {
-    if (!token) {
-      // Rediriger l'accueil du sous-domaine vers la connexion si non connecté
-      if (subdomain) {
-        return NextResponse.redirect(new URL("/connexion", req.url));
-      }
-      return NextResponse.next();
-    }
-    
-    const role = (token.role as string)?.toUpperCase();
-    
-    // Si connecté, rediriger vers le bon sous-domaine selon le rôle
-    if (role === "ADMIN") {
-      if (subdomain !== "admin") return NextResponse.redirect(new URL(getSubdomainUrl("admin"), req.url));
-      return NextResponse.rewrite(new URL("/dashboard/admin", req.url));
-    } else if (role === "RECRUTEUR" || role === "RECRUITER") {
-      if (subdomain !== "recruteur") return NextResponse.redirect(new URL(getSubdomainUrl("recruteur"), req.url));
-      return NextResponse.rewrite(new URL("/dashboard/recruteur", req.url));
-    } else {
-      if (subdomain !== "talent") return NextResponse.redirect(new URL(getSubdomainUrl("talent"), req.url));
-      return NextResponse.rewrite(new URL("/dashboard/talent", req.url));
-    }
-  }
-
-  // RBAC & Subdomain Enforcement (only for logged in users on non-public routes)
-  if (token && !isPublicRoute) {
-    const role = (token.role as string)?.toUpperCase();
-    
-    // Si un talent essaie d'accéder au sous-domaine recruteur ou admin
-    if (role === "TALENT" && (subdomain === "recruteur" || subdomain === "admin")) {
-      return NextResponse.redirect(new URL(getSubdomainUrl("talent"), req.url));
-    }
-    
-    // Si un recruteur essaie d'accéder au sous-domaine talent ou admin
-    if ((role === "RECRUTEUR" || role === "RECRUITER") && (subdomain === "talent" || subdomain === "admin")) {
-      return NextResponse.redirect(new URL(getSubdomainUrl("recruteur"), req.url));
-    }
-
-    // L'Admin peut théoriquement tout voir, mais on le garde sur admin pour son dashboard
-    if (role === "ADMIN" && (subdomain === "talent" || subdomain === "recruteur")) {
-      if (path === "/" || path.startsWith("/dashboard")) {
-        return NextResponse.redirect(new URL(`${getSubdomainUrl("admin")}/dashboard/admin`, req.url));
-      }
-    }
-  }
-
-  // Redirection des routes classiques /dashboard/... vers les sous-domaines
-  if (path.startsWith("/dashboard/talent") && subdomain !== "talent") {
-    return NextResponse.redirect(new URL(`${getSubdomainUrl("talent")}${path.replace("/dashboard/talent", "")}`, req.url));
-  }
-  if (path.startsWith("/dashboard/recruteur") && subdomain !== "recruteur") {
-    return NextResponse.redirect(new URL(`${getSubdomainUrl("recruteur")}${path.replace("/dashboard/recruteur", "")}`, req.url));
-  }
-  if (path.startsWith("/dashboard/admin") && subdomain !== "admin") {
-    return NextResponse.redirect(new URL(`${getSubdomainUrl("admin")}${path.replace("/dashboard/admin", "")}`, req.url));
-  }
-
-  // REWRITES : Masquer le dossier /dashboard/... dans l'URL pour les sous-domaines
-  if (subdomain === "talent" && !isPublicRoute && !path.startsWith("/dashboard")) {
-    return NextResponse.rewrite(new URL(`/dashboard/talent${path === "/" ? "" : path}`, req.url));
-  }
-  if (subdomain === "recruteur" && !isPublicRoute && !path.startsWith("/dashboard")) {
-    return NextResponse.rewrite(new URL(`/dashboard/recruteur${path === "/" ? "" : path}`, req.url));
-  }
-  if (subdomain === "admin" && !isPublicRoute && !path.startsWith("/dashboard")) {
-    return NextResponse.rewrite(new URL(`/dashboard/admin${path === "/" ? "" : path}`, req.url));
-  }
+  const isAdminLoginRoute = path === "/admin";
+  const isPublicRoute = isApiRoute || isAuthRoute || path.startsWith("/_next") || path.startsWith("/assets") || isAdminLoginRoute;
+  const isDashboardRoute = path.startsWith("/dashboard");
 
   // Si on est sur une route protégée sans token
-  const isProtectedRoute = path.startsWith("/dashboard") || (subdomain && !isPublicRoute);
+  const isProtectedRoute = isDashboardRoute || (isAdminSubdomain && !isPublicRoute);
   if (isProtectedRoute && !token) {
-    const url = new URL("/connexion", req.url);
+    const loginPath = isAdminSubdomain ? "/admin" : "/connexion";
+    const url = new URL(loginPath, req.url);
     url.searchParams.set("callbackUrl", encodeURI(req.url));
     return NextResponse.redirect(url);
   }
 
-  // Rediriger les utilisateurs connectés qui tentent d'accéder aux pages d'auth
-  const isAccountDeleted = req.nextUrl.searchParams.get("account_deleted") === "true";
-  if (token && !isAccountDeleted && isAuthRoute) {
+  // Comportement pour les utilisateurs connectés
+  if (token) {
     const role = (token.role as string)?.toUpperCase();
-    if (role === "ADMIN") return NextResponse.redirect(new URL(getSubdomainUrl("admin"), req.url));
-    if (role === "RECRUTEUR" || role === "RECRUITER") return NextResponse.redirect(new URL(getSubdomainUrl("recruteur"), req.url));
-    return NextResponse.redirect(new URL(getSubdomainUrl("talent"), req.url));
+    
+    // Logique pour l'Administrateur
+    if (role === "ADMIN") {
+      // Forcer le sous-domaine admin
+      if (!isAdminSubdomain) {
+        return NextResponse.redirect(new URL(adminUrl, req.url));
+      }
+      
+      // Empêcher l'accès aux dashboards talent/recruteur
+      if (path.startsWith("/dashboard/talent") || path.startsWith("/dashboard/recruteur")) {
+        return NextResponse.redirect(new URL(adminUrl, req.url));
+      }
+
+      // Si l'admin est déjà connecté et visite la page de connexion, le rediriger vers l'accueil (qui affiche le dashboard)
+      if (path === "/admin") {
+        return NextResponse.redirect(new URL(adminUrl, req.url));
+      }
+    } 
+    // Logique pour les Utilisateurs Classiques (Talent / Recruteur)
+    else {
+      // Interdire l'accès au sous-domaine admin
+      if (isAdminSubdomain) {
+        return NextResponse.redirect(new URL(`${protocol}://${baseDomain}/dashboard`, req.url));
+      }
+
+      let defaultDashboardPath = "/dashboard/talent";
+      if (role === "RECRUTEUR" || role === "RECRUITER") {
+        defaultDashboardPath = "/dashboard/recruteur";
+      }
+
+      // Rediriger l'accueil ou les pages de connexion vers le dashboard par défaut
+      const isAccountDeleted = req.nextUrl.searchParams.get("account_deleted") === "true";
+      if (!isAccountDeleted && (path === "/" || path === "/dashboard" || isAuthRoute)) {
+        return NextResponse.redirect(new URL(defaultDashboardPath, req.url));
+      }
+
+      // RBAC : Empêcher l'accès aux dashboards des autres rôles
+      if (path.startsWith("/dashboard/talent") && role !== "TALENT") {
+        return NextResponse.redirect(new URL(defaultDashboardPath, req.url));
+      }
+      if (path.startsWith("/dashboard/recruteur") && role !== "RECRUTEUR" && role !== "RECRUITER") {
+        return NextResponse.redirect(new URL(defaultDashboardPath, req.url));
+      }
+    }
+  }
+
+  // REWRITE : Masquer /dashboard/admin dans l'URL pour le sous-domaine admin
+  if (isAdminSubdomain && !isPublicRoute && !path.startsWith("/dashboard")) {
+    return NextResponse.rewrite(new URL(`/dashboard/admin${path === "/" ? "" : path}`, req.url));
   }
 
   return NextResponse.next();

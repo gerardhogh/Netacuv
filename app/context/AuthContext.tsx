@@ -18,7 +18,7 @@ export interface User {
 
 // Fonction utilitaire pour migrer en douceur toutes les utilisations de useAuth
 export function useAuth() {
-  const { data: session, status } = useSession();
+  const { data: session, status, update } = useSession();
 
   const user = session?.user
     ? {
@@ -32,7 +32,15 @@ export function useAuth() {
     : null;
 
   const logout = () => {
-    signOut({ callbackUrl: "/connexion" });
+    if (typeof window !== "undefined") {
+      const isAdmin = window.location.hostname.startsWith("admin.");
+      const callbackUrl = isAdmin
+        ? `${window.location.protocol}//${window.location.host}/admin`
+        : `${window.location.protocol}//${window.location.host}/connexion`;
+      signOut({ callbackUrl });
+    } else {
+      signOut({ callbackUrl: "/connexion" });
+    }
   };
 
   return {
@@ -43,7 +51,7 @@ export function useAuth() {
     login: async () => false,
     loginWithGoogle: async (role?: string, data?: any) => false,
     register: async () => false,
-    updateUser: (data?: any) => {},
+    updateUser: update,
   };
 }
 

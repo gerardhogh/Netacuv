@@ -1,12 +1,13 @@
-import { NextResponse } from 'next/server';
+import { NextResponse, NextRequest } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
-import { supabase } from '@/lib/supabase';
+import fs from 'fs/promises';
+import path from 'path';
 
 export const dynamic = 'force-dynamic';
 
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
     
@@ -39,35 +40,20 @@ export async function POST(req: Request) {
     const fileExt = file.name.split('.').pop() || 'png';
     const fileName = `avatar-${userId}-${Date.now()}.${fileExt}`;
     
-    let fileUrl = "";
-
-    const isPlaceholder = !process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL.includes("placeholder");
-
-    if (isPlaceholder) {
-      return NextResponse.json({ error: "Supabase n'est pas configuré." }, { status: 500 });
-    } else {
-      try {
-        // We use the 'cvs' bucket because we know it exists and has the correct RLS policies.
-        const { data: uploadData, error: uploadError } = await supabase
-          .storage
-          .from('cvs')
-          .upload(fileName, file, {
-            contentType: file.type,
-            upsert: true
-          });
-
-        if (uploadError) {
-          console.error("Supabase upload error:", uploadError);
-          return NextResponse.json({ error: "Erreur Supabase: " + (uploadError.message) }, { status: 500 });
-        } else {
-          const { data: publicUrlData } = supabase.storage.from('cvs').getPublicUrl(fileName);
-          fileUrl = publicUrlData.publicUrl;
-        }
-      } catch (uploadException: any) {
-        console.error("Supabase upload exception:", uploadException);
-        return NextResponse.json({ error: "Exception Supabase: " + (uploadException.message) }, { status: 500 });
-      }
+    const bytes = await file.arrayBuffer();
+    const buffer = Buffer.from(bytes);
+    
+    const uploadDir = path.join(process.cwd(), 'public', 'uploads', 'avatars');
+    
+    try {
+      await fs.mkdir(uploadDir, { recursive: true });
+      await fs.writeFile(path.join(uploadDir, fileName), buffer);
+    } catch (fsError) {
+      console.error("Erreur d'écriture du fichier localement:", fsError);
+      return NextResponse.json({ error: "Erreur lors de la sauvegarde du fichier." }, { status: 500 });
     }
+    
+    const fileUrl = `/uploads/avatars/${fileName}`;
 
     // Mettre à jour l'utilisateur dans la base de données
     await prisma.user.update({

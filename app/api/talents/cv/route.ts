@@ -1,14 +1,13 @@
-import { NextResponse } from 'next/server';
+import { NextResponse, NextRequest } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
-import fs from 'fs';
+import fsPromises from 'fs/promises';
 import path from 'path';
-import { supabase } from '@/lib/supabase';
 
 export const dynamic = 'force-dynamic';
 
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
     
@@ -40,35 +39,20 @@ export async function POST(req: Request) {
     // Nom de fichier unique pour éviter les collisions
     const fileName = `${userId}-${Date.now()}-${file.name.replace(/\s+/g, '_')}`;
     
-    let fileUrl = "";
-
-    const isPlaceholder = !process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL.includes("placeholder");
-
-    if (isPlaceholder) {
-      console.warn("Using placeholder Supabase URL, cannot upload CV.");
-      return NextResponse.json({ error: "Supabase n'est pas configuré. Veuillez configurer NEXT_PUBLIC_SUPABASE_URL." }, { status: 500 });
-    } else {
-      try {
-        const { data: uploadData, error: uploadError } = await supabase
-          .storage
-          .from('cvs')
-          .upload(fileName, file, {
-            contentType: file.type,
-            upsert: true
-          });
-
-        if (uploadError) {
-          console.error("Supabase upload error:", uploadError);
-          return NextResponse.json({ error: "Erreur Supabase: " + (uploadError.message || "Impossible d'importer le CV.") + " (Le bucket 'cvs' existe-t-il ?)" }, { status: 500 });
-        } else {
-          const { data: publicUrlData } = supabase.storage.from('cvs').getPublicUrl(fileName);
-          fileUrl = publicUrlData.publicUrl;
-        }
-      } catch (uploadException: any) {
-        console.error("Supabase upload exception:", uploadException);
-        return NextResponse.json({ error: "Exception Supabase: " + (uploadException.message || "Erreur réseau.") }, { status: 500 });
-      }
+    const bytes = await file.arrayBuffer();
+    const buffer = Buffer.from(bytes);
+    
+    const uploadDir = path.join(process.cwd(), 'public', 'uploads', 'cvs');
+    
+    try {
+      await fsPromises.mkdir(uploadDir, { recursive: true });
+      await fsPromises.writeFile(path.join(uploadDir, fileName), buffer);
+    } catch (fsError) {
+      console.error("Erreur d'écriture du fichier localement:", fsError);
+      return NextResponse.json({ error: "Erreur lors de la sauvegarde du fichier." }, { status: 500 });
     }
+    
+    const fileUrl = `/uploads/cvs/${fileName}`;
 
     // S'assurer que le TalentProfile existe pour cet utilisateur
     let talentProfile = await prisma.talentProfile.findUnique({

@@ -164,6 +164,9 @@ function ProfilTalentContent({ initialTab = "informations" }: { initialTab?: Sub
 
       showToast("Photo de profil mise à jour avec succès !");
       fetchProfile();
+      if (updateUser) {
+        updateUser({ user: { image: data.avatarUrl } });
+      }
     } catch (err: any) {
       console.error("Erreur sauvegarde avatar", err);
       showToast(err.message || "Une erreur s'est produite lors de la sauvegarde de la photo.");

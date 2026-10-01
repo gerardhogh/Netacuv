@@ -44,3 +44,4 @@ node_modules/
 
 # Security - Ignore API inventory
 .api-inventory.json
+public/uploads/

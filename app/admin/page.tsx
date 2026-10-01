@@ -27,9 +27,9 @@ export default function AdminLoginPage() {
       });
 
       if (res?.error) {
-        setError("Identifiants incorrects ou accès refusé.");
+        setError(`Erreur: ${res.error}`);
       } else {
-        router.push("/dashboard/admin");
+        window.location.href = "/";
       }
     } catch (err) {
       setError("Une erreur est survenue.");
@@ -51,10 +51,10 @@ export default function AdminLoginPage() {
         <div className="flex justify-center mb-8">
           <div className="relative h-14 w-48">
             <Image
-              src="/Logo/PNG/Logo.png"
+              src="/Logo/PNG/Asset 20.png"
               alt="Netacuv Admin"
               fill
-              className="object-contain brightness-0 invert"
+              className="object-contain"
               priority
             />
           </div>
