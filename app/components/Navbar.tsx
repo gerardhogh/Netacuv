@@ -179,7 +179,13 @@ export default function Navbar({
 
       {/* Mobile menu */}
       {mobileOpen && (
-        <div className="md:hidden bg-white border-t border-slate-100 px-4 py-4 flex flex-col gap-1 animate-fade-in shadow-lg">
+        <div 
+          className={`md:hidden px-4 py-4 flex flex-col gap-1 animate-fade-in shadow-lg ${
+            variant === "auth"
+              ? "bg-[#0A192F]/95 backdrop-blur-md border-t border-white/10"
+              : "bg-white border-t border-slate-100"
+          }`}
+        >
           {[
             { href: "/", label: "Accueil" },
             { href: "/#pourquoi", label: "Pourquoi ?" },
@@ -190,20 +196,28 @@ export default function Navbar({
             <Link
               key={href}
               href={href}
-              className="nav-link"
+              className={`block px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                variant === "auth"
+                  ? "text-blue-100 hover:bg-white/10 hover:text-white"
+                  : "text-slate-600 hover:bg-blue-50/60 hover:text-blue-600"
+              }`}
               onClick={() => setMobileOpen(false)}
             >
               {label}
             </Link>
           ))}
 
-          <div className="flex gap-3 mt-3 pt-3 border-t border-slate-100">
+          <div className={`flex gap-3 mt-3 pt-3 border-t ${variant === "auth" ? "border-white/10" : "border-slate-100"}`}>
             {user ? (
               <div className="w-full flex items-center justify-between gap-2">
                 <Link
                   href={getDashboardHref()}
                   onClick={() => setMobileOpen(false)}
-                  className="btn-primary flex-1 justify-center text-sm"
+                  className={`flex-1 justify-center py-2 text-center rounded-full text-sm font-bold shadow-sm transition-all ${
+                    variant === "auth"
+                      ? "bg-[#32A8D7] text-white hover:bg-[#2891bb]"
+                      : "btn-primary"
+                  }`}
                 >
                   Mon Espace ({user.role})
                 </Link>
@@ -220,14 +234,22 @@ export default function Navbar({
                 <Link
                   href="/connexion"
                   onClick={() => setMobileOpen(false)}
-                  className="btn-outline flex-1 justify-center text-sm !rounded-full"
+                  className={`flex-1 flex justify-center items-center text-center text-sm !rounded-full transition-all ${
+                    variant === "auth"
+                      ? "px-5 py-2 font-semibold border text-white border-white/30 hover:bg-white/10"
+                      : "btn-outline"
+                  }`}
                 >
                   Connexion
                 </Link>
                 <Link
                   href="/inscription"
                   onClick={() => setMobileOpen(false)}
-                  className="btn-primary flex-1 justify-center text-sm !rounded-full"
+                  className={`flex-1 flex justify-center items-center text-center text-sm !rounded-full transition-all shadow-sm ${
+                    variant === "auth"
+                      ? "bg-[#32A8D7] text-white hover:bg-[#2891bb] py-2"
+                      : "btn-primary"
+                  }`}
                 >
                   S'inscrire
                 </Link>
