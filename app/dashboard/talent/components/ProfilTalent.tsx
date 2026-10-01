@@ -1086,6 +1086,7 @@ function ReseauxTab() {
 import { DeleteVideoModal, ReplaceVideoModal } from "../../../components/modals/InterviewModals";
 
 function VideoTab() {
+  const { user } = useAuth();
   const router = useRouter();
   const [hasVideo, setHasVideo] = useState(false);
   const [videoUrl, setVideoUrl] = useState<string | null>(null);

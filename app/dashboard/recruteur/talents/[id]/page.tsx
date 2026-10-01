@@ -378,7 +378,7 @@ export default function TalentDetailPage() {
   const [talent, setTalent] = useState<TalentProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  const isPremiumRecruiter = user?.role === "admin" || user?.role === "ADMIN" || user?.isPremium;
+  const isPremiumRecruiter = user?.role === "admin" || user?.isPremium;
 
   useEffect(() => {
     if (id && isPremiumRecruiter) {
