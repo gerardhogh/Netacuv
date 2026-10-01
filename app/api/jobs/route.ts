@@ -106,6 +106,29 @@ export async function POST(req: Request) {
       });
     }
 
+    // --- VÉRIFICATION PREMIUM ---
+    // Si l'utilisateur n'est pas ADMIN, on vérifie la limite
+    if (session.user.role !== "ADMIN") {
+      const userRecord = await prisma.user.findUnique({
+        where: { id: userId },
+        select: { isPremium: true }
+      });
+
+      if (userRecord && !userRecord.isPremium) {
+        // Compter les offres déjà créées
+        const jobCount = await prisma.jobOffer.count({
+          where: { recruiterId: recruiterProfile.id }
+        });
+
+        if (jobCount >= 1) {
+          return NextResponse.json(
+            { error: "Vous avez atteint la limite d'offres gratuites (1). Veuillez souscrire à l'offre Premium pour publier des offres en illimité." },
+            { status: 403 }
+          );
+        }
+      }
+    }
+
     const newJob = await prisma.jobOffer.create({
       data: {
         title,
