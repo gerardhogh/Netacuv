@@ -219,7 +219,10 @@ export default function HomePage() {
       </section>
 
       {/* ── COMMENT ÇA MARCHE ? ── */}
-      <section className="py-24 bg-[#0F172A] text-white relative">
+      <section 
+        className="py-24 text-white relative"
+        style={{ background: "linear-gradient(180deg, #0076a8 0%, #005a82 100%)" }}
+      >
         <div className="absolute inset-0 bg-[#2BAFE3]/5" style={{ backgroundImage: 'radial-gradient(#2BAFE3 1px, transparent 1px)', backgroundSize: '24px 24px', opacity: 0.1 }}></div>
         <div className="max-w-5xl mx-auto px-6 relative z-10">
           <div className="text-center mb-16">
