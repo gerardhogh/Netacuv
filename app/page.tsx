@@ -5,13 +5,28 @@ import Footer from "./components/Footer";
 import Link from "next/link";
 import Image from "next/image";
 import { useState, useEffect } from "react";
-import { Plus, Minus } from "lucide-react";
-import { motion } from "framer-motion";
+import { 
+  Plus, 
+  Minus, 
+  CheckCircle2, 
+  Zap, 
+  Video, 
+  BrainCircuit, 
+  ShieldCheck, 
+  PlayCircle, 
+  ArrowRight, 
+  Star, 
+  Check, 
+  Users,
+  Search,
+  Briefcase
+} from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 
 export default function HomePage() {
-  const [activeFaqTab, setActiveFaqTab] = useState<"talents" | "recruteurs">("talents");
-  const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(0);
   const [activeHowTab, setActiveHowTab] = useState<"talents" | "recruteurs">("talents");
+  const [activePricingTab, setActivePricingTab] = useState<"talents" | "recruteurs">("talents");
+  const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(0);
   const [showDeletedModal, setShowDeletedModal] = useState(false);
 
   // Check URL for account_deleted
@@ -20,7 +35,6 @@ export default function HomePage() {
       const params = new URLSearchParams(window.location.search);
       if (params.get("account_deleted") === "true") {
         setShowDeletedModal(true);
-        // Remove query param without reloading
         const newUrl = new URL(window.location.href);
         newUrl.searchParams.delete("account_deleted");
         window.history.replaceState({}, "", newUrl.toString());
@@ -32,644 +46,557 @@ export default function HomePage() {
     setOpenFaqIndex(openFaqIndex === index ? null : index);
   };
 
-  const talentFaqs = [
+  const faqs = [
     {
-      q: "1. Est-ce que la plateforme est gratuite ?",
-      a: "L&apos;accès aux fonctionnalités clés nécessite un petit abonnement de 700 FCFA/mois pour les talents afin de garantir la qualité des profils certifiés.",
+      q: "Comment fonctionne l'entretien vidéo IA ?",
+      a: "Notre intelligence artificielle vous pose des questions adaptées à votre domaine. Elle analyse ensuite vos réponses, votre élocution et votre pertinence pour certifier vos compétences. Tout se passe directement depuis votre navigateur ou mobile.",
     },
     {
-      q: "2. Comment mon CV est-il évalué ?",
-      a: "Notre IA analyse votre CV selon plusieurs critères précis : structure, compétences clés, pertinence des expériences et clarté.",
+      q: "Est-ce que je peux tester gratuitement ?",
+      a: "Absolument ! Les talents bénéficient d'une candidature gratuite chaque mois avec l'option de base. Les recruteurs peuvent consulter les profils et publier des annonces gratuitement (les coordonnées des candidats sont floutées en version gratuite).",
     },
     {
-      q: "3. Que sont les étoiles et badges ?",
-      a: "Les étoiles valorisent votre profil auprès des entreprises : score IA du CV, entretien vidéo réussi et complétion totale.",
+      q: "Comment les recruteurs contactent-ils les talents ?",
+      a: "Avec l'abonnement Premium, les recruteurs ont accès direct aux emails et numéros de téléphone des candidats. Ils peuvent télécharger le CV au format PDF ou les contacter via le chat intégré.",
     },
     {
-      q: "4. Le test vidéo est-il obligatoire ?",
-      a: "Il n&apos;est pas obligatoire mais vivement recommandé car les profils avec vidéo certifiée sont 3 fois plus consultés par les recruteurs.",
-    },
-    {
-      q: "5. Puis-je refaire le test vidéo ?",
-      a: "Oui, vous disposez de 3 essais pour enregistrer et valider votre meilleure prestation.",
-    },
-    {
-      q: "6. Est-ce que mes informations sont visibles publiquement ?",
-      a: "Non, seules les entreprises et recruteurs vérifiés ont accès à vos informations selon vos paramètres de confidentialité.",
-    },
-  ];
-
-  const recruteurFaqs = [
-    {
-      q: "7. Comment accéder aux profils des talents ?",
-      a: "Après création de votre compte recruteur, accédez instantanément à notre vivier de talents avec filtres multicritères.",
-    },
-    {
-      q: "8. Puis-je poster des offres d&apos;emploi ?",
-      a: "Oui, vous pouvez publier vos offres d&apos;emploi gratuitement et recevoir des candidatures qualifiées directement sur votre tableau de bord.",
-    },
-    {
-      q: "9. Comment est vérifiée la qualité des profils ?",
-      a: "Chaque talent passe une vérification automatisée de CV et un entretien vidéo avec scoring IA transparent.",
-    },
-    {
-      q: "10. Est-ce qu&apos;il y a un coût pour les recruteurs ?",
-      a: "Netacuv propose une version gratuite pour démarrer, et un plan mensuel à 1 000 FCFA/mois pour des recherches et téléchargements illimités.",
+      q: "Quels sont les modes de paiement acceptés ?",
+      a: "Nous acceptons les paiements via Mobile Money (Orange Money, MTN, Moov) ainsi que les paiements classiques par Carte Bancaire pour une accessibilité maximale sur tout le continent.",
     },
   ];
 
   return (
-    <div 
-      className="min-h-screen bg-slate-50 selection:bg-blue-500 selection:text-white"
-      style={{
-        backgroundImage: "url('/assets/Fond.png')",
-        backgroundSize: "cover",
-        backgroundPosition: "center",
-        backgroundAttachment: "fixed"
-      }}
-    >
-      <Navbar />
+    <div className="min-h-screen bg-[#F8FAFC] selection:bg-[#2BAFE3]/30 selection:text-[#0F172A] font-sans">
+      <Navbar variant="default" />
 
       {/* ── HERO SECTION ── */}
-      <section
-        id="accueil"
-        className="relative pt-12 pb-20 md:pt-20 md:pb-28 overflow-hidden"
-        style={{
-          background:
-            "radial-gradient(ellipse at 80% 20%, rgba(254,235,226,0.6) 0%, rgba(230,243,254,0.7) 40%, rgba(240,248,255,0.9) 100%)",
-        }}
-      >
-        <div className="max-w-7xl mx-auto px-6 relative">
-          <div className="flex flex-col lg:flex-row items-center justify-between gap-12 lg:gap-8">
+      <section className="relative pt-24 pb-16 md:pt-32 md:pb-24 overflow-hidden bg-white">
+        {/* Background Decorative Gradients */}
+        <div className="absolute top-0 inset-x-0 h-full overflow-hidden pointer-events-none">
+          <div className="absolute top-[-10%] right-[-5%] w-[50%] h-[50%] rounded-full bg-[#2BAFE3]/10 blur-[100px]" />
+          <div className="absolute bottom-[20%] left-[-10%] w-[40%] h-[40%] rounded-full bg-[#F59E0B]/10 blur-[100px]" />
+        </div>
+
+        <div className="max-w-7xl mx-auto px-6 relative z-10">
+          <div className="flex flex-col lg:flex-row items-center gap-12 lg:gap-8">
+            
             {/* Left Content */}
-            <div className="flex-1 max-w-2xl animate-fade-in-up">
-              <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black text-slate-900 leading-[1.15] mb-6">
-                Dépose ton CV,<br />
-                <span className="text-blue-600">brille auprès des</span><br />
-                recruteurs
+            <div className="flex-1 max-w-3xl animate-fade-in-up text-center lg:text-left">
+              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#2BAFE3]/10 text-[#2BAFE3] font-semibold text-sm mb-6 shadow-sm border border-[#2BAFE3]/20">
+                <Zap size={16} className="fill-current" />
+                <span>Le Recrutement Digital Nouvelle Génération par IA</span>
+              </div>
+              
+              <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black text-[#0F172A] leading-[1.15] mb-6 tracking-tight">
+                Fini les CVs ignorés.<br />
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#2BAFE3] to-[#1E8CB8]">
+                  Prouvez votre valeur
+                </span> en vidéo.
               </h1>
-              <p className="text-slate-600 text-lg sm:text-xl leading-relaxed mb-8 max-w-xl">
-                Rejoins une plateforme intelligente pour améliorer ta visibilité,
-                passer un test vidéo, et booster ton profil avec des étoiles.
+              
+              <p className="text-slate-600 text-lg sm:text-xl leading-relaxed mb-10 max-w-2xl mx-auto lg:mx-0">
+                Netacuv transforme vos expériences en <strong className="text-[#0F172A]">Profil Certifié IA</strong>. 
+                Les candidats montrent leurs vraies compétences, et les recruteurs accèdent instantanément aux meilleurs profils.
               </p>
-              <div className="flex items-center gap-4 flex-wrap">
+              
+              <div className="flex flex-col sm:flex-row items-center gap-4 justify-center lg:justify-start">
                 <Link
-                  href="/inscription?type=talent"
-                  className="px-8 py-4 rounded-full font-bold text-base text-white bg-blue-600 hover:bg-blue-700 hover:scale-[1.02] hover:shadow-lg hover:shadow-blue-500/25 shadow-xl shadow-blue-500/25 active:scale-95 transition-all duration-300 ease-in-out inline-flex items-center gap-2"
+                  href="https://talent.netacuv.com/register"
+                  className="w-full sm:w-auto px-8 py-4 rounded-full font-bold text-white bg-[#2BAFE3] hover:bg-[#1E8CB8] shadow-lg shadow-[#2BAFE3]/30 hover:shadow-[#2BAFE3]/50 hover:-translate-y-0.5 active:translate-y-0 transition-all duration-300 flex items-center justify-center gap-2"
                 >
-                  Je crée mon compte
+                  Je décroche un job en vidéo 🚀
                 </Link>
                 <Link
-                  href="/recruteurs"
-                  className="px-8 py-4 rounded-full font-bold text-base text-blue-600 bg-white/80 hover:bg-white border border-blue-200 shadow-sm hover:scale-[1.02] hover:shadow-lg hover:shadow-blue-500/25 transition-all duration-300 ease-in-out"
+                  href="https://recruteur.netacuv.com/register"
+                  className="w-full sm:w-auto px-8 py-4 rounded-full font-bold text-[#0F172A] bg-white border-2 border-slate-200 hover:border-[#2BAFE3] hover:bg-[#2BAFE3]/5 hover:-translate-y-0.5 active:translate-y-0 transition-all duration-300 flex items-center justify-center gap-2"
                 >
-                  Je recrute
+                  Je cherche des talents certifiés 👔
                 </Link>
               </div>
             </div>
 
-            {/* Arrow — absolute, centered vertically between the two columns */}
-            <div className="hidden lg:block absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-10 pointer-events-none">
-              <Image
-                src="/assets/Arrow.png"
-                alt="Flèche indicative"
-                width={130}
-                height={95}
-                className="object-contain opacity-75"
-              />
-            </div>
-
-            {/* Right Card Mockup (image 1.png from Figma) */}
-            <div className="flex-1 flex justify-center lg:justify-end">
-              <div className="relative w-full max-w-md animate-fade-in">
-                {/* Floating graphic from Figma */}
-                <div className="relative rounded-3xl overflow-hidden shadow-2xl transition-transform hover:scale-[1.01]">
-                  <Image
-                    src="/assets/image 1.png"
-                    alt="Dépose ton CV - Netacuv"
-                    width={460}
-                    height={590}
-                    priority
-                    className="w-full h-auto object-contain rounded-3xl bg-white/60 backdrop-blur-md"
-                  />
+            {/* Right Mockup/Animation */}
+            <div className="flex-1 w-full flex justify-center lg:justify-end relative">
+              <motion.div 
+                initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: 0.2 }}
+                className="relative w-full max-w-[480px]"
+              >
+                {/* Simulated UI Mockup */}
+                <div className="bg-white rounded-3xl shadow-2xl border border-slate-100 overflow-hidden relative z-10">
+                  <div className="bg-slate-50 border-b border-slate-100 px-6 py-4 flex justify-between items-center">
+                    <div className="flex gap-2">
+                      <div className="w-3 h-3 rounded-full bg-red-400"></div>
+                      <div className="w-3 h-3 rounded-full bg-amber-400"></div>
+                      <div className="w-3 h-3 rounded-full bg-green-400"></div>
+                    </div>
+                    <div className="bg-white px-3 py-1 rounded-md text-xs font-semibold text-slate-500 shadow-sm border border-slate-200 flex items-center gap-1">
+                      <ShieldCheck size={14} className="text-[#2BAFE3]" />
+                      Profil Vérifié
+                    </div>
+                  </div>
+                  <div className="p-6 relative">
+                    <div className="flex items-start gap-4 mb-6">
+                      <div className="w-16 h-16 rounded-full bg-gradient-to-br from-[#2BAFE3] to-[#F59E0B] p-[2px]">
+                        <div className="w-full h-full bg-white rounded-full flex items-center justify-center text-[#2BAFE3] font-bold text-xl">
+                          AK
+                        </div>
+                      </div>
+                      <div>
+                        <h3 className="font-bold text-[#0F172A] text-lg">Amadou K.</h3>
+                        <p className="text-slate-500 text-sm">Développeur Frontend</p>
+                        <div className="flex items-center gap-1 mt-1 text-[#F59E0B]">
+                          <Star size={14} className="fill-current" />
+                          <Star size={14} className="fill-current" />
+                          <Star size={14} className="fill-current" />
+                          <Star size={14} className="fill-current" />
+                          <Star size={14} className="fill-current" />
+                        </div>
+                      </div>
+                    </div>
+                    
+                    {/* Simulated Video Player */}
+                    <div className="relative rounded-2xl overflow-hidden bg-slate-900 aspect-video group cursor-pointer shadow-inner">
+                      <div className="absolute inset-0 bg-slate-800/80 flex items-center justify-center group-hover:bg-slate-800/60 transition-all">
+                        <motion.div 
+                          animate={{ scale: [1, 1.1, 1] }}
+                          transition={{ repeat: Infinity, duration: 2 }}
+                        >
+                          <PlayCircle size={64} className="text-[#2BAFE3] bg-white/10 rounded-full" />
+                        </motion.div>
+                      </div>
+                      <div className="absolute bottom-4 left-4 right-4 flex justify-between items-end">
+                         <div className="bg-black/50 backdrop-blur-md px-3 py-1.5 rounded-lg text-white text-xs font-semibold">
+                            Évaluation IA : 94/100
+                         </div>
+                         <div className="w-8 h-8 rounded-full bg-[#2BAFE3] flex items-center justify-center shadow-lg">
+                           <Zap size={16} className="text-white fill-white" />
+                         </div>
+                      </div>
+                    </div>
+                  </div>
                 </div>
-              </div>
+
+                {/* Decorative floating badges */}
+                <motion.div 
+                  animate={{ y: [0, -10, 0] }}
+                  transition={{ repeat: Infinity, duration: 4, ease: "easeInOut" }}
+                  className="absolute -right-6 top-1/4 bg-white p-4 rounded-2xl shadow-xl border border-slate-100 z-20 flex flex-col items-center gap-2"
+                >
+                  <div className="w-10 h-10 rounded-full bg-[#F59E0B]/10 flex items-center justify-center">
+                    <CheckCircle2 size={24} className="text-[#F59E0B]" />
+                  </div>
+                  <span className="text-xs font-bold text-slate-700">Top 5%</span>
+                </motion.div>
+
+              </motion.div>
             </div>
           </div>
         </div>
-
       </section>
 
-      {/* ── POURQUOI CHOISIR NETACUV ── */}
-      <section id="pourquoi" className="py-24 bg-white relative">
-        <motion.div 
-          className="max-w-7xl mx-auto px-6"
-          initial={{ opacity: 0, y: 40 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: "-100px" }}
-          transition={{ duration: 0.6, ease: "easeOut" }}
-        >
-          <div className="text-center max-w-3xl mx-auto mb-16">
-            <h2 className="text-3xl md:text-5xl font-black text-slate-900 mb-4 tracking-tight">
-              Pourquoi choisir <span className="text-blue-600">NETACUV</span>
-            </h2>
-            <p className="text-slate-500 text-base sm:text-lg leading-relaxed">
-              Débloquez votre plein potentiel et accédez à des opportunités
-              concrètes alignées avec vos ambitions.
-            </p>
-          </div>
-
-          {/* 5 Cards Layout with large center card matching Figma */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-center max-w-6xl mx-auto">
-            {/* Left 2 Cards */}
-            <div className="space-y-6 flex flex-col justify-center">
-              {/* Card 1: Affiliation */}
-              <div className="p-7 rounded-3xl bg-white border border-slate-100 shadow-xl shadow-slate-100 hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 ease-in-out relative">
-                <div className="w-12 h-12 rounded-2xl bg-blue-50 flex items-center justify-center mb-4">
-                  <Image
-                    src="/assets/Icon01.png"
-                    alt="Affiliation"
-                    width={32}
-                    height={32}
-                    className="object-contain"
-                  />
-                </div>
-                <h3 className="font-extrabold text-lg text-slate-900 mb-2">
-                  Affiliation récompensée
-                </h3>
-                <p className="text-slate-500 text-xs sm:text-sm leading-relaxed mb-4">
-                  Partage ton code et gagne des récompenses pour chaque filleul.
-                </p>
-                <Link
-                  href="/inscription?type=talent"
-                  className="inline-block px-4 py-1.5 rounded-full text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 transition-colors shadow-sm"
-                >
-                  Gagne plus !
-                </Link>
-              </div>
-
-              {/* Card 2: Test vidéo */}
-              <div className="p-7 rounded-3xl bg-white border border-slate-100 shadow-xl shadow-slate-100 hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 ease-in-out">
-                <div className="w-12 h-12 rounded-2xl bg-blue-50 flex items-center justify-center mb-4">
-                  <Image
-                    src="/assets/Icon03.png"
-                    alt="Test vidéo"
-                    width={32}
-                    height={32}
-                    className="object-contain"
-                  />
-                </div>
-                <h3 className="font-extrabold text-lg text-slate-900 mb-2">
-                  Test vidéo automatisé
-                </h3>
-                <p className="text-slate-500 text-xs sm:text-sm leading-relaxed">
-                  Réponds aux questions métiers avec vidéo, notation IA et badge
-                  de performance.
-                </p>
-              </div>
+      {/* ── BANDEAU DE PREUVE SOCIALE ── */}
+      <section className="border-y border-slate-200 bg-[#F8FAFC] py-10">
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6 text-center divide-x divide-slate-200">
+            <div className="px-4">
+              <h4 className="text-3xl font-black text-[#2BAFE3] mb-1">+90%</h4>
+              <p className="text-sm font-semibold text-slate-600">Visibilité des certifiés</p>
             </div>
-
-            {/* Center Big Featured Card: Profil certifié & étoiles */}
-            <div className="rounded-3xl p-8 sm:p-10 text-white text-center shadow-2xl relative overflow-hidden flex flex-col items-center justify-between min-h-[440px] bg-gradient-to-b from-[#0080b7] to-[#005f88] transform lg:-translate-y-2 hover:-translate-y-3 hover:shadow-xl transition-all duration-300 ease-in-out">
-              <div className="w-24 h-24 mb-6 relative flex items-center justify-center">
-                <Image
-                  src="/assets/Certif.png"
-                  alt="Certification"
-                  width={96}
-                  height={96}
-                  className="object-contain drop-shadow-md"
-                />
-              </div>
-
-              <div className="my-auto">
-                <h3 className="text-2xl sm:text-3xl font-black mb-3 text-white">
-                  Profil certifié<br />& étoiles
-                </h3>
-                <p className="text-blue-100 text-sm leading-relaxed max-w-xs mx-auto mb-8">
-                  Optimise ton CV, passe un test vidéo, et gagne des badges de
-                  confiance auprès des entreprises.
-                </p>
-              </div>
-
-              <Link
-                href="/inscription?type=talent"
-                className="w-full py-4 rounded-full font-bold text-sm bg-blue-500 hover:bg-blue-400 text-white shadow-lg hover:scale-[1.02] hover:shadow-xl hover:shadow-blue-500/25 transition-all duration-300 ease-in-out active:scale-95"
-              >
-                Commencer maintenant
-              </Link>
+            <div className="px-4">
+              <h4 className="text-3xl font-black text-[#2BAFE3] mb-1">x3</h4>
+              <p className="text-sm font-semibold text-slate-600">Plus rapide pour recruter</p>
             </div>
-
-            {/* Right 2 Cards */}
-            <div className="space-y-6 flex flex-col justify-center">
-              {/* Card 3: Recruteurs sérieux */}
-              <div className="p-7 rounded-3xl bg-white border border-slate-100 shadow-xl shadow-slate-100 hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 ease-in-out">
-                <div className="w-12 h-12 rounded-2xl bg-blue-50 flex items-center justify-center mb-4">
-                  <Image
-                    src="/assets/Icon02.png"
-                    alt="Recruteurs sérieux"
-                    width={32}
-                    height={32}
-                    className="object-contain"
-                  />
-                </div>
-                <h3 className="font-extrabold text-lg text-slate-900 mb-2">
-                  Recruteurs sérieux
-                </h3>
-                <p className="text-slate-500 text-xs sm:text-sm leading-relaxed">
-                  Des entreprises vérifiées et des outils de recherche
-                  puissants.
-                </p>
-              </div>
-
-              {/* Card 4: Paiement accessible */}
-              <div className="p-7 rounded-3xl bg-white border border-slate-100 shadow-xl shadow-slate-100 hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 ease-in-out">
-                <div className="w-12 h-12 rounded-2xl bg-blue-50 flex items-center justify-center mb-4">
-                  <Image
-                    src="/assets/Icon04.png"
-                    alt="Paiement accessible"
-                    width={32}
-                    height={32}
-                    className="object-contain"
-                  />
-                </div>
-                <h3 className="font-extrabold text-lg text-slate-900 mb-2">
-                  Paiement accessible
-                </h3>
-                <p className="text-slate-500 text-xs sm:text-sm leading-relaxed mb-4">
-                  Abonnement mensuel à seulement 700 FCFA, accessible à tous.
-                </p>
-                <span className="inline-block px-4 py-1.5 rounded-full text-xs font-bold text-blue-600 bg-blue-50 border border-blue-200">
-                  Sécurité fiable
-                </span>
-              </div>
+            <div className="px-4">
+              <h4 className="text-3xl font-black text-[#2BAFE3] mb-1">100%</h4>
+              <p className="text-sm font-semibold text-slate-600">Profils vérifiés par IA</p>
+            </div>
+            <div className="px-4">
+              <h4 className="text-3xl font-black text-[#2BAFE3] mb-1">24/7</h4>
+              <p className="text-sm font-semibold text-slate-600">Disponibilité du vivier</p>
             </div>
           </div>
-        </motion.div>
-      </section>
-
-      {/* ── STATS SECTION ── */}
-      <section
-        className="py-20 px-6 relative"
-        style={{
-          background:
-            "linear-gradient(135deg, #cde6f9 0%, #e8f4fc 50%, #eee8f8 100%)",
-        }}
-      >
-        <motion.div 
-          className="max-w-5xl mx-auto text-center"
-          initial={{ opacity: 0, y: 40 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: "-100px" }}
-          transition={{ duration: 0.6, ease: "easeOut" }}
-        >
-          <h2 className="text-3xl md:text-4xl font-black text-slate-900 mb-4">
-            Déjà plus de 5 000 talents inscrits !
-          </h2>
-          <p className="text-slate-600 text-base sm:text-lg max-w-3xl mx-auto mb-12 leading-relaxed">
-            Vous connecter aux meilleures opportunités, valoriser votre parcours
-            professionnel, améliorer votre carrière et décrocher encore plus
-            d&apos;opportunités.
-          </p>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl mx-auto mb-16">
-            <div className="bg-white/80 backdrop-blur-md rounded-3xl py-8 px-6 shadow-xl border border-white/80">
-              <p className="text-4xl font-black text-blue-600 mb-2">+500</p>
-              <p className="text-sm font-semibold text-slate-600">
-                Recruteurs actifs
-              </p>
-            </div>
-            <div className="bg-white/80 backdrop-blur-md rounded-3xl py-8 px-6 shadow-xl border border-white/80">
-              <p className="text-4xl font-black text-blue-600 mb-2">+10 000</p>
-              <p className="text-sm font-semibold text-slate-600">
-                CV analysés par l&apos;IA
-              </p>
-            </div>
-            <div className="bg-white/80 backdrop-blur-md rounded-3xl py-8 px-6 shadow-xl border border-white/80">
-              <p className="text-4xl font-black text-blue-600 mb-2">24h/24</p>
-              <p className="text-sm font-semibold text-slate-600">
-                Support et assistance
-              </p>
-            </div>
-          </div>
-
-          <div className="max-w-5xl mx-auto rounded-[2.5rem] overflow-hidden shadow-2xl relative h-64 md:h-96 border-4 border-white/50">
-            <Image
-              src="/assets/african_talent_banner.jpg"
-              alt="Talents africains au travail"
-              fill
-              className="object-cover hover:scale-105 transition-transform duration-700"
-            />
-          </div>
-        </motion.div>
+        </div>
       </section>
 
       {/* ── COMMENT ÇA MARCHE ? ── */}
-      <section id="comment" className="py-28 bg-white relative">
-        <motion.div 
-          className="max-w-4xl mx-auto px-6"
-          initial={{ opacity: 0, y: 40 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: "-100px" }}
-          transition={{ duration: 0.6, ease: "easeOut" }}
-        >
-          <div className="text-center mb-14">
-            <h2 className="text-3xl md:text-5xl font-black text-slate-900 mb-8">
+      <section className="py-24 bg-white relative">
+        <div className="max-w-6xl mx-auto px-6">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl md:text-5xl font-black text-[#0F172A] mb-8">
               Comment ça marche ?
             </h2>
-
-            {/* Toggle tabs */}
-            <div className="inline-flex p-1.5 rounded-full bg-slate-100 border border-slate-200">
+            
+            {/* Tabs */}
+            <div className="inline-flex p-1.5 rounded-full bg-slate-100 border border-slate-200 shadow-inner">
               <button
                 onClick={() => setActiveHowTab("talents")}
                 className={`px-8 py-3 rounded-full text-sm font-bold transition-all ${
                   activeHowTab === "talents"
-                    ? "bg-blue-600 text-white shadow-md"
-                    : "text-slate-600 hover:text-slate-900"
+                    ? "bg-[#2BAFE3] text-white shadow-md"
+                    : "text-slate-600 hover:text-[#0F172A]"
                 }`}
               >
-                Pour les Talents
+                Côté Candidats
               </button>
               <button
                 onClick={() => setActiveHowTab("recruteurs")}
                 className={`px-8 py-3 rounded-full text-sm font-bold transition-all ${
                   activeHowTab === "recruteurs"
-                    ? "bg-blue-600 text-white shadow-md"
-                    : "text-slate-600 hover:text-slate-900"
+                    ? "bg-[#2BAFE3] text-white shadow-md"
+                    : "text-slate-600 hover:text-[#0F172A]"
                 }`}
               >
-                Pour les Recruteurs
+                Côté Recruteurs
               </button>
             </div>
           </div>
 
-          {/* Steps — identical layout and spacing for both tabs */}
-          <div className="flex flex-col gap-6">
-            {(activeHowTab === "talents"
-              ? [
-                  {
-                    num: "01",
-                    iconBg: "bg-blue-100",
-                    iconColor: "#4F8EF7",
-                    title: "Crée ton compte en 1 minute",
-                    desc: "Accède à la plateforme avec un petit abonnement de 600 FCFA/mois.",
-                    align: "right",
-                  },
-                  {
-                    num: "02",
-                    iconBg: "bg-amber-100",
-                    iconColor: "#F59E0B",
-                    title: "Téléverse ton CV",
-                    desc: "Ou remplis directement ton profil avec tes infos clés.",
-                    align: "left",
-                  },
-                  {
-                    num: "03",
-                    iconBg: "bg-purple-100",
-                    iconColor: "#A855F7",
-                    title: "Passe le test vidéo IA",
-                    desc: "Réponds à des questions métiers en vidéo, évalue-toi en 3 essais.",
-                    align: "right",
-                  },
-                  {
-                    num: "04",
-                    iconBg: "bg-amber-100",
-                    iconColor: "#F59E0B",
-                    title: "Obtiens ta certification",
-                    desc: "L&apos;IA note ta prestation et t&apos;attribue un badge et des étoiles visibles.",
-                    align: "left",
-                  },
-                  {
-                    num: "05",
-                    iconBg: "bg-purple-100",
-                    iconColor: "#A855F7",
-                    title: "Sois visible par les recruteurs",
-                    desc: "Ton profil apparaît dans les recherches selon ton score, ton CV et ta vidéo.",
-                    align: "right",
-                  },
-                  {
-                    num: "06",
-                    iconBg: "bg-amber-100",
-                    iconColor: "#F59E0B",
-                    title: "Gagne avec l&apos;affiliation",
-                    desc: "Partage ton code et reçois des bonus quand tes filleuls s&apos;inscrivent.",
-                    align: "left",
-                  },
-                ]
-              : [
-                  {
-                    num: "01",
-                    iconBg: "bg-blue-100",
-                    iconColor: "#4F8EF7",
-                    title: "Créez un compte recruteur en quelques minutes",
-                    desc: "Inscrivez-vous rapidement sur la plateforme pour commencer à accéder aux talents.",
-                    align: "right",
-                  },
-                  {
-                    num: "02",
-                    iconBg: "bg-amber-100",
-                    iconColor: "#F59E0B",
-                    title: "Accédez à la base de talents avec profils certifiés",
-                    desc: "Explorez les profils des talents, tous certifiés avec des badges de confiance et utilisez des filtres pour affiner votre recherche (domaine, score, étoiles, etc.).",
-                    align: "left",
-                  },
-                  {
-                    num: "03",
-                    iconBg: "bg-purple-100",
-                    iconColor: "#A855F7",
-                    title: "Consultez les CV, vidéos de présentation et badges",
-                    desc: "Visualisez les CV et les vidéos de présentation des talents, ainsi que leurs badges de performance.",
-                    align: "right",
-                  },
-                  {
-                    num: "04",
-                    iconBg: "bg-amber-100",
-                    iconColor: "#F59E0B",
-                    title: "Contactez directement les talents ou publiez une offre",
-                    desc: "Entrez en contact avec les talents qui correspondent à vos critères ou publiez une nouvelle offre d&apos;emploi.",
-                    align: "left",
-                  },
-                  {
-                    num: "05",
-                    iconBg: "bg-purple-100",
-                    iconColor: "#A855F7",
-                    title: "Gagnez avec l&apos;affiliation",
-                    desc: "Partagez votre code et recevez des bonus quand vos filleuls s&apos;inscrivent.",
-                    align: "right",
-                  },
-                ]
-            ).map((step, idx) => (
-              <div
-                key={idx}
-                className={`flex items-center gap-4 ${
-                  step.align === "left" ? "flex-row-reverse" : "flex-row"
-                }`}
-              >
-                {/* Big number */}
-                <div className="w-20 flex-shrink-0 flex items-center justify-center">
-                  <span
-                    className="text-7xl font-black leading-none select-none"
-                    style={{ color: "#CBD5E1", fontFamily: "inherit" }}
-                  >
-                    {step.num}
-                  </span>
-                </div>
-
-                {/* Card */}
-                <div className="flex-1 bg-white rounded-2xl border border-slate-100 shadow-md px-6 py-5 flex items-start gap-4">
-                  {/* Icon circle */}
-                  <div
-                    className={`w-11 h-11 rounded-full flex-shrink-0 flex items-center justify-center ${step.iconBg}`}
-                  >
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                      <path
-                        d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14H9V8h2v8zm4 0h-2V8h2v8z"
-                        fill={step.iconColor}
-                      />
-                    </svg>
-                  </div>
-
-                  {/* Text */}
-                  <div className="flex-1 min-w-0">
-                    <h3
-                      className="font-extrabold text-base leading-snug mb-1.5"
-                      style={{ color: "#1E2D4E" }}
-                    >
-                      {step.title}
-                    </h3>
-                    <p className="text-sm text-slate-500 leading-relaxed">
-                      {step.desc}
+          <div className="relative">
+            <AnimatePresence mode="wait">
+              {activeHowTab === "talents" ? (
+                <motion.div 
+                  key="talents"
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: 20 }}
+                  transition={{ duration: 0.3 }}
+                  className="grid grid-cols-1 md:grid-cols-3 gap-8"
+                >
+                  <div className="bg-slate-50 rounded-3xl p-8 border border-slate-100 text-center relative overflow-hidden group hover:shadow-xl hover:border-[#2BAFE3]/30 transition-all">
+                    <div className="w-16 h-16 rounded-2xl bg-white shadow-sm border border-slate-200 flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform">
+                      <Search className="text-[#2BAFE3]" size={32} />
+                    </div>
+                    <div className="absolute top-4 right-4 text-6xl font-black text-slate-200/50 -z-10 group-hover:text-[#2BAFE3]/10 transition-colors">1</div>
+                    <h3 className="text-xl font-bold text-[#0F172A] mb-3">Crée ton profil</h3>
+                    <p className="text-slate-600 leading-relaxed">
+                      Dépose ton CV en ligne ou remplis directement tes informations. C'est simple, rapide et structuré.
                     </p>
                   </div>
-                </div>
-              </div>
-            ))}
+                  
+                  <div className="bg-slate-50 rounded-3xl p-8 border border-slate-100 text-center relative overflow-hidden group hover:shadow-xl hover:border-[#F59E0B]/30 transition-all">
+                    <div className="w-16 h-16 rounded-2xl bg-white shadow-sm border border-slate-200 flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform">
+                      <Video className="text-[#F59E0B]" size={32} />
+                    </div>
+                    <div className="absolute top-4 right-4 text-6xl font-black text-slate-200/50 -z-10 group-hover:text-[#F59E0B]/10 transition-colors">2</div>
+                    <h3 className="text-xl font-bold text-[#0F172A] mb-3">Passe l'entretien IA</h3>
+                    <p className="text-slate-600 leading-relaxed">
+                      Réponds aux questions en vidéo. L'IA évalue tes compétences et t'attribue un badge certifié objectif.
+                    </p>
+                  </div>
+                  
+                  <div className="bg-slate-50 rounded-3xl p-8 border border-slate-100 text-center relative overflow-hidden group hover:shadow-xl hover:border-[#2BAFE3]/30 transition-all">
+                    <div className="w-16 h-16 rounded-2xl bg-white shadow-sm border border-slate-200 flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform">
+                      <Star className="text-[#2BAFE3]" size={32} />
+                    </div>
+                    <div className="absolute top-4 right-4 text-6xl font-black text-slate-200/50 -z-10 group-hover:text-[#2BAFE3]/10 transition-colors">3</div>
+                    <h3 className="text-xl font-bold text-[#0F172A] mb-3">Fais-toi repérer</h3>
+                    <p className="text-slate-600 leading-relaxed">
+                      Postule aux meilleures offres. Ton profil certifié te place automatiquement en haut de la pile des recruteurs.
+                    </p>
+                  </div>
+                </motion.div>
+              ) : (
+                <motion.div 
+                  key="recruteurs"
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -20 }}
+                  transition={{ duration: 0.3 }}
+                  className="grid grid-cols-1 md:grid-cols-3 gap-8"
+                >
+                  <div className="bg-slate-50 rounded-3xl p-8 border border-slate-100 text-center relative overflow-hidden group hover:shadow-xl hover:border-[#2BAFE3]/30 transition-all">
+                    <div className="w-16 h-16 rounded-2xl bg-white shadow-sm border border-slate-200 flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform">
+                      <Briefcase className="text-[#2BAFE3]" size={32} />
+                    </div>
+                    <div className="absolute top-4 right-4 text-6xl font-black text-slate-200/50 -z-10 group-hover:text-[#2BAFE3]/10 transition-colors">1</div>
+                    <h3 className="text-xl font-bold text-[#0F172A] mb-3">Publie tes offres</h3>
+                    <p className="text-slate-600 leading-relaxed">
+                      Postez vos offres d'emploi ciblées en quelques clics et attirez immédiatement les meilleurs profils.
+                    </p>
+                  </div>
+                  
+                  <div className="bg-slate-50 rounded-3xl p-8 border border-slate-100 text-center relative overflow-hidden group hover:shadow-xl hover:border-[#F59E0B]/30 transition-all">
+                    <div className="w-16 h-16 rounded-2xl bg-white shadow-sm border border-slate-200 flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform">
+                      <PlayCircle className="text-[#F59E0B]" size={32} />
+                    </div>
+                    <div className="absolute top-4 right-4 text-6xl font-black text-slate-200/50 -z-10 group-hover:text-[#F59E0B]/10 transition-colors">2</div>
+                    <h3 className="text-xl font-bold text-[#0F172A] mb-3">Visionne les talents</h3>
+                    <p className="text-slate-600 leading-relaxed">
+                      Regardez les entretiens vidéo des candidats pré-évalués par notre IA pour un tri rapide et efficace.
+                    </p>
+                  </div>
+                  
+                  <div className="bg-slate-50 rounded-3xl p-8 border border-slate-100 text-center relative overflow-hidden group hover:shadow-xl hover:border-[#2BAFE3]/30 transition-all">
+                    <div className="w-16 h-16 rounded-2xl bg-white shadow-sm border border-slate-200 flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform">
+                      <Users className="text-[#2BAFE3]" size={32} />
+                    </div>
+                    <div className="absolute top-4 right-4 text-6xl font-black text-slate-200/50 -z-10 group-hover:text-[#2BAFE3]/10 transition-colors">3</div>
+                    <h3 className="text-xl font-bold text-[#0F172A] mb-3">Recrute sans friction</h3>
+                    <p className="text-slate-600 leading-relaxed">
+                      Accédez aux coordonnées complètes et entrez en contact direct avec votre futur collaborateur.
+                    </p>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
-        </motion.div>
+        </div>
       </section>
 
+      {/* ── LES FONCTIONNALITÉS CLÉS (IA) ── */}
+      <section className="py-24 bg-[#F8FAFC]">
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="text-center max-w-3xl mx-auto mb-16">
+            <h2 className="text-3xl md:text-4xl font-black text-[#0F172A] mb-4">
+              La puissance de l'IA à votre service
+            </h2>
+            <p className="text-slate-600 text-lg">
+              Des algorithmes de pointe pour sécuriser vos recrutements et valoriser les compétences réelles.
+            </p>
+          </div>
 
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            {/* Card 1 */}
+            <div className="bg-white rounded-[2rem] p-8 md:p-10 shadow-lg shadow-slate-200/50 border border-slate-100 flex flex-col md:flex-row items-center gap-8 hover:-translate-y-1 hover:shadow-xl transition-all">
+              <div className="w-24 h-24 flex-shrink-0 bg-blue-50 rounded-full flex items-center justify-center">
+                <BrainCircuit className="text-[#2BAFE3]" size={48} />
+              </div>
+              <div>
+                <h3 className="text-2xl font-bold text-[#0F172A] mb-3">Certification Vidéo IA</h3>
+                <p className="text-slate-600 leading-relaxed">
+                  L'IA analyse le ton, l'expression orale et la pertinence des réponses pour fournir une note globale objective.
+                </p>
+              </div>
+            </div>
 
-      {/* ── FAQ (ACCORDION FULL WIDTH DEEP BLUE MATCHING FIGMA) ── */}
-      <section
-        id="faq"
-        className="py-24 px-6 text-white"
-        style={{
-          background: "linear-gradient(180deg, #0076a8 0%, #005a82 100%)",
-        }}
-      >
-        <motion.div 
-          className="max-w-4xl mx-auto"
-          initial={{ opacity: 0, y: 40 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: "-100px" }}
-          transition={{ duration: 0.6, ease: "easeOut" }}
-        >
-          <h2 className="text-3xl md:text-5xl font-black text-center mb-12 text-white">
+            {/* Card 2 */}
+            <div className="bg-white rounded-[2rem] p-8 md:p-10 shadow-lg shadow-slate-200/50 border border-slate-100 flex flex-col md:flex-row items-center gap-8 hover:-translate-y-1 hover:shadow-xl transition-all">
+              <div className="w-24 h-24 flex-shrink-0 bg-amber-50 rounded-full flex items-center justify-center">
+                <Search className="text-[#F59E0B]" size={48} />
+              </div>
+              <div>
+                <h3 className="text-2xl font-bold text-[#0F172A] mb-3">Scoring Automatique</h3>
+                <p className="text-slate-600 leading-relaxed">
+                  Notre système analyse votre CV et le classe automatiquement pour recommander les profils à fort potentiel aux entreprises.
+                </p>
+              </div>
+            </div>
+
+            {/* Card 3 */}
+            <div className="bg-white rounded-[2rem] p-8 md:p-10 shadow-lg shadow-slate-200/50 border border-slate-100 flex flex-col md:flex-row items-center gap-8 hover:-translate-y-1 hover:shadow-xl transition-all">
+              <div className="w-24 h-24 flex-shrink-0 bg-green-50 rounded-full flex items-center justify-center">
+                <ShieldCheck className="text-green-500" size={48} />
+              </div>
+              <div>
+                <h3 className="text-2xl font-bold text-[#0F172A] mb-3">Badges de Confiance</h3>
+                <p className="text-slate-600 leading-relaxed">
+                  Garantit aux recruteurs la fiabilité des compétences et limite fortement les fausses déclarations sur les CVs.
+                </p>
+              </div>
+            </div>
+
+            {/* Card 4 */}
+            <div className="bg-[#2BAFE3] rounded-[2rem] p-8 md:p-10 shadow-lg shadow-[#2BAFE3]/30 text-white flex flex-col md:flex-row items-center gap-8 hover:-translate-y-1 hover:shadow-xl hover:shadow-[#2BAFE3]/40 transition-all">
+              <div className="w-24 h-24 flex-shrink-0 bg-white/20 backdrop-blur-md rounded-full flex items-center justify-center">
+                <Zap className="text-white fill-white" size={48} />
+              </div>
+              <div>
+                <h3 className="text-2xl font-bold text-white mb-3">Ultra-Accessible</h3>
+                <p className="text-blue-50 leading-relaxed">
+                  Des tarifs transparents, simples et sans engagement (700 FCFA pour les Talents, 1 000 FCFA pour les Recruteurs).
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ── PRICING & OFFRES ── */}
+      <section className="py-24 bg-white border-t border-slate-100">
+        <div className="max-w-5xl mx-auto px-6">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl md:text-4xl font-black text-[#0F172A] mb-6">
+              Transparence Totale. Sans engagement.
+            </h2>
+            
+            {/* Toggle Pricing Tabs */}
+            <div className="inline-flex p-1.5 rounded-full bg-slate-100 border border-slate-200 shadow-inner">
+              <button
+                onClick={() => setActivePricingTab("talents")}
+                className={`px-8 py-3 rounded-full text-sm font-bold transition-all ${
+                  activePricingTab === "talents"
+                    ? "bg-[#2BAFE3] text-white shadow-md"
+                    : "text-slate-600 hover:text-[#0F172A]"
+                }`}
+              >
+                Offres Talents
+              </button>
+              <button
+                onClick={() => setActivePricingTab("recruteurs")}
+                className={`px-8 py-3 rounded-full text-sm font-bold transition-all ${
+                  activePricingTab === "recruteurs"
+                    ? "bg-[#2BAFE3] text-white shadow-md"
+                    : "text-slate-600 hover:text-[#0F172A]"
+                }`}
+              >
+                Offres Recruteurs
+              </button>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+            {/* Free Tier */}
+            <div className="bg-white rounded-3xl p-8 border border-slate-200 shadow-sm flex flex-col">
+              <div className="mb-8">
+                <h3 className="text-xl font-bold text-slate-500 mb-2">Option Gratuite</h3>
+                <div className="flex items-baseline gap-2">
+                  <span className="text-5xl font-black text-[#0F172A]">0</span>
+                  <span className="text-slate-500 font-semibold">FCFA / mois</span>
+                </div>
+                <p className="text-sm text-slate-500 mt-2">Pour découvrir la plateforme</p>
+              </div>
+              <ul className="space-y-4 mb-8 flex-1">
+                {activePricingTab === "talents" ? (
+                  <>
+                    <li className="flex items-start gap-3"><Check className="text-slate-400 mt-0.5" size={20} /> <span className="text-slate-600">Création de profil CV</span></li>
+                    <li className="flex items-start gap-3"><Check className="text-slate-400 mt-0.5" size={20} /> <span className="text-slate-600">Passage de l'entretien vidéo IA</span></li>
+                    <li className="flex items-start gap-3"><Check className="text-[#2BAFE3] mt-0.5" size={20} /> <span className="text-[#0F172A] font-semibold">1 candidature gratuite / mois</span></li>
+                  </>
+                ) : (
+                  <>
+                    <li className="flex items-start gap-3"><Check className="text-slate-400 mt-0.5" size={20} /> <span className="text-slate-600">Création de profil Entreprise</span></li>
+                    <li className="flex items-start gap-3"><Check className="text-slate-400 mt-0.5" size={20} /> <span className="text-slate-600">Consultation des profils IA</span></li>
+                    <li className="flex items-start gap-3"><Check className="text-[#2BAFE3] mt-0.5" size={20} /> <span className="text-[#0F172A] font-semibold">Coordonnées / CV masqués</span></li>
+                  </>
+                )}
+              </ul>
+              <Link
+                href={activePricingTab === "talents" ? "https://talent.netacuv.com/register" : "https://recruteur.netacuv.com/register"}
+                className="w-full py-4 rounded-full font-bold text-[#0F172A] bg-slate-100 hover:bg-slate-200 transition-colors text-center"
+              >
+                Commencer gratuitement
+              </Link>
+            </div>
+
+            {/* Premium Tier */}
+            <div className="bg-[#0F172A] rounded-3xl p-8 border border-slate-700 shadow-2xl relative flex flex-col transform md:-translate-y-4">
+              <div className="absolute top-0 right-6 -translate-y-1/2 bg-[#F59E0B] text-[#0F172A] font-bold text-xs uppercase tracking-wider py-1.5 px-4 rounded-full shadow-lg">
+                Recommandé
+              </div>
+              <div className="mb-8">
+                <h3 className="text-xl font-bold text-blue-300 mb-2">Option Premium</h3>
+                <div className="flex items-baseline gap-2">
+                  <span className="text-5xl font-black text-white">
+                    {activePricingTab === "talents" ? "700" : "1 000"}
+                  </span>
+                  <span className="text-slate-400 font-semibold">FCFA / mois</span>
+                </div>
+                <p className="text-sm text-slate-400 mt-2">Accès illimité sans engagement</p>
+              </div>
+              <ul className="space-y-4 mb-8 flex-1">
+                {activePricingTab === "talents" ? (
+                  <>
+                    <li className="flex items-start gap-3"><Check className="text-[#2BAFE3] mt-0.5" size={20} /> <span className="text-slate-200">Tout l'abonnement gratuit</span></li>
+                    <li className="flex items-start gap-3"><Check className="text-[#2BAFE3] mt-0.5" size={20} /> <span className="text-white font-semibold">Candidatures illimitées</span></li>
+                    <li className="flex items-start gap-3"><Check className="text-[#2BAFE3] mt-0.5" size={20} /> <span className="text-slate-200">Profil recommandé en tête de liste</span></li>
+                    <li className="flex items-start gap-3"><Check className="text-[#2BAFE3] mt-0.5" size={20} /> <span className="text-slate-200">Badge Certifié prioritaire</span></li>
+                  </>
+                ) : (
+                  <>
+                    <li className="flex items-start gap-3"><Check className="text-[#2BAFE3] mt-0.5" size={20} /> <span className="text-slate-200">Tout l'abonnement gratuit</span></li>
+                    <li className="flex items-start gap-3"><Check className="text-[#2BAFE3] mt-0.5" size={20} /> <span className="text-white font-semibold">Accès direct emails & téléphones</span></li>
+                    <li className="flex items-start gap-3"><Check className="text-[#2BAFE3] mt-0.5" size={20} /> <span className="text-slate-200">Téléchargement CV PDF illimité</span></li>
+                    <li className="flex items-start gap-3"><Check className="text-[#2BAFE3] mt-0.5" size={20} /> <span className="text-slate-200">Publication d'offres illimitée</span></li>
+                  </>
+                )}
+              </ul>
+              <Link
+                href={activePricingTab === "talents" ? "https://talent.netacuv.com/register" : "https://recruteur.netacuv.com/register"}
+                className="w-full py-4 rounded-full font-bold text-white bg-[#2BAFE3] hover:bg-[#1E8CB8] transition-colors text-center shadow-lg shadow-[#2BAFE3]/20"
+              >
+                Passer en Premium
+              </Link>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ── FAQ (Accordion UI) ── */}
+      <section className="py-24 bg-[#F8FAFC]">
+        <div className="max-w-3xl mx-auto px-6">
+          <h2 className="text-3xl md:text-4xl font-black text-[#0F172A] text-center mb-12">
             Questions fréquentes
           </h2>
-
-          {/* FAQ Tabs */}
-          <div className="flex justify-center mb-10">
-            <div className="inline-flex p-1 rounded-full bg-white/10 backdrop-blur-md border border-white/20">
-              <button
-                onClick={() => setActiveFaqTab("talents")}
-                className={`px-6 py-2.5 rounded-full text-xs font-bold transition-all ${
-                  activeFaqTab === "talents"
-                    ? "bg-white text-blue-700 shadow-lg"
-                    : "text-blue-100 hover:text-white"
-                }`}
-              >
-                Pour les Talents
-              </button>
-              <button
-                onClick={() => setActiveFaqTab("recruteurs")}
-                className={`px-6 py-2.5 rounded-full text-xs font-bold transition-all ${
-                  activeFaqTab === "recruteurs"
-                    ? "bg-white text-blue-700 shadow-lg"
-                    : "text-blue-100 hover:text-white"
-                }`}
-              >
-                Pour les Recruteurs
-              </button>
-            </div>
-          </div>
-
-          {/* Accordion Questions */}
           <div className="space-y-4">
-            {(activeFaqTab === "talents" ? talentFaqs : recruteurFaqs).map(
-              (faq, index) => {
-                const isOpen = openFaqIndex === index;
-                return (
-                  <div
-                    key={index}
-                    className="rounded-2xl border border-white/15 bg-white/10 backdrop-blur-sm overflow-hidden transition-all"
+            {faqs.map((faq, index) => {
+              const isOpen = openFaqIndex === index;
+              return (
+                <div
+                  key={index}
+                  className="rounded-2xl border border-slate-200 bg-white overflow-hidden transition-all shadow-sm"
+                >
+                  <button
+                    onClick={() => toggleFaq(index)}
+                    className="w-full p-6 text-left flex items-center justify-between gap-4 font-bold text-base md:text-lg text-[#0F172A] hover:bg-slate-50 transition-colors"
                   >
-                    <button
-                      onClick={() => toggleFaq(index)}
-                      className="w-full p-5 text-left flex items-center justify-between gap-4 font-bold text-sm sm:text-base hover:bg-white/5 transition-colors"
-                    >
-                      <span>{faq.q}</span>
-                      <span className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center flex-shrink-0">
-                        {isOpen ? <Minus size={16} /> : <Plus size={16} />}
-                      </span>
-                    </button>
+                    <span>{faq.q}</span>
+                    <span className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 transition-colors ${isOpen ? 'bg-[#2BAFE3] text-white' : 'bg-slate-100 text-slate-500'}`}>
+                      {isOpen ? <Minus size={16} /> : <Plus size={16} />}
+                    </span>
+                  </button>
+                  <AnimatePresence>
                     {isOpen && (
-                      <div className="px-5 pb-5 pt-1 text-xs sm:text-sm text-blue-100 leading-relaxed border-t border-white/10">
-                        {faq.a}
-                      </div>
+                      <motion.div 
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: "auto", opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        className="overflow-hidden"
+                      >
+                        <div className="px-6 pb-6 text-slate-600 leading-relaxed border-t border-slate-100 pt-4">
+                          {faq.a}
+                        </div>
+                      </motion.div>
                     )}
-                  </div>
-                );
-              }
-            )}
+                  </AnimatePresence>
+                </div>
+              );
+            })}
           </div>
-        </motion.div>
+        </div>
       </section>
 
-      {/* ── CTA: REJOIGNEZ LA RÉVOLUTION DU RECRUTEMENT ── */}
-      <section className="py-20 px-6 bg-slate-50">
-        <motion.div 
-          className="max-w-5xl mx-auto"
-          initial={{ opacity: 0, y: 40 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: "-100px" }}
-          transition={{ duration: 0.6, ease: "easeOut" }}
-        >
-          <div
-            className="rounded-3xl p-10 md:p-14 text-center shadow-2xl border border-blue-100 relative overflow-hidden"
-            style={{
-              background:
-                "linear-gradient(135deg, #d8edf9 0%, #eef6fd 50%, #f3ebf9 100%)",
-            }}
-          >
-            <h2 className="text-3xl md:text-5xl font-black text-slate-900 mb-4 tracking-tight">
-              Rejoignez la révolution du recrutement
-            </h2>
-            <p className="text-slate-600 text-base sm:text-lg mb-8 max-w-2xl mx-auto">
-              Que vous soyez à la recherche d&apos;un emploi ou d&apos;un profil qualifié,
-              Netacuv est la solution.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Link
-                href="/inscription?type=talent"
-                className="px-8 py-4 rounded-full font-bold text-base text-white bg-blue-600 hover:bg-blue-700 hover:scale-[1.02] hover:shadow-lg hover:shadow-blue-500/25 shadow-xl shadow-blue-500/25 active:scale-95 transition-all duration-300 ease-in-out"
-              >
-                Je suis un talentueux
-              </Link>
-              <Link
-                href="/inscription?type=recruteur"
-                className="px-8 py-4 rounded-full font-bold text-base text-blue-600 bg-white hover:bg-blue-50 hover:scale-[1.02] hover:shadow-lg hover:shadow-blue-500/25 border border-blue-200 shadow-sm active:scale-95 transition-all duration-300 ease-in-out"
-              >
-                Je suis un recruteur
-              </Link>
-            </div>
+      {/* ── CTA FINAL ── */}
+      <section className="py-24 bg-[#0F172A] relative overflow-hidden">
+        <div className="absolute inset-0 bg-[#2BAFE3]/10" style={{ backgroundImage: 'radial-gradient(#2BAFE3 1px, transparent 1px)', backgroundSize: '24px 24px', opacity: 0.1 }}></div>
+        <div className="max-w-4xl mx-auto px-6 text-center relative z-10">
+          <h2 className="text-3xl md:text-5xl font-black text-white mb-6">
+            Prêt à transformer votre carrière ou vos recrutements ?
+          </h2>
+          <p className="text-slate-300 text-lg mb-12 max-w-2xl mx-auto">
+            Rejoignez des milliers de talents et de recruteurs qui utilisent déjà l'IA pour révolutionner leur quotidien.
+          </p>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <Link
+              href="https://talent.netacuv.com/register"
+              className="px-8 py-4 rounded-full font-bold text-[#0F172A] bg-[#F59E0B] hover:bg-amber-400 shadow-xl hover:-translate-y-1 transition-all duration-300"
+            >
+              Je suis un Talent
+            </Link>
+            <Link
+              href="https://recruteur.netacuv.com/register"
+              className="px-8 py-4 rounded-full font-bold text-white bg-[#2BAFE3] hover:bg-[#1E8CB8] shadow-xl shadow-[#2BAFE3]/20 hover:-translate-y-1 transition-all duration-300"
+            >
+              Je suis un Recruteur
+            </Link>
           </div>
-        </motion.div>
+        </div>
       </section>
 
       <Footer />
 
-      {/* ── MODAL SUPPRESSION COMPTE ── */}
+      {/* ── MODAL SUPPRESSION COMPTE (Preserved from old code) ── */}
       {showDeletedModal && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in">
           <div className="bg-white rounded-3xl w-full max-w-md p-8 text-center shadow-2xl relative overflow-hidden">
@@ -687,9 +614,9 @@ export default function HomePage() {
             
             <div className="flex flex-col gap-3">
               <Link
-                href="/inscription"
+                href="https://talent.netacuv.com/register"
                 onClick={() => setShowDeletedModal(false)}
-                className="w-full py-3.5 bg-[#32A8D7] hover:bg-[#2896c2] text-white font-bold rounded-xl shadow-md transition-all active:scale-[0.98]"
+                className="w-full py-3.5 bg-[#2BAFE3] hover:bg-[#1E8CB8] text-white font-bold rounded-xl shadow-md transition-all active:scale-[0.98]"
               >
                 Créer un nouveau compte
               </Link>
