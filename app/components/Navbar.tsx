@@ -180,9 +180,9 @@ export default function Navbar({
       {/* Mobile menu */}
       {mobileOpen && (
         <div 
-          className={`md:hidden px-4 py-4 flex flex-col gap-1 animate-fade-in shadow-lg ${
+          className={`md:hidden px-4 py-4 flex flex-col gap-1 animate-fade-in shadow-2xl ${
             variant === "auth"
-              ? "bg-[#1e8ae9]/95 backdrop-blur-md border-t border-white/10"
+              ? "bg-white/10 backdrop-blur-md border-t border-white/20"
               : "bg-white border-t border-slate-100"
           }`}
         >
