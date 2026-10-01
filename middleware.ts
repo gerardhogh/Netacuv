@@ -67,8 +67,8 @@ export async function middleware(req: NextRequest) {
     
     // Logique pour l'Administrateur
     if (role === "ADMIN") {
-      // Forcer le sous-domaine admin
-      if (!isAdminSubdomain) {
+      // Forcer le sous-domaine admin pour les routes du dashboard
+      if (!isAdminSubdomain && path.startsWith("/dashboard")) {
         return NextResponse.redirect(new URL(adminUrl, req.url));
       }
       
@@ -95,8 +95,8 @@ export async function middleware(req: NextRequest) {
       }
 
       // Rediriger l'accueil ou les pages de connexion vers le dashboard par défaut
-      const isAccountDeleted = req.nextUrl.searchParams.get("account_deleted") === "true";
-      if (!isAccountDeleted && (path === "/" || path === "/dashboard" || isAuthRoute)) {
+      const isAccountDeleted = (token as any).error === "DeletedAccount";
+      if (!isAccountDeleted && (path === "/dashboard" || isAuthRoute)) {
         return NextResponse.redirect(new URL(defaultDashboardPath, req.url));
       }
 

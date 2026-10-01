@@ -55,21 +55,7 @@ export function useAuth() {
       }
     }
 
-    // Auto-correction pour l'admin qui a un vieux cookie "TALENT" 
-    // et qui a été redirigé à tort vers le domaine principal par le middleware
-    if (status === "authenticated" && session?.user) {
-      const role = (session.user as any).role?.toUpperCase();
-      const isAdmin = window.location.hostname.startsWith("admin.");
-
-      if (role === "ADMIN" && !isAdmin) {
-        // On force la mise à jour du cookie via NextAuth, puis on le renvoie vers admin.
-        update().then(() => {
-          const newHost = `admin.${window.location.host.replace(/^admin\./, "")}`;
-          window.location.href = `${window.location.protocol}//${newHost}/`;
-        });
-      }
-    }
-  }, [status, session, update]);
+  }, [status, session]);
 
   return {
     user,

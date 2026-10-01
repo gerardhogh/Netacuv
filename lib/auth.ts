@@ -45,18 +45,6 @@ export const authOptions: NextAuthOptions = {
   session: {
     strategy: "jwt",
   },
-  cookies: {
-    sessionToken: {
-      name: process.env.NODE_ENV === "production" ? "__Secure-next-auth.session-token" : "next-auth.session-token",
-      options: {
-        httpOnly: true,
-        sameSite: "lax",
-        path: "/",
-        secure: process.env.NODE_ENV === "production",
-        domain: process.env.NODE_ENV === "production" ? ".netacuv.com" : undefined,
-      },
-    },
-  },
   providers: [
     // Authentification Google
     GoogleProvider({
@@ -110,6 +98,30 @@ export const authOptions: NextAuthOptions = {
 
   ],
   callbacks: {
+    async signIn({ user, account, profile }) {
+      if (account?.provider === "google") {
+        let authAction = "login";
+        try {
+          const cookieStore = await cookies();
+          authAction = cookieStore.get("netacuv_auth_action")?.value || "login";
+        } catch(e) {}
+        
+        if (user.email) {
+          const existingUser = await prisma.user.findUnique({
+            where: { email: user.email }
+          });
+
+          // If they try to "login" but account doesn't exist, block it.
+          if (authAction === "login" && !existingUser) {
+            return "/connexion?error=Ce+compte+n'existe+pas.+Veuillez+vous+inscrire.";
+          }
+          
+          // If they try to "register" but account DOES exist, block it or maybe let them through?
+          // If they register and it exists, they just log in, which is probably fine.
+        }
+      }
+      return true;
+    },
     async jwt({ token, user, trigger, session }) {
       // Si une mise à jour manuelle de la session est déclenchée (update())
       if (trigger === "update") {

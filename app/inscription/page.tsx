@@ -128,8 +128,9 @@ function InscriptionForm() {
     setGoogleLoading(true);
     setError("");
     try {
-      // Create a cookie to remember the intended role for Google signup
+      // Create cookies to remember the intended role and the auth action for Google signup
       document.cookie = `netacuv_intended_role=${role}; path=/; max-age=3600`;
+      document.cookie = `netacuv_auth_action=register; path=/; max-age=3600`;
       
       await signIn("google", {
         callbackUrl:

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
+import { deleteUserFiles } from "@/lib/deleteFiles";
 
 export async function POST(req: NextRequest) {
   try {
@@ -35,6 +36,8 @@ export async function POST(req: NextRequest) {
         reason: reason || "Aucune raison fournie",
       },
     });
+
+    await deleteUserFiles(user.id);
 
     // Supprimer l'utilisateur (Cascade se chargera des profils)
     await prisma.user.delete({

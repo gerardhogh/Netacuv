@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { deleteUserFiles } from "@/lib/deleteFiles";
 
 export async function PUT(
   req: Request,
@@ -59,6 +60,8 @@ export async function DELETE(
   if (!session || (session.user?.role as string)?.toUpperCase() !== "ADMIN") {
     return NextResponse.json({ error: "Accès refusé." }, { status: 403 });
   }
+
+  await deleteUserFiles(id);
 
   await prisma.user.delete({
     where: { id },
