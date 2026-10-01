@@ -269,7 +269,7 @@ export default function HomePage() {
                     {/* Images Top Section */}
                     <div className="flex justify-center mb-4">
                       <Image 
-                        src="/assets/ImageTalents.png" // Using a generic source, or placeholder if needed. Since we don't have the exact Figma export, I'll use a placeholder that falls back gracefully or use standard layout 
+                        src="/Figma capture/Frame 1000004830.png" 
                         alt="Talents" 
                         width={600} 
                         height={400} 
@@ -322,7 +322,7 @@ export default function HomePage() {
                     {/* Images Top Section */}
                     <div className="flex justify-center mb-4">
                       <Image 
-                        src="/assets/ImageRecruteurs.png" 
+                        src="/Figma capture/Frame 1000004830-1.png" 
                         alt="Recruteurs" 
                         width={600} 
                         height={400} 
