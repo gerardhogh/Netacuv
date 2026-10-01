@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import { useSession, signOut } from "next-auth/react";
 import { useRouter } from "next/navigation";
 
@@ -42,6 +43,33 @@ export function useAuth() {
       signOut({ callbackUrl: "/connexion" });
     }
   };
+
+  // Si le compte a été supprimé en base, la callback session retourne {}
+  // Donc session.user sera undefined, même si le token JWT (cookie) est techniquement encore valide.
+  // Dans ce cas, on force la déconnexion côté client pour nettoyer le cookie stale.
+  useEffect(() => {
+    if (status === "unauthenticated" || (status === "authenticated" && !session?.user)) {
+      const pathname = window.location.pathname;
+      if (pathname.startsWith("/dashboard") || pathname.startsWith("/admin")) {
+        logout();
+      }
+    }
+
+    // Auto-correction pour l'admin qui a un vieux cookie "TALENT" 
+    // et qui a été redirigé à tort vers le domaine principal par le middleware
+    if (status === "authenticated" && session?.user) {
+      const role = (session.user as any).role?.toUpperCase();
+      const isAdmin = window.location.hostname.startsWith("admin.");
+
+      if (role === "ADMIN" && !isAdmin) {
+        // On force la mise à jour du cookie via NextAuth, puis on le renvoie vers admin.
+        update().then(() => {
+          const newHost = `admin.${window.location.host.replace(/^admin\./, "")}`;
+          window.location.href = `${window.location.protocol}//${newHost}/`;
+        });
+      }
+    }
+  }, [status, session, update]);
 
   return {
     user,
