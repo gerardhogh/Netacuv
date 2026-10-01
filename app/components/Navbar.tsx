@@ -234,9 +234,9 @@ export default function Navbar({
                 <Link
                   href="/connexion"
                   onClick={() => setMobileOpen(false)}
-                  className={`flex-1 flex justify-center items-center text-center text-sm !rounded-full transition-all ${
+                  className={`flex-1 flex justify-center items-center text-center text-sm h-[42px] !rounded-full transition-all ${
                     variant === "auth"
-                      ? "px-5 py-2 font-semibold border text-white border-white/30 hover:bg-white/10"
+                      ? "font-semibold border text-white border-white/30 hover:bg-white/10"
                       : "btn-outline"
                   }`}
                 >
@@ -245,9 +245,9 @@ export default function Navbar({
                 <Link
                   href="/inscription"
                   onClick={() => setMobileOpen(false)}
-                  className={`flex-1 flex justify-center items-center text-center text-sm !rounded-full transition-all shadow-sm ${
+                  className={`flex-1 flex justify-center items-center text-center text-sm h-[42px] !rounded-full transition-all shadow-sm ${
                     variant === "auth"
-                      ? "bg-[#32A8D7] text-white hover:bg-[#2891bb] py-2"
+                      ? "font-semibold bg-[#32A8D7] text-white hover:bg-[#2891bb]"
                       : "btn-primary"
                   }`}
                 >
