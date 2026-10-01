@@ -501,7 +501,7 @@ export default function EmploisTab() {
   const [toastMsg, setToastMsg] = useState<string | null>(null);
 
   const handleCreateClick = () => {
-    const isAdmin = user?.role === "ADMIN" || user?.role === "admin";
+    const isAdmin = user?.role === "admin";
     if (!isAdmin && !user?.isPremium && emplois.length >= 1) {
       setShowLimitModal(true);
     } else {
