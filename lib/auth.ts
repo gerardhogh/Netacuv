@@ -71,17 +71,24 @@ export const authOptions: NextAuthOptions = {
         if (!credentials?.email || !credentials?.password) {
           throw new Error("Email et mot de passe requis");
         }
+        
+        const email = credentials.email.trim().toLowerCase();
+        console.log("Authorize called with email:", email);
 
         const user = await prisma.user.findUnique({
-          where: { email: credentials.email },
+          where: { email: email },
           include: { role: true },
         });
+        
+        console.log("Found user:", user?.email, "Hash exists?", !!user?.passwordHash);
 
         if (!user || !user.passwordHash) {
           throw new Error("Utilisateur non trouvé ou compte incorrect");
         }
 
         const isValid = await bcrypt.compare(credentials.password, user.passwordHash);
+        
+        console.log("Password valid?", isValid);
 
         if (!isValid) {
           throw new Error("Mot de passe incorrect");

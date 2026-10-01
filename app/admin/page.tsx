@@ -22,7 +22,7 @@ export default function AdminLoginPage() {
     try {
       const res = await signIn("credentials", {
         redirect: false,
-        email,
+        email: email.trim(),
         password,
       });
 
