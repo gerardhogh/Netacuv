@@ -182,7 +182,7 @@ export default function Navbar({
         <div 
           className={`md:hidden px-4 py-4 flex flex-col gap-1 animate-fade-in shadow-lg ${
             variant === "auth"
-              ? "bg-[#0A192F]/95 backdrop-blur-md border-t border-white/10"
+              ? "bg-[#1e8ae9]/95 backdrop-blur-md border-t border-white/10"
               : "bg-white border-t border-slate-100"
           }`}
         >
