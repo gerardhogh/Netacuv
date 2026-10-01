@@ -38,7 +38,9 @@ export default function TalentCard({
   isPremium = false,
   hasVideo = false,
 }: TalentCardProps) {
-  const destination = profileHref ?? (id ? `/dashboard/recruteur/talents/${id}` : undefined);
+  const destination = (!blurSensitive && (profileHref || id)) 
+    ? (profileHref ?? `/dashboard/recruteur/talents/${id}`) 
+    : undefined;
 
   return (
     <div className="bg-white border border-slate-200 rounded-xl overflow-hidden flex flex-col hover:shadow-lg transition-all duration-200 group">
@@ -49,7 +51,7 @@ export default function TalentCard({
           alt={name}
           fill
           sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
-          className="object-cover object-center w-full h-full group-hover:scale-102 transition-transform duration-300"
+          className={`object-cover object-center w-full h-full group-hover:scale-102 transition-transform duration-300 ${blurSensitive ? 'blur-md select-none' : ''}`}
         />
         {/* Verification badge */}
         {isVerified && (

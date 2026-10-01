@@ -165,8 +165,9 @@ export default function TalentDashboard() {
             hasVid = true;
           } else {
             // Fallback to checking localStorage since videos are saved in IndexedDB currently
-            const isRecorded = typeof window !== "undefined" && localStorage.getItem("interview_recorded") === "true";
-            hasVid = isRecorded;
+            // Tie it to the current user ID to prevent showing old cache for new accounts
+            const isRecorded = typeof window !== "undefined" && user?.id && localStorage.getItem(`interview_recorded_${user.id}`) === "true";
+            hasVid = isRecorded || false;
           }
           setHasValidVideo(hasVid);
 

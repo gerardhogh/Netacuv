@@ -109,7 +109,7 @@ function ProfilTalentContent({ initialTab = "informations" }: { initialTab?: Sub
           const hasCv = !!(data.talentProfile?.cvUrl) || localStorage.getItem("check_cv_has_pdf") === "true";
           if (hasCv) pct += 25;
 
-          const hasVid = !!(data.talentProfile?.videoUrl) || localStorage.getItem("interview_recorded") === "true";
+          const hasVid = !!(data.talentProfile?.videoUrl) || (user?.id && localStorage.getItem(`interview_recorded_${user.id}`) === "true");
           if (hasVid) pct += 40;
 
           setCompletionPercent(pct);
@@ -1117,7 +1117,7 @@ function VideoTab() {
       }
 
       // 2. Fallback: check IndexedDB (local blob)
-      const isRecorded = typeof window !== "undefined" && localStorage.getItem("interview_recorded") === "true";
+      const isRecorded = typeof window !== "undefined" && user?.id && localStorage.getItem(`interview_recorded_${user.id}`) === "true";
       if (isRecorded) {
         try {
           const blob = await getVideoFromDB();
@@ -1160,7 +1160,7 @@ function VideoTab() {
   }, [videoUrl]);
 
   const handleDelete = () => {
-    localStorage.removeItem("interview_recorded");
+    if (user?.id) localStorage.removeItem(`interview_recorded_${user.id}`);
     deleteVideoFromDB()
       .then(() => {
         setHasVideo(false);

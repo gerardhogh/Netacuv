@@ -148,36 +148,39 @@ function InscriptionForm() {
   };
 
   return (
-    <div
-      className="min-h-screen flex flex-col relative"
-      style={{
-        backgroundImage: "url('/assets/Fond.png')",
-        backgroundSize: "cover",
-        backgroundAttachment: "fixed",
-        backgroundPosition: "center",
-      }}
-    >
-      {/* Navbar with pill transparent variant */}
-      <Navbar />
-      {/* Main card */}
-      <div className="flex-1 flex items-center justify-center px-4 py-12">
-        <div className="w-full max-w-lg bg-white rounded-2xl shadow-xl p-8 md:p-10 border border-slate-100 animate-fade-in-up">
-          <h1 className="text-3xl font-extrabold text-center mb-2" style={{ color: "#32A8D7" }}>
-            Créer un compte
-          </h1>
-          <p className="text-center text-sm mb-6 text-slate-500">
-            Rejoignez la plateforme Netacuv dès aujourd'hui
-          </p>
+    <div className="h-screen flex flex-col items-center justify-center relative overflow-hidden bg-[#0A192F] pt-20 pb-4 px-4">
+      {/* Dynamic Background Elements */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] rounded-full bg-[#1E3A8A] blur-[120px]"></div>
+        <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] rounded-full bg-[#32A8D7] blur-[120px]"></div>
+      </div>
 
-          {/* Role selector */}
-          <div className="flex gap-3 mb-8 w-full">
+      {/* Navbar overlay */}
+      <div className="absolute top-0 w-full z-20">
+        <Navbar variant="auth" />
+      </div>
+
+      <div className="z-10 w-full max-w-lg animate-fade-in-up mt-12">
+        {/* Card */}
+        <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl shadow-2xl flex flex-col max-h-[calc(100vh-140px)] overflow-hidden">
+          {/* Fixed Header */}
+          <div className="pt-6 px-6 md:pt-8 md:px-8 pb-4 shrink-0 border-b border-white/10 shadow-sm">
+            <h1 className="text-3xl font-extrabold text-center mb-2 text-white">
+              Créer un compte
+            </h1>
+            <p className="text-center text-sm mb-5 text-slate-300">
+              Rejoignez la plateforme Netacuv dès aujourd'hui
+            </p>
+
+            {/* Role selector */}
+            <div className="flex gap-3 w-full">
             <button
               type="button"
               onClick={() => setRole("talent")}
               className={`flex-1 py-2 text-sm font-semibold rounded-lg capitalize transition-all border ${
                 role === "talent"
                   ? "bg-[#32A8D7] text-white border-transparent shadow-md"
-                  : "bg-transparent text-[#32A8D7] border-[#32A8D7] hover:bg-blue-50"
+                  : "bg-white/5 text-slate-300 border-white/10 hover:bg-white/10"
               }`}
               id="tab-talent"
             >
@@ -189,25 +192,28 @@ function InscriptionForm() {
               className={`flex-1 py-2 text-sm font-semibold rounded-lg capitalize transition-all border ${
                 role === "recruteur"
                   ? "bg-[#32A8D7] text-white border-transparent shadow-md"
-                  : "bg-transparent text-[#32A8D7] border-[#32A8D7] hover:bg-blue-50"
+                  : "bg-white/5 text-slate-300 border-white/10 hover:bg-white/10"
               }`}
               id="tab-recruteur"
             >
               Je suis un Recruteur
             </button>
           </div>
+          </div>
 
-          {error && (
-            <div className="mb-4 p-3 rounded-xl bg-red-50 border border-red-200 flex items-center gap-2 text-xs text-red-600">
-              <AlertCircle size={16} className="flex-shrink-0" />
-              <span>{error}</span>
-            </div>
-          )}
+          {/* Scrollable Form Content */}
+          <div className="px-6 md:px-8 py-4 overflow-y-auto custom-scrollbar flex-1">
+            {error && (
+              <div className="mb-4 p-3 rounded-xl bg-red-50 border border-red-200 flex items-center gap-2 text-xs text-red-600">
+                <AlertCircle size={16} className="flex-shrink-0" />
+                <span>{error}</span>
+              </div>
+            )}
 
-          <form onSubmit={handleSubmit} className="space-y-4">
+            <form onSubmit={handleSubmit} className="space-y-4">
             {/* Nom complet ou Entreprise */}
             <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-1.5">
+              <label className="block text-sm font-semibold text-slate-200 mb-1.5">
                 {role === "recruteur" ? "Nom de l'entreprise" : "Nom complet"}
               </label>
               <div className="relative">
@@ -229,7 +235,7 @@ function InscriptionForm() {
                   placeholder={
                     role === "recruteur" ? "Ex: Grand-G Corp" : "Ex: Candidat"
                   }
-                  className="w-full pl-10 pr-4 py-3 bg-[#F9FAFB] border-0 rounded-xl text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#32A8D7] transition-all"
+                  className="w-full pl-10 pr-4 py-3 bg-white/5 border border-white/10 rounded-xl text-sm text-white placeholder-slate-400 focus:outline-none focus:border-[#32A8D7] transition-all [&:-webkit-autofill]:shadow-[0_0_0_1000px_#0A192F_inset] [&:-webkit-autofill]:text-white"
                   id="nom-complet"
                 />
               </div>
@@ -237,7 +243,7 @@ function InscriptionForm() {
 
             {/* Email */}
             <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-1.5">
+              <label className="block text-sm font-semibold text-slate-200 mb-1.5">
                 Email professionnel ou personnel
               </label>
               <div className="relative">
@@ -250,7 +256,7 @@ function InscriptionForm() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="Entrer l'e-mail"
-                  className="w-full pl-10 pr-4 py-3 bg-[#F9FAFB] border-0 rounded-xl text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#32A8D7] transition-all"
+                  className="w-full pl-10 pr-4 py-3 bg-white/5 border border-white/10 rounded-xl text-sm text-white placeholder-slate-400 focus:outline-none focus:border-[#32A8D7] transition-all [&:-webkit-autofill]:shadow-[0_0_0_1000px_#0A192F_inset] [&:-webkit-autofill]:text-white"
                   id="email-inscription"
                 />
               </div>
@@ -258,7 +264,7 @@ function InscriptionForm() {
 
             {/* Téléphone */}
             <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-1.5">
+              <label className="block text-sm font-semibold text-slate-200 mb-1.5">
                 Téléphone (WhatsApp de préférence)
               </label>
               <div className="relative">
@@ -271,7 +277,7 @@ function InscriptionForm() {
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
                   placeholder="+229 XX XX XX XX"
-                  className="w-full pl-10 pr-4 py-3 bg-[#F9FAFB] border-0 rounded-xl text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#32A8D7] transition-all"
+                  className="w-full pl-10 pr-4 py-3 bg-white/5 border border-white/10 rounded-xl text-sm text-white placeholder-slate-400 focus:outline-none focus:border-[#32A8D7] transition-all [&:-webkit-autofill]:shadow-[0_0_0_1000px_#0A192F_inset] [&:-webkit-autofill]:text-white"
                   id="telephone"
                 />
               </div>
@@ -279,7 +285,7 @@ function InscriptionForm() {
 
             {/* Mot de passe */}
             <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-1.5">
+              <label className="block text-sm font-semibold text-slate-200 mb-1.5">
                 Mot de passe
               </label>
               <div className="relative">
@@ -292,33 +298,33 @@ function InscriptionForm() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••••••"
-                  className="w-full pl-10 pr-11 py-3 bg-[#F9FAFB] border-0 rounded-xl text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#32A8D7] transition-all"
+                  className="w-full pl-10 pr-11 py-3 bg-white/5 border border-white/10 rounded-xl text-sm text-white placeholder-slate-400 focus:outline-none focus:border-[#32A8D7] transition-all [&:-webkit-autofill]:shadow-[0_0_0_1000px_#0A192F_inset] [&:-webkit-autofill]:text-white"
                   id="password-inscription"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPwd(!showPwd)}
-                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white"
                 >
                   {showPwd ? <EyeOff size={18} /> : <Eye size={18} />}
                 </button>
               </div>
               <div className="mt-3 space-y-2">
                 <div className="flex items-center gap-2 text-xs">
-                  {hasMinLength ? <CheckCircle2 size={14} className="text-green-500" /> : <XCircle size={14} className="text-slate-300" />}
-                  <span className={hasMinLength ? "text-green-600 font-medium" : "text-slate-500"}>Au moins 8 caractères</span>
+                  {hasMinLength ? <CheckCircle2 size={14} className="text-[#32A8D7]" /> : <XCircle size={14} className="text-slate-500" />}
+                  <span className={hasMinLength ? "text-[#32A8D7] font-medium" : "text-slate-400"}>Au moins 8 caractères</span>
                 </div>
                 <div className="flex items-center gap-2 text-xs">
-                  {hasUppercase ? <CheckCircle2 size={14} className="text-green-500" /> : <XCircle size={14} className="text-slate-300" />}
-                  <span className={hasUppercase ? "text-green-600 font-medium" : "text-slate-500"}>Une lettre majuscule</span>
+                  {hasUppercase ? <CheckCircle2 size={14} className="text-[#32A8D7]" /> : <XCircle size={14} className="text-slate-500" />}
+                  <span className={hasUppercase ? "text-[#32A8D7] font-medium" : "text-slate-400"}>Une lettre majuscule</span>
                 </div>
                 <div className="flex items-center gap-2 text-xs">
-                  {hasNumber ? <CheckCircle2 size={14} className="text-green-500" /> : <XCircle size={14} className="text-slate-300" />}
-                  <span className={hasNumber ? "text-green-600 font-medium" : "text-slate-500"}>Un chiffre</span>
+                  {hasNumber ? <CheckCircle2 size={14} className="text-[#32A8D7]" /> : <XCircle size={14} className="text-slate-500" />}
+                  <span className={hasNumber ? "text-[#32A8D7] font-medium" : "text-slate-400"}>Un chiffre</span>
                 </div>
                 <div className="flex items-center gap-2 text-xs">
-                  {hasSpecial ? <CheckCircle2 size={14} className="text-green-500" /> : <XCircle size={14} className="text-slate-300" />}
-                  <span className={hasSpecial ? "text-green-600 font-medium" : "text-slate-500"}>Un caractère spécial</span>
+                  {hasSpecial ? <CheckCircle2 size={14} className="text-[#32A8D7]" /> : <XCircle size={14} className="text-slate-500" />}
+                  <span className={hasSpecial ? "text-[#32A8D7] font-medium" : "text-slate-400"}>Un caractère spécial</span>
                 </div>
               </div>
             </div>
@@ -326,18 +332,18 @@ function InscriptionForm() {
             {/* CV upload for Talents */}
             {role === "talent" && (
               <div>
-                <label className="block text-sm font-semibold text-slate-700 mb-1.5">
+                <label className="block text-sm font-semibold text-slate-200 mb-1.5">
                   Votre CV <span className="text-slate-400 font-normal">(optionnel)</span>
                 </label>
                 <label
                   htmlFor="cv-upload-input"
-                  className="flex items-center gap-3 p-3.5 rounded-2xl border-2 border-dashed border-slate-200 hover:border-[#32A8D7] hover:bg-blue-50/30 cursor-pointer transition-all"
+                  className="flex items-center gap-3 p-3.5 rounded-2xl border-2 border-dashed border-white/20 hover:border-[#32A8D7] hover:bg-white/5 cursor-pointer transition-all"
                 >
-                  <div className="w-9 h-9 rounded-xl bg-blue-50 flex items-center justify-center text-[#32A8D7] flex-shrink-0">
+                  <div className="w-9 h-9 rounded-xl bg-white/10 flex items-center justify-center text-[#32A8D7] flex-shrink-0">
                     {cvFile ? <FileCheck size={18} /> : <Upload size={18} />}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-xs font-bold text-slate-700 truncate">
+                    <p className="text-xs font-bold text-slate-200 truncate">
                       {cvFile ? cvFile.name : "Glissez votre CV ici (.PDF, .DOC)"}
                     </p>
                     <p className="text-[11px] text-slate-400">
@@ -361,7 +367,7 @@ function InscriptionForm() {
 
             {/* Referral code */}
             <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-1.5">
+              <label className="block text-sm font-semibold text-slate-200 mb-1.5">
                 Code de parrainage{" "}
                 <span className="text-slate-400 font-normal">(optionnel)</span>
               </label>
@@ -370,7 +376,7 @@ function InscriptionForm() {
                 value={referralCode}
                 onChange={(e) => setReferralCode(e.target.value)}
                 placeholder="Ex: CC-XXXX"
-                className="w-full px-4 py-2.5 bg-[#F9FAFB] border-0 rounded-xl text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#32A8D7] transition-all"
+                className="w-full px-4 py-2.5 bg-white/5 border border-white/10 rounded-xl text-sm text-white placeholder-slate-400 focus:outline-none focus:border-[#32A8D7] transition-all [&:-webkit-autofill]:shadow-[0_0_0_1000px_#0A192F_inset] [&:-webkit-autofill]:text-white"
                 id="code-parrainage"
               />
             </div>
@@ -386,21 +392,19 @@ function InscriptionForm() {
               />
               <label
                 htmlFor="terms"
-                className="text-xs text-slate-500 leading-relaxed cursor-pointer select-none"
+                className="text-xs text-slate-300 leading-relaxed cursor-pointer select-none"
               >
                 J'accepte les{" "}
                 <Link
                   href="/conditions"
-                  className="font-medium hover:underline"
-                  style={{ color: "#32A8D7" }}
+                  className="font-medium hover:underline text-white"
                 >
                   conditions d'utilisation
                 </Link>{" "}
                 et la{" "}
                 <Link
                   href="/confidentialite"
-                  className="font-medium hover:underline"
-                  style={{ color: "#32A8D7" }}
+                  className="font-medium hover:underline text-white"
                 >
                   politique de confidentialité
                 </Link>
@@ -428,9 +432,9 @@ function InscriptionForm() {
 
           {/* Divider */}
           <div className="flex items-center gap-3 my-6">
-            <div className="flex-1 h-px bg-slate-200"></div>
+            <div className="flex-1 h-px bg-white/10"></div>
             <span className="text-slate-400 text-xs font-medium">ou</span>
-            <div className="flex-1 h-px bg-slate-200"></div>
+            <div className="flex-1 h-px bg-white/10"></div>
           </div>
 
           {/* Social login buttons */}
@@ -440,7 +444,7 @@ function InscriptionForm() {
               onClick={handleGoogleLogin}
               disabled={isLoading || googleLoading}
               id="btn-google-inscription"
-              className="w-full flex items-center justify-center gap-3 py-3.5 px-4 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 active:scale-[0.99] transition-all text-sm font-bold text-slate-700 shadow-sm disabled:opacity-50"
+              className="w-full flex items-center justify-center gap-3 py-3.5 px-4 rounded-xl border border-white/20 bg-white/5 hover:bg-white/10 active:scale-[0.99] transition-all text-sm font-bold text-white shadow-sm disabled:opacity-50"
             >
               {googleLoading ? (
                 <>
@@ -462,16 +466,16 @@ function InscriptionForm() {
             </button>
           </div>
 
-          <p className="text-center text-xs text-slate-500 mt-6">
+          <p className="text-center text-xs text-slate-400 mt-6">
             Déjà inscrit ?{" "}
             <Link
               href="/connexion"
-              className="font-bold hover:underline"
-              style={{ color: "#32A8D7" }}
+              className="font-bold hover:underline text-white"
             >
               Se connecter
             </Link>
           </p>
+          </div>
         </div>
       </div>
     </div>

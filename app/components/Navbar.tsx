@@ -20,7 +20,7 @@ import {
 export default function Navbar({
   variant = "default",
 }: {
-  variant?: "default" | "transparent";
+  variant?: "default" | "transparent" | "auth";
 }) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const { user, logout } = useAuth();
@@ -35,12 +35,19 @@ export default function Navbar({
   return (
     <header
       className={`sticky top-0 z-50 transition-all duration-300 ${
-        variant === "transparent"
-          ? "max-w-[1200px] w-[95%] mx-auto mt-6 rounded-full border border-white/40 shadow-sm"
+        variant === "transparent" || variant === "auth"
+          ? "max-w-[1200px] w-[95%] mx-auto mt-6 rounded-full border shadow-sm"
           : ""
+      } ${
+        variant === "auth" ? "border-white/10" : variant === "transparent" ? "border-white/40" : ""
       }`}
       style={
-        variant === "transparent"
+        variant === "auth"
+          ? {
+              background: "rgba(255,255,255,0.05)",
+              backdropFilter: "blur(16px)",
+            }
+          : variant === "transparent"
           ? {
               background: "rgba(255,255,255,0.6)",
               backdropFilter: "blur(16px)",
@@ -52,12 +59,12 @@ export default function Navbar({
             }
       }
     >
-      <nav className={`mx-auto px-6 flex items-center justify-between ${variant === "transparent" ? "h-16" : "max-w-7xl h-20"}`}>
+      <nav className={`mx-auto px-6 flex items-center justify-between ${(variant === "transparent" || variant === "auth") ? "h-16" : "max-w-7xl h-20"}`}>
         {/* Logo with official Figma asset */}
         <Link href="/" className="flex items-center gap-2 group transition-opacity hover:opacity-90">
           <div className="relative h-8 w-28 sm:w-36 flex items-center">
             <Image
-              src="/Logo/PNG/Logo.png"
+              src={variant === "auth" ? "/Logo/PNG/Asset 20.png" : "/Logo/PNG/Logo.png"}
               alt="Netacuv Logo"
               fill
               priority
@@ -78,7 +85,11 @@ export default function Navbar({
             <Link
               key={href}
               href={href}
-              className="px-3.5 py-2 rounded-lg text-sm font-medium text-slate-600 hover:text-blue-600 hover:bg-blue-50/60 transition-all"
+              className={`px-3.5 py-2 rounded-lg text-sm font-medium transition-all ${
+                variant === "auth" 
+                  ? "text-blue-100 hover:text-white hover:bg-white/10" 
+                  : "text-slate-600 hover:text-blue-600 hover:bg-blue-50/60"
+              }`}
             >
               {label}
             </Link>
@@ -132,13 +143,21 @@ export default function Navbar({
             <>
               <Link
                 href="/connexion"
-                className="px-5 py-2 rounded-full text-sm font-semibold border text-blue-600 border-blue-500 hover:bg-blue-50/50 transition-all"
+                className={`px-5 py-2 rounded-full text-sm font-semibold border transition-all ${
+                  variant === "auth" 
+                    ? "text-white border-white/30 hover:bg-white/10"
+                    : "text-blue-600 border-blue-500 hover:bg-blue-50/50"
+                }`}
               >
                 Connexion
               </Link>
               <Link
                 href="/inscription"
-                className="btn-primary text-sm py-2 px-5 !rounded-full"
+                className={`text-sm py-2 px-5 !rounded-full transition-all shadow-sm ${
+                  variant === "auth"
+                    ? "bg-[#32A8D7] text-white hover:bg-[#2891bb]"
+                    : "btn-primary"
+                }`}
               >
                 S'inscrire
               </Link>
@@ -148,7 +167,9 @@ export default function Navbar({
 
         {/* Mobile menu button */}
         <button
-          className="md:hidden p-2 rounded-lg text-slate-600 hover:bg-slate-100"
+          className={`md:hidden p-2 rounded-lg transition-colors ${
+            variant === "auth" ? "text-white hover:bg-white/10" : "text-slate-600 hover:bg-slate-100"
+          }`}
           onClick={() => setMobileOpen(!mobileOpen)}
           aria-label="Menu"
         >

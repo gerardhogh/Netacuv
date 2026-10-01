@@ -518,7 +518,7 @@ export default function InterviewPage() {
   // ── Set recorded flag when finished ─────────────────────────────────────────
   useEffect(() => {
     if (phase === "finished") {
-      localStorage.setItem("interview_recorded", "true");
+      if (user?.id) localStorage.setItem(`interview_recorded_${user.id}`, "true");
       
       const finalizeAndSave = async () => {
         const mimeType = MediaRecorder.isTypeSupported("video/webm;codecs=vp9")

@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import TalentCard from "@/app/components/TalentCard";
 import { useAuth } from "@/app/context/AuthContext";
+import { ConfirmModal } from "../components/Modals";
 
 // No MOCK_TALENTS anymore
 
@@ -32,6 +33,16 @@ export default function RechercheProfil() {
   
   const [talents, setTalents] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showPremiumModal, setShowPremiumModal] = useState(false);
+
+  const isPremiumRecruiter = user?.role === "admin" || user?.isPremium;
+
+  useEffect(() => {
+    // A chaque fois qu'il tombe sur la page, on lui rappelle s'il n'est pas premium
+    if (user && !isPremiumRecruiter) {
+      setShowPremiumModal(true);
+    }
+  }, [user, isPremiumRecruiter]);
 
   const fetchTalents = async (
     q = searchQuery, 
@@ -88,6 +99,17 @@ export default function RechercheProfil() {
         <div className="fixed top-6 right-6 z-50 bg-slate-900 text-white px-5 py-3 rounded-xl shadow-xl text-sm animate-fade-in border border-slate-700">
           {toastMessage}
         </div>
+      )}
+
+      {/* Premium Reminder Modal */}
+      {showPremiumModal && (
+        <ConfirmModal
+          title="Accès Restreint"
+          message="Pour voir les profils et contacter les talents, vous devez activer l'offre Premium."
+          confirmLabel="J'ai compris"
+          onConfirm={() => setShowPremiumModal(false)}
+          onCancel={() => setShowPremiumModal(false)}
+        />
       )}
 
       {/* Header */}
@@ -304,9 +326,15 @@ export default function RechercheProfil() {
                 isVerified={talent.isVerified}
                 isFavorite={favorites.includes(talent.id)}
                 onFavorite={toggleFavorite}
-                blurSensitive={!user?.isPremium}
+                blurSensitive={!isPremiumRecruiter}
                 isPremium={talent.isPremium}
                 hasVideo={talent.videoOk}
+                onViewProfile={() => {
+                  if (!isPremiumRecruiter) setShowPremiumModal(true);
+                }}
+                onSendEmail={() => {
+                  if (!isPremiumRecruiter) setShowPremiumModal(true);
+                }}
               />
             ))}
           </div>

@@ -41,37 +41,38 @@ export default function ForgotPasswordPage() {
   };
 
   return (
-    <div
-      className="min-h-screen flex flex-col relative"
-      style={{
-        backgroundImage: "url('/assets/Fond.png')",
-        backgroundSize: "cover",
-        backgroundAttachment: "fixed",
-        backgroundPosition: "center",
-      }}
-    >
-      <Navbar />
+    <div className="h-screen flex flex-col items-center justify-center relative overflow-hidden bg-[#0A192F] pt-20 pb-4 px-4">
+      {/* Dynamic Background Elements */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] rounded-full bg-[#1E3A8A] blur-[120px]"></div>
+        <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] rounded-full bg-[#32A8D7] blur-[120px]"></div>
+      </div>
 
-      <div className="flex-1 flex items-center justify-center px-4 py-12">
-        <div className="w-full max-w-md bg-white rounded-2xl shadow-xl p-8 md:p-10 border border-slate-100 animate-fade-in-up">
-          <h1 className="text-3xl font-extrabold text-center mb-2" style={{ color: "#32A8D7" }}>
+      {/* Navbar overlay */}
+      <div className="absolute top-0 w-full z-20">
+        <Navbar variant="auth" />
+      </div>
+
+      <div className="z-10 w-full max-w-md animate-fade-in-up mt-12">
+        <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl shadow-2xl p-6 md:p-8 max-h-[calc(100vh-120px)] overflow-y-auto custom-scrollbar">
+          <h1 className="text-3xl font-extrabold text-center mb-2 text-white">
             Mot de passe oublié ?
           </h1>
 
           {isSuccess ? (
             <div className="text-center mt-6">
-              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <CheckCircle2 size={32} className="text-green-500" />
+              <div className="w-16 h-16 bg-white/10 rounded-full flex items-center justify-center mx-auto mb-4 border border-white/20">
+                <CheckCircle2 size={32} className="text-[#32A8D7]" />
               </div>
-              <h3 className="text-xl font-bold text-slate-800 mb-2">E-mail envoyé !</h3>
-              <p className="text-slate-500 mb-6 text-sm">
-                Un lien pour réinitialiser votre mot de passe a été envoyé à <strong>{email}</strong>. 
-                Veuillez vérifier votre boîte de réception. Si vous ne le voyez pas, pensez à consulter vos <strong>dossiers de spams (courriers indésirables)</strong>.
+              <h3 className="text-xl font-bold text-white mb-2">E-mail envoyé !</h3>
+              <p className="text-slate-300 mb-6 text-sm">
+                Un lien pour réinitialiser votre mot de passe a été envoyé à <strong className="text-white">{email}</strong>. 
+                Veuillez vérifier votre boîte de réception. Si vous ne le voyez pas, pensez à consulter vos <strong className="text-white">dossiers de spams (courriers indésirables)</strong>.
               </p>
             </div>
           ) : (
             <>
-              <p className="text-center text-sm mb-8 text-slate-500 px-4">
+              <p className="text-center text-sm mb-8 text-slate-300 px-4">
                 Entrer votre adresse e-mail pour recevoir le lien de réinitialisation
               </p>
 
@@ -84,7 +85,7 @@ export default function ForgotPasswordPage() {
 
               <form onSubmit={handleSubmit} className="space-y-6">
                 <div>
-                  <label className="block text-sm font-semibold text-slate-700 mb-1.5">
+                  <label className="block text-sm font-semibold text-slate-200 mb-1.5">
                     Email professionnel ou personnel
                   </label>
                   <div className="relative">
@@ -98,7 +99,7 @@ export default function ForgotPasswordPage() {
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       placeholder="Entrer l'e-mail"
-                      className="w-full pl-10 pr-4 py-3 bg-[#F9FAFB] border-0 rounded-xl text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#32A8D7] transition-all"
+                      className="w-full pl-10 pr-4 py-3 bg-white/5 border border-white/10 rounded-xl text-sm text-white placeholder-slate-400 focus:outline-none focus:border-[#32A8D7] transition-all [&:-webkit-autofill]:shadow-[0_0_0_1000px_#0A192F_inset] [&:-webkit-autofill]:text-white"
                     />
                   </div>
                 </div>
@@ -124,7 +125,7 @@ export default function ForgotPasswordPage() {
           <div className="mt-6 flex justify-center">
             <Link
               href="/connexion"
-              className="flex items-center gap-1.5 text-sm font-semibold text-slate-500 hover:text-slate-800 transition-colors"
+              className="flex items-center gap-1.5 text-sm font-semibold text-slate-400 hover:text-white transition-colors"
             >
               <ArrowLeft size={16} /> Retour à la connexion
             </Link>

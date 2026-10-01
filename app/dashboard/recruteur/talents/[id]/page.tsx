@@ -6,6 +6,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useAuth } from "@/app/context/AuthContext";
 import LogoutButton from "@/app/components/LogoutButton";
+import { ConfirmModal } from "../../components/Modals";
 import {
   Menu,
   Bell,
@@ -377,8 +378,10 @@ export default function TalentDetailPage() {
   const [talent, setTalent] = useState<TalentProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
+  const isPremiumRecruiter = user?.role === "admin" || user?.role === "ADMIN" || user?.isPremium;
+
   useEffect(() => {
-    if (id) {
+    if (id && isPremiumRecruiter) {
       setIsLoading(true);
       fetch(`/api/talents/${id}`)
         .then((res) => res.json())
@@ -392,12 +395,46 @@ export default function TalentDetailPage() {
           console.error(err);
           setIsLoading(false);
         });
+    } else if (id && !isPremiumRecruiter) {
+      setIsLoading(false); // We don't load the talent if not premium
     }
-  }, [id]);
+  }, [id, isPremiumRecruiter]);
 
   const [activeTab, setActiveTab] = useState<"informations" | "reseaux" | "video">("informations");
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
+
+  if (!isLoading && !isPremiumRecruiter) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex flex-col font-sans relative">
+        {/* We can import ConfirmModal directly if we have it, let's just render a full page modal */}
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl shadow-2xl border border-slate-100 w-full max-w-sm p-7 flex flex-col gap-5 text-center mx-auto relative">
+            <div>
+              <h2 className="text-lg font-extrabold text-slate-900 mb-2">Accès Restreint</h2>
+              <p className="text-sm text-slate-500 leading-relaxed">
+                Pour voir les détails complets de ce talent, vous devez activer l'offre Premium.
+              </p>
+            </div>
+            <div className="flex gap-3 mt-1">
+              <button
+                onClick={() => router.push("/dashboard/recruteur?tab=recherche")}
+                className="flex-1 py-2.5 rounded-xl border border-slate-200 text-sm font-semibold text-slate-600 hover:bg-slate-50 transition-colors"
+              >
+                Retour
+              </button>
+              <button
+                onClick={() => router.push("/dashboard/recruteur?tab=premium")}
+                className="flex-1 py-2.5 rounded-xl text-white text-sm font-semibold shadow-sm transition-colors bg-[#32A8D7] hover:bg-[#2896c2]"
+              >
+                Passer Premium
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
   const [notifMenuOpen, setNotifMenuOpen] = useState(false);
   const [toastMsg, setToastMsg] = useState<string | null>(null);
   const [isFavorite, setIsFavorite] = useState(false);
