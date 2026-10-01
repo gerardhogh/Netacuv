@@ -125,8 +125,8 @@ export default function ConnexionPage() {
     <div className="h-screen flex flex-col items-center justify-center bg-[#002B49] px-4 pt-20 pb-4 relative overflow-hidden">
       {/* Background decorations */}
       <div className="absolute top-0 left-0 w-full h-full overflow-hidden z-0 opacity-20 pointer-events-none">
-        <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] rounded-full bg-[#32A8D7] blur-[120px]"></div>
-        <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] rounded-full bg-[#32A8D7] blur-[120px]"></div>
+        <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-[#32A8D7] blur-[120px]"></div>
+        <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-[#32A8D7] blur-[120px]"></div>
       </div>
 
       {/* Navbar overlay */}
