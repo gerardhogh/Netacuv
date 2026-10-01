@@ -14,10 +14,8 @@ import {
   BrainCircuit, 
   ShieldCheck, 
   PlayCircle, 
-  ArrowRight, 
   Star, 
   Check, 
-  Users,
   Search,
   Briefcase
 } from "lucide-react";
@@ -221,21 +219,22 @@ export default function HomePage() {
       </section>
 
       {/* ── COMMENT ÇA MARCHE ? ── */}
-      <section className="py-24 bg-white relative">
-        <div className="max-w-6xl mx-auto px-6">
+      <section className="py-24 bg-[#0F172A] text-white relative">
+        <div className="absolute inset-0 bg-[#2BAFE3]/5" style={{ backgroundImage: 'radial-gradient(#2BAFE3 1px, transparent 1px)', backgroundSize: '24px 24px', opacity: 0.1 }}></div>
+        <div className="max-w-5xl mx-auto px-6 relative z-10">
           <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-5xl font-black text-[#0F172A] mb-8">
+            <h2 className="text-3xl md:text-5xl font-black mb-8 text-white">
               Comment ça marche ?
             </h2>
             
             {/* Tabs */}
-            <div className="inline-flex p-1.5 rounded-full bg-slate-100 border border-slate-200 shadow-inner">
+            <div className="inline-flex p-1 rounded-full bg-white/10 backdrop-blur-md border border-white/20">
               <button
                 onClick={() => setActiveHowTab("talents")}
                 className={`px-8 py-3 rounded-full text-sm font-bold transition-all ${
                   activeHowTab === "talents"
-                    ? "bg-[#2BAFE3] text-white shadow-md"
-                    : "text-slate-600 hover:text-[#0F172A]"
+                    ? "bg-white text-[#0F172A] shadow-md"
+                    : "text-blue-100 hover:text-white"
                 }`}
               >
                 Côté Candidats
@@ -244,8 +243,8 @@ export default function HomePage() {
                 onClick={() => setActiveHowTab("recruteurs")}
                 className={`px-8 py-3 rounded-full text-sm font-bold transition-all ${
                   activeHowTab === "recruteurs"
-                    ? "bg-[#2BAFE3] text-white shadow-md"
-                    : "text-slate-600 hover:text-[#0F172A]"
+                    ? "bg-white text-[#0F172A] shadow-md"
+                    : "text-blue-100 hover:text-white"
                 }`}
               >
                 Côté Recruteurs
@@ -262,39 +261,50 @@ export default function HomePage() {
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, x: 20 }}
                   transition={{ duration: 0.3 }}
-                  className="grid grid-cols-1 md:grid-cols-3 gap-8"
                 >
-                  <div className="bg-slate-50 rounded-3xl p-8 border border-slate-100 text-center relative overflow-hidden group hover:shadow-xl hover:border-[#2BAFE3]/30 transition-all">
-                    <div className="w-16 h-16 rounded-2xl bg-white shadow-sm border border-slate-200 flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform">
-                      <Search className="text-[#2BAFE3]" size={32} />
+                  <div className="flex flex-col gap-12">
+                    {/* Images Top Section */}
+                    <div className="flex justify-center mb-4">
+                      <Image 
+                        src="/assets/ImageTalents.png" // Using a generic source, or placeholder if needed. Since we don't have the exact Figma export, I'll use a placeholder that falls back gracefully or use standard layout 
+                        alt="Talents" 
+                        width={600} 
+                        height={400} 
+                        className="object-contain" 
+                        onError={(e) => {
+                          e.currentTarget.style.display = 'none';
+                        }}
+                      />
                     </div>
-                    <div className="absolute top-4 right-4 text-6xl font-black text-slate-200/50 -z-10 group-hover:text-[#2BAFE3]/10 transition-colors">1</div>
-                    <h3 className="text-xl font-bold text-[#0F172A] mb-3">Crée ton profil</h3>
-                    <p className="text-slate-600 leading-relaxed">
-                      Dépose ton CV en ligne ou remplis directement tes informations. C'est simple, rapide et structuré.
-                    </p>
-                  </div>
-                  
-                  <div className="bg-slate-50 rounded-3xl p-8 border border-slate-100 text-center relative overflow-hidden group hover:shadow-xl hover:border-[#F59E0B]/30 transition-all">
-                    <div className="w-16 h-16 rounded-2xl bg-white shadow-sm border border-slate-200 flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform">
-                      <Video className="text-[#F59E0B]" size={32} />
+                    {/* Steps list */}
+                    <div className="flex flex-col gap-6">
+                      {[
+                        { num: "01", title: "Crée ton compte en 1 minute", desc: "Accède à la plateforme avec un petit abonnement de 700 FCFA/mois.", align: "right" },
+                        { num: "02", title: "Téléverse ton CV", desc: "Ou remplis directement ton profil avec tes infos clés.", align: "left" },
+                        { num: "03", title: "Passe le test vidéo IA", desc: "Réponds à des questions métiers en vidéo, évalue-toi en 3 essais.", align: "right" },
+                        { num: "04", title: "Obtiens ta certification", desc: "L'IA note ta prestation et t'attribue un badge et des étoiles visibles.", align: "left" },
+                        { num: "05", title: "Sois visible par les recruteurs", desc: "Ton profil apparaît dans les recherches selon ton score, ton CV et ta vidéo.", align: "right" },
+                        { num: "06", title: "Gagne avec l'affiliation", desc: "Partage ton code et reçois des bonus quand tes filleuls s'inscrivent.", align: "left" },
+                      ].map((step, idx) => (
+                        <div key={idx} className={`flex items-center gap-4 ${step.align === "left" ? "flex-row-reverse" : "flex-row"}`}>
+                          <div className="w-20 flex-shrink-0 flex items-center justify-center">
+                            <span className="text-7xl font-black leading-none select-none text-slate-700/50">
+                              {step.num}
+                            </span>
+                          </div>
+                          <div className="flex-1 bg-white/5 backdrop-blur-md rounded-2xl border border-white/10 px-6 py-5 flex items-start gap-4 hover:bg-white/10 transition-colors">
+                            <div className="flex-1 min-w-0">
+                              <h3 className="font-extrabold text-base leading-snug mb-1.5 text-white">
+                                {step.title}
+                              </h3>
+                              <p className="text-sm text-slate-300 leading-relaxed">
+                                {step.desc}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
                     </div>
-                    <div className="absolute top-4 right-4 text-6xl font-black text-slate-200/50 -z-10 group-hover:text-[#F59E0B]/10 transition-colors">2</div>
-                    <h3 className="text-xl font-bold text-[#0F172A] mb-3">Passe l'entretien IA</h3>
-                    <p className="text-slate-600 leading-relaxed">
-                      Réponds aux questions en vidéo. L'IA évalue tes compétences et t'attribue un badge certifié objectif.
-                    </p>
-                  </div>
-                  
-                  <div className="bg-slate-50 rounded-3xl p-8 border border-slate-100 text-center relative overflow-hidden group hover:shadow-xl hover:border-[#2BAFE3]/30 transition-all">
-                    <div className="w-16 h-16 rounded-2xl bg-white shadow-sm border border-slate-200 flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform">
-                      <Star className="text-[#2BAFE3]" size={32} />
-                    </div>
-                    <div className="absolute top-4 right-4 text-6xl font-black text-slate-200/50 -z-10 group-hover:text-[#2BAFE3]/10 transition-colors">3</div>
-                    <h3 className="text-xl font-bold text-[#0F172A] mb-3">Fais-toi repérer</h3>
-                    <p className="text-slate-600 leading-relaxed">
-                      Postule aux meilleures offres. Ton profil certifié te place automatiquement en haut de la pile des recruteurs.
-                    </p>
                   </div>
                 </motion.div>
               ) : (
@@ -304,39 +314,48 @@ export default function HomePage() {
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, x: -20 }}
                   transition={{ duration: 0.3 }}
-                  className="grid grid-cols-1 md:grid-cols-3 gap-8"
                 >
-                  <div className="bg-slate-50 rounded-3xl p-8 border border-slate-100 text-center relative overflow-hidden group hover:shadow-xl hover:border-[#2BAFE3]/30 transition-all">
-                    <div className="w-16 h-16 rounded-2xl bg-white shadow-sm border border-slate-200 flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform">
-                      <Briefcase className="text-[#2BAFE3]" size={32} />
+                  <div className="flex flex-col gap-12">
+                    {/* Images Top Section */}
+                    <div className="flex justify-center mb-4">
+                      <Image 
+                        src="/assets/ImageRecruteurs.png" 
+                        alt="Recruteurs" 
+                        width={600} 
+                        height={400} 
+                        className="object-contain" 
+                        onError={(e) => {
+                          e.currentTarget.style.display = 'none';
+                        }}
+                      />
                     </div>
-                    <div className="absolute top-4 right-4 text-6xl font-black text-slate-200/50 -z-10 group-hover:text-[#2BAFE3]/10 transition-colors">1</div>
-                    <h3 className="text-xl font-bold text-[#0F172A] mb-3">Publie tes offres</h3>
-                    <p className="text-slate-600 leading-relaxed">
-                      Postez vos offres d'emploi ciblées en quelques clics et attirez immédiatement les meilleurs profils.
-                    </p>
-                  </div>
-                  
-                  <div className="bg-slate-50 rounded-3xl p-8 border border-slate-100 text-center relative overflow-hidden group hover:shadow-xl hover:border-[#F59E0B]/30 transition-all">
-                    <div className="w-16 h-16 rounded-2xl bg-white shadow-sm border border-slate-200 flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform">
-                      <PlayCircle className="text-[#F59E0B]" size={32} />
+                    <div className="flex flex-col gap-6">
+                      {[
+                        { num: "01", title: "Créez un compte recruteur en quelques minutes", desc: "Inscrivez-vous rapidement sur la plateforme pour commencer à accéder aux talents.", align: "right" },
+                        { num: "02", title: "Accédez à la base de talents avec profils certifiés", desc: "Explorez les profils des talents, tous certifiés avec des badges de confiance.", align: "left" },
+                        { num: "03", title: "Consultez les CV, vidéos de présentation et badges", desc: "Visualisez les CV et les vidéos de présentation des talents, ainsi que leurs badges.", align: "right" },
+                        { num: "04", title: "Contactez directement les talents ou publiez une offre", desc: "Entrez en contact avec les talents qui correspondent à vos critères.", align: "left" },
+                        { num: "05", title: "Gagnez avec l'affiliation", desc: "Partagez votre code et recevez des bonus quand vos filleuls s'inscrivent.", align: "right" },
+                      ].map((step, idx) => (
+                        <div key={idx} className={`flex items-center gap-4 ${step.align === "left" ? "flex-row-reverse" : "flex-row"}`}>
+                          <div className="w-20 flex-shrink-0 flex items-center justify-center">
+                            <span className="text-7xl font-black leading-none select-none text-slate-700/50">
+                              {step.num}
+                            </span>
+                          </div>
+                          <div className="flex-1 bg-white/5 backdrop-blur-md rounded-2xl border border-white/10 px-6 py-5 flex items-start gap-4 hover:bg-white/10 transition-colors">
+                            <div className="flex-1 min-w-0">
+                              <h3 className="font-extrabold text-base leading-snug mb-1.5 text-white">
+                                {step.title}
+                              </h3>
+                              <p className="text-sm text-slate-300 leading-relaxed">
+                                {step.desc}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
                     </div>
-                    <div className="absolute top-4 right-4 text-6xl font-black text-slate-200/50 -z-10 group-hover:text-[#F59E0B]/10 transition-colors">2</div>
-                    <h3 className="text-xl font-bold text-[#0F172A] mb-3">Visionne les talents</h3>
-                    <p className="text-slate-600 leading-relaxed">
-                      Regardez les entretiens vidéo des candidats pré-évalués par notre IA pour un tri rapide et efficace.
-                    </p>
-                  </div>
-                  
-                  <div className="bg-slate-50 rounded-3xl p-8 border border-slate-100 text-center relative overflow-hidden group hover:shadow-xl hover:border-[#2BAFE3]/30 transition-all">
-                    <div className="w-16 h-16 rounded-2xl bg-white shadow-sm border border-slate-200 flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform">
-                      <Users className="text-[#2BAFE3]" size={32} />
-                    </div>
-                    <div className="absolute top-4 right-4 text-6xl font-black text-slate-200/50 -z-10 group-hover:text-[#2BAFE3]/10 transition-colors">3</div>
-                    <h3 className="text-xl font-bold text-[#0F172A] mb-3">Recrute sans friction</h3>
-                    <p className="text-slate-600 leading-relaxed">
-                      Accédez aux coordonnées complètes et entrez en contact direct avec votre futur collaborateur.
-                    </p>
                   </div>
                 </motion.div>
               )}
@@ -523,10 +542,13 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ── FAQ (Accordion UI) ── */}
-      <section className="py-24 bg-[#F8FAFC]">
+      {/* ── FAQ (Accordion UI with Deep Blue Background) ── */}
+      <section 
+        className="py-24 text-white relative"
+        style={{ background: "linear-gradient(180deg, #0076a8 0%, #005a82 100%)" }}
+      >
         <div className="max-w-3xl mx-auto px-6">
-          <h2 className="text-3xl md:text-4xl font-black text-[#0F172A] text-center mb-12">
+          <h2 className="text-3xl md:text-5xl font-black text-center mb-12 text-white">
             Questions fréquentes
           </h2>
           <div className="space-y-4">
@@ -535,14 +557,14 @@ export default function HomePage() {
               return (
                 <div
                   key={index}
-                  className="rounded-2xl border border-slate-200 bg-white overflow-hidden transition-all shadow-sm"
+                  className="rounded-2xl border border-white/15 bg-white/10 backdrop-blur-sm overflow-hidden transition-all shadow-sm"
                 >
                   <button
                     onClick={() => toggleFaq(index)}
-                    className="w-full p-6 text-left flex items-center justify-between gap-4 font-bold text-base md:text-lg text-[#0F172A] hover:bg-slate-50 transition-colors"
+                    className="w-full p-6 text-left flex items-center justify-between gap-4 font-bold text-base md:text-lg text-white hover:bg-white/5 transition-colors"
                   >
                     <span>{faq.q}</span>
-                    <span className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 transition-colors ${isOpen ? 'bg-[#2BAFE3] text-white' : 'bg-slate-100 text-slate-500'}`}>
+                    <span className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 transition-colors ${isOpen ? 'bg-white text-blue-700' : 'bg-white/10 text-white'}`}>
                       {isOpen ? <Minus size={16} /> : <Plus size={16} />}
                     </span>
                   </button>
@@ -554,7 +576,7 @@ export default function HomePage() {
                         exit={{ height: 0, opacity: 0 }}
                         className="overflow-hidden"
                       >
-                        <div className="px-6 pb-6 text-slate-600 leading-relaxed border-t border-slate-100 pt-4">
+                        <div className="px-6 pb-6 text-blue-100 leading-relaxed border-t border-white/10 pt-4">
                           {faq.a}
                         </div>
                       </motion.div>
@@ -568,8 +590,18 @@ export default function HomePage() {
       </section>
 
       {/* ── CTA FINAL ── */}
-      <section className="py-24 bg-[#0F172A] relative overflow-hidden">
-        <div className="absolute inset-0 bg-[#2BAFE3]/10" style={{ backgroundImage: 'radial-gradient(#2BAFE3 1px, transparent 1px)', backgroundSize: '24px 24px', opacity: 0.1 }}></div>
+      <section className="py-32 bg-[#0F172A] relative overflow-hidden">
+        {/* Background Image with opacity */}
+        <div className="absolute inset-0 z-0">
+          <Image 
+            src="/assets/african_talent_banner.jpg" 
+            alt="Rejoindre Netacuv" 
+            fill 
+            className="object-cover opacity-20"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-[#0F172A] via-[#0F172A]/80 to-[#0F172A]/40"></div>
+        </div>
+        
         <div className="max-w-4xl mx-auto px-6 text-center relative z-10">
           <h2 className="text-3xl md:text-5xl font-black text-white mb-6">
             Prêt à transformer votre carrière ou vos recrutements ?
