@@ -53,7 +53,7 @@ export default function ForgotPasswordPage() {
         <Navbar variant="auth" />
       </div>
 
-      <div className="z-10 w-full max-w-md animate-fade-in-up mt-12">
+      <div className="z-10 w-full max-w-md animate-fade-in-up mt-6 md:mt-12">
         <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl shadow-2xl p-6 md:p-8 max-h-[calc(100vh-120px)] overflow-y-auto custom-scrollbar">
           <h1 className="text-3xl font-extrabold text-center mb-2 text-white">
             Mot de passe oublié ?

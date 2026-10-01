@@ -134,7 +134,7 @@ export default function ConnexionPage() {
         <Navbar variant="auth" />
       </div>
 
-      <div className="z-10 w-full max-w-md animate-fade-in-up mt-12">
+      <div className="z-10 w-full max-w-md animate-fade-in-up mt-6 md:mt-12">
         {/* Card */}
         <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl shadow-2xl flex flex-col max-h-[calc(100vh-140px)] overflow-hidden">
           {/* Fixed Header */}
