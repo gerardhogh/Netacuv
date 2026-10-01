@@ -24,6 +24,7 @@ import {
 } from "lucide-react";
 import { ConfirmModal, SuccessModal } from "./Modals";
 import useSWR from "swr";
+import { useAuth } from "../../../context/AuthContext";
 
 const fetcher = (url: string) => fetch(url, { headers: { 'Cache-Control': 'no-cache' } }).then(res => res.json());
 
@@ -489,13 +490,24 @@ function ModifierOffreView({ emploi, onBack, onSave }: ModifierOffreViewProps) {
 type EmploisView = "grid" | "detail" | "modifier";
 
 export default function EmploisTab() {
+  const { user } = useAuth();
   const { data: emploisFetched = [], error, mutate } = useSWR("/api/jobs?mine=true", fetcher);
   const emplois = Array.isArray(emploisFetched) ? emploisFetched : (emploisFetched.jobs || []);
   const [view, setView] = useState<EmploisView>("grid");
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [showModal, setShowModal] = useState(false);
+  const [showLimitModal, setShowLimitModal] = useState(false);
   const [openMenuId, setOpenMenuId] = useState<number | null>(null);
   const [toastMsg, setToastMsg] = useState<string | null>(null);
+
+  const handleCreateClick = () => {
+    const isAdmin = user?.role === "ADMIN" || user?.role === "admin";
+    if (!isAdmin && !user?.isPremium && emplois.length >= 1) {
+      setShowLimitModal(true);
+    } else {
+      setShowModal(true);
+    }
+  };
 
   // Confirmation modals
   const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null);
@@ -633,6 +645,18 @@ export default function EmploisTab() {
       {/* Publier Modal */}
       {showModal && <PublierModal onClose={() => setShowModal(false)} onPublish={handlePublish} />}
 
+      {/* ── Limit Modal ── */}
+      {showLimitModal && (
+        <ConfirmModal
+          title="Limite d'offres atteinte"
+          message="Vous avez atteint la limite d'offres gratuites (1). Veuillez souscrire à l'offre Premium pour publier des offres en illimité."
+          confirmLabel="J'ai compris"
+          cancelLabel="Annuler"
+          onConfirm={() => setShowLimitModal(false)}
+          onCancel={() => setShowLimitModal(false)}
+        />
+      )}
+
       {/* ── Confirmation: Supprimer offre ── */}
       {confirmDeleteId !== null && (
         <ConfirmModal
@@ -728,7 +752,7 @@ export default function EmploisTab() {
               </span>
             </div>
             <button
-              onClick={() => setShowModal(true)}
+              onClick={handleCreateClick}
               className="flex items-center gap-2 px-5 py-2.5 bg-[#32A8D7] hover:bg-[#2896c2] text-white rounded-xl text-sm font-semibold shadow-sm hover:shadow-md transition-all"
             >
               <Plus size={16} /> Publier une offre
@@ -745,7 +769,7 @@ export default function EmploisTab() {
                   Vous n'avez pas encore publié d'offres d'emploi. Publiez votre première offre pour commencer à recevoir des candidatures.
                 </p>
                 <button
-                  onClick={() => setShowModal(true)}
+                  onClick={handleCreateClick}
                   className="flex items-center gap-2 px-5 py-2.5 bg-[#32A8D7] hover:bg-[#2896c2] text-white rounded-xl text-sm font-semibold shadow-sm hover:shadow-md transition-all"
                 >
                   <Plus size={16} /> Publier une offre
