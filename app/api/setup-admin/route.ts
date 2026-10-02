@@ -19,7 +19,7 @@ export async function GET(request: Request) {
       create: {
         name: 'ADMIN',
         description: 'Administrateur principal du système',
-        permissions: JSON.stringify(['ALL']),
+        isSystem: true,
       },
     });
 

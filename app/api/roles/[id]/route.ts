@@ -2,20 +2,46 @@ import { NextResponse } from 'next/server';
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from '@/lib/prisma';
+import { hasPermission } from '@/lib/permissions';
 
 export async function PUT(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
+    if (!(await hasPermission('roles:write'))) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+
     const { id } = await params;
     const body = await req.json();
     const { name, description, permissions, active } = body;
 
+    const currentRole = await prisma.role.findUnique({ where: { id } });
+    if (!currentRole) return NextResponse.json({ error: "Rôle non trouvé" }, { status: 404 });
+    if (currentRole.name === "Super Admin") {
+      return NextResponse.json({ error: "Le rôle Super Admin est verrouillé par le système et ne peut être modifié." }, { status: 400 });
+    }
+    if (currentRole.isSystem && name && name !== currentRole.name) {
+      return NextResponse.json({ error: "Impossible de renommer un rôle système" }, { status: 400 });
+    }
+
     const updatedRole = await prisma.role.update({
       where: { id },
       data: {
-        ...(name && { name }),
+        ...(name && !currentRole.isSystem && { name }),
         ...(description !== undefined && { description }),
-        ...(permissions && { permissions: JSON.stringify(permissions) }),
-        ...(active !== undefined && { active })
+        ...(active !== undefined && !currentRole.isSystem && { active }),
+        ...(permissions && {
+          rolePermissions: {
+            deleteMany: {},
+            create: permissions.map((code: string) => ({
+              permission: {
+                connectOrCreate: {
+                  where: { code },
+                  create: { code, module: 'general' }
+                }
+              }
+            }))
+          }
+        })
       }
     });
 
@@ -43,7 +69,17 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
 
 export async function DELETE(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
+    if (!(await hasPermission('roles:delete'))) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+
     const { id } = await params;
+
+    const roleToDelete = await prisma.role.findUnique({ where: { id } });
+    if (!roleToDelete) return NextResponse.json({ error: "Rôle non trouvé" }, { status: 404 });
+    if (roleToDelete.isSystem) {
+      return NextResponse.json({ error: "Impossible de supprimer un rôle système" }, { status: 400 });
+    }
 
     // Check if users are assigned to this role
     const usersWithRole = await prisma.user.count({

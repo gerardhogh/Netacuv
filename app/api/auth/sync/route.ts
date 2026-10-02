@@ -58,7 +58,7 @@ export async function POST(request: NextRequest) {
         role = await prisma.role.create({
           data: {
             name: roleName,
-            permissions: JSON.stringify([]),
+            isSystem: true,
           },
         });
       }
@@ -118,7 +118,7 @@ export async function POST(request: NextRequest) {
     // Déterminer la redirection basée sur le nouveau rôle
     const userRole = user.role?.name || "TALENT";
     const redirectPath =
-      userRole === "ADMIN"
+      ["SUPER ADMIN", "ADMIN RH / MODÉRATEUR", "MANAGER IA & CERTIFICATION", "GESTIONNAIRE FINANCIER", "SUPPORT CLIENT", "ADMIN"].includes(userRole.toUpperCase())
         ? "/dashboard/admin"
         : userRole === "RECRUTEUR"
         ? "/dashboard/recruteur"

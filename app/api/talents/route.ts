@@ -13,7 +13,7 @@ export async function GET(request: Request) {
     const city = searchParams.get('city') || '';
 
     const session = await getServerSession(authOptions);
-    const isAdmin = session?.user?.role === "ADMIN";
+    const isAdmin = ["SUPER ADMIN", "ADMIN RH / MODÉRATEUR", "MANAGER IA & CERTIFICATION", "GESTIONNAIRE FINANCIER", "SUPPORT CLIENT", "ADMIN"].includes(session?.user?.role?.toUpperCase() || "");
 
     // AS-03: Vérifier isPremium en BDD (et non via le JWT client)
     let isPremium = false;
@@ -26,10 +26,14 @@ export async function GET(request: Request) {
     }
 
     const filters: any = { isNot: null };
-    if (degree) filters.degree = degree;
-    if (gender) filters.gender = gender;
-    if (country) filters.country = country;
-    if (city) filters.city = city;
+    
+    // Filtres avancés bloqués pour les recruteurs non-premium
+    if (isAdmin || isPremium) {
+      if (degree) filters.degree = degree;
+      if (gender) filters.gender = gender;
+      if (country) filters.country = country;
+      if (city) filters.city = city;
+    }
 
     // Build the query where clause
     const whereClause: any = {

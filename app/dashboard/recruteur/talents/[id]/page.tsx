@@ -35,6 +35,7 @@ import {
   ExternalLink,
   ArrowLeft,
 } from "lucide-react";
+import PremiumRequiredModal from "@/app/components/PremiumRequiredModal";
 
 
 // ─── API Data Fetching ────────────────────────────────────────────────────────
@@ -55,6 +56,7 @@ interface TalentProfile {
   competences: string;
   isActive: boolean;
   isVerified: boolean;
+  isContactUnmasked?: boolean;
   imageUrl: string;
   cvUpdated: string;
   cvUrl?: string;
@@ -94,6 +96,7 @@ function mapToTalentProfile(dbData: any): TalentProfile {
     competences: Array.isArray(dbData.skills) ? dbData.skills.join(", ") : (dbData.skills || ""),
     isActive: true, // Assuming active if listed
     isVerified: dbData.isVerified,
+    isContactUnmasked: dbData.isContactUnmasked,
     imageUrl: dbData.imageUrl || "/assets/candidate-alicia-parker.jpg",
     cvUpdated: dbData.updatedAt || "Récemment",
     cvUrl: dbData.cvUrl,
@@ -346,9 +349,35 @@ function TabVideoEntretien({ talent, blurSensitive }: { talent: TalentProfile, b
             </div>
           </div>
           {talent.interviewSession.aiFeedback && (
-            <div className="bg-white rounded-lg p-4 border border-indigo-50 text-xs text-slate-700 leading-relaxed shadow-sm">
-              <strong className="text-indigo-800 block mb-1">Résumé de l'analyse :</strong>
-              {talent.interviewSession.aiFeedback}
+            <div className="bg-white rounded-lg p-4 border border-indigo-50 text-xs text-slate-700 leading-relaxed shadow-sm space-y-4">
+              <strong className="text-indigo-800 block mb-2 text-sm">Résumé de l'analyse par question :</strong>
+              {(() => {
+                try {
+                  const feedbackObj = JSON.parse(talent.interviewSession.aiFeedback);
+                  return Object.keys(feedbackObj).map((key, idx) => {
+                    const item = feedbackObj[key];
+                    // Support old format and new format
+                    const evalData = item.evaluation || item;
+                    const questionText = item.questionText || `Question ${idx + 1}`;
+                    const transcript = item.transcript || "";
+                    
+                    return (
+                      <div key={key} className="p-3 bg-slate-50 rounded-lg border border-slate-100">
+                        <p className="font-bold text-slate-800 mb-1">Q{idx + 1} : {questionText}</p>
+                        {transcript && <p className="text-slate-500 italic mb-2">"{transcript}"</p>}
+                        <div className="flex items-start gap-3 mt-2">
+                          <span className={`px-2 py-1 rounded text-xs font-bold ${evalData.score >= 80 ? 'bg-green-100 text-green-700' : evalData.score >= 50 ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700'}`}>
+                            {evalData.score}/100
+                          </span>
+                          <p className="text-slate-600">{evalData.feedback}</p>
+                        </div>
+                      </div>
+                    );
+                  });
+                } catch (e) {
+                  return <p>{talent.interviewSession.aiFeedback}</p>;
+                }
+              })()}
             </div>
           )}
         </div>
@@ -381,7 +410,7 @@ export default function TalentDetailPage() {
   const isPremiumRecruiter = user?.role === "admin" || user?.isPremium;
 
   useEffect(() => {
-    if (id && isPremiumRecruiter) {
+    if (id) {
       setIsLoading(true);
       fetch(`/api/talents/${id}`)
         .then((res) => res.json())
@@ -395,49 +424,18 @@ export default function TalentDetailPage() {
           console.error(err);
           setIsLoading(false);
         });
-    } else if (id && !isPremiumRecruiter) {
-      setIsLoading(false); // We don't load the talent if not premium
     }
-  }, [id, isPremiumRecruiter]);
+  }, [id]);
 
   const [activeTab, setActiveTab] = useState<"informations" | "reseaux" | "video">("informations");
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
 
-  if (!isLoading && !isPremiumRecruiter) {
-    return (
-      <div className="min-h-screen bg-slate-50 flex flex-col font-sans relative">
-        {/* We can import ConfirmModal directly if we have it, let's just render a full page modal */}
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
-          <div className="bg-white rounded-2xl shadow-2xl border border-slate-100 w-full max-w-sm p-7 flex flex-col gap-5 text-center mx-auto relative">
-            <div>
-              <h2 className="text-lg font-extrabold text-slate-900 mb-2">Accès Restreint</h2>
-              <p className="text-sm text-slate-500 leading-relaxed">
-                Pour voir les détails complets de ce talent, vous devez activer l'offre Premium.
-              </p>
-            </div>
-            <div className="flex gap-3 mt-1">
-              <button
-                onClick={() => router.push("/dashboard/recruteur?tab=recherche")}
-                className="flex-1 py-2.5 rounded-xl border border-slate-200 text-sm font-semibold text-slate-600 hover:bg-slate-50 transition-colors"
-              >
-                Retour
-              </button>
-              <button
-                onClick={() => router.push("/dashboard/recruteur?tab=premium")}
-                className="flex-1 py-2.5 rounded-xl text-white text-sm font-semibold shadow-sm transition-colors bg-[#32A8D7] hover:bg-[#2896c2]"
-              >
-                Passer Premium
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  // Removed full-page block for non-premium recruiters
   const [notifMenuOpen, setNotifMenuOpen] = useState(false);
   const [toastMsg, setToastMsg] = useState<string | null>(null);
   const [isFavorite, setIsFavorite] = useState(false);
+  const [showPremiumModal, setShowPremiumModal] = useState(false);
 
   const companyName = (user as any)?.company || "Grand-G Corp";
   const companyEmail = user?.email || "recruteur@grand-g.com";
@@ -709,8 +707,19 @@ export default function TalentDetailPage() {
                     {isFavorite ? "Sauvegardé" : "Sauvegarder"}
                   </button>
                   <button
-                    onClick={() => showToast(`Email envoyé à ${talent.name}`)}
-                    className="w-full py-2.5 rounded-xl text-sm font-semibold border border-slate-200 text-slate-600 hover:border-[#32A8D7] hover:text-[#32A8D7] transition-all flex items-center justify-center gap-2"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      if (!(user?.isPremium || talent.isContactUnmasked)) {
+                        setShowPremiumModal(true);
+                        return;
+                      }
+                      showToast(`Email envoyé à ${talent.name}`);
+                    }}
+                    className={`w-full py-2.5 rounded-xl text-sm font-semibold transition-all flex items-center justify-center gap-2 ${
+                      !(user?.isPremium || talent.isContactUnmasked)
+                        ? 'bg-slate-50 border border-slate-200 text-slate-400 cursor-not-allowed opacity-70'
+                        : 'border border-slate-200 text-slate-600 hover:border-[#32A8D7] hover:text-[#32A8D7]'
+                    }`}
                   >
                     <Mail size={15} />
                     Envoyer un mail
@@ -811,15 +820,22 @@ export default function TalentDetailPage() {
 
               {/* Tab content */}
               <div className="p-6">
-                {activeTab === "informations" && <TabInformations talent={talent} blurSensitive={!user?.isPremium} />}
-                {activeTab === "reseaux" && <TabReseaux talent={talent} blurSensitive={!user?.isPremium} />}
-                {activeTab === "video" && <TabVideoEntretien talent={talent} blurSensitive={!user?.isPremium} />}
+                {activeTab === "informations" && <TabInformations talent={talent} blurSensitive={!(isPremiumRecruiter || talent?.isContactUnmasked)} />}
+                {activeTab === "reseaux" && <TabReseaux talent={talent} blurSensitive={!(isPremiumRecruiter || talent?.isContactUnmasked)} />}
+                {activeTab === "video" && <TabVideoEntretien talent={talent} blurSensitive={!(isPremiumRecruiter || talent?.isContactUnmasked)} />}
               </div>
             </div>
             </div>
           )}
         </main>
       </div>
+
+      {showPremiumModal && (
+        <PremiumRequiredModal 
+          onClose={() => setShowPremiumModal(false)} 
+          message="Passez au plan Premium pour contacter ce talent et consulter son profil complet."
+        />
+      )}
     </div>
   );
 }

@@ -37,7 +37,8 @@ function InscriptionForm() {
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
-  const [referralCode, setReferralCode] = useState("");
+  const initialReferralCode = searchParams.get("ref") || "";
+  const [referralCode, setReferralCode] = useState(initialReferralCode);
   const [cvFile, setCvFile] = useState<File | null>(null);
   const [acceptTerms, setAcceptTerms] = useState(false);
   const [showPwd, setShowPwd] = useState(false);
@@ -87,6 +88,7 @@ function InscriptionForm() {
           email,
           password,
           roleName,
+          referralCode,
         }),
       });
 

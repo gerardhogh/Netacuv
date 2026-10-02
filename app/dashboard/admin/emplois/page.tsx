@@ -81,7 +81,7 @@ export default function AdminEmplois() {
     localisation: String(j.location || "Non spécifié"),
     candidatures: (j.applications as any[])?.length || 0,
     status: j.status === "PUBLISHED" ? "Actif" : (j.status === "CLOSED" ? "Suspendu" : "En attente"),
-    isAdminCreated: (j.recruiter as any)?.user?.role?.name === "ADMIN",
+    isAdminCreated: ["SUPER ADMIN", "ADMIN RH / MODÉRATEUR", "MANAGER IA & CERTIFICATION", "GESTIONNAIRE FINANCIER", "SUPPORT CLIENT", "ADMIN"].includes((j.recruiter as any)?.user?.role?.name?.toUpperCase() || ""),
     candidats: (j.applications as any[])?.length || 0,
     description: String(j.description || "")
   })) : [];

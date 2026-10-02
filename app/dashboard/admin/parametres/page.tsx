@@ -1,10 +1,13 @@
 "use client";
 import React, { useState } from "react";
 import { Eye, EyeOff, ChevronDown } from "lucide-react";
-import { useLang, LOCALES } from "../../../context/LangContext";
+import { useLocale } from "next-intl";
+import { LOCALES, Locale } from "@/app/components/LanguageSwitcher";
+import { useRouter } from "next/navigation";
 
 export default function AdminParametres() {
-  const { locale, setLocale } = useLang();
+  const locale = useLocale();
+  const router = useRouter();
   const [emailNotif, setEmailNotif] = useState(true);
   const [smsNotif, setSmsNotif] = useState(false);
   const [showPassword1, setShowPassword1] = useState(false);
@@ -99,7 +102,13 @@ export default function AdminParametres() {
         <div className="relative w-full">
           <select
             value={locale}
-            onChange={(e) => setLocale(e.target.value as typeof locale)}
+            onChange={(e) => {
+              const newLocale = e.target.value as Locale;
+              const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+              const domainPart = isLocalhost ? '' : ' domain=.netacuv.com;';
+              document.cookie = `NEXT_LOCALE=${newLocale}; path=/;${domainPart} SameSite=Lax`;
+              router.refresh();
+            }}
             className="w-full bg-[#f8f9fa] border-none rounded-lg py-3 px-4 text-sm focus:ring-2 focus:ring-[#1e8ae9] appearance-none cursor-pointer text-slate-800 font-medium"
           >
             {LOCALES.map(({ code, label, flag }) => (

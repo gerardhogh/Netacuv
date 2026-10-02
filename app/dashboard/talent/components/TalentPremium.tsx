@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { CheckCircle, XCircle, CreditCard, ArrowLeft, CheckCheck, Sparkles, Loader2 } from "lucide-react";
+import { CheckCircle, XCircle, CreditCard, ArrowLeft, CheckCheck, Sparkles, Loader2, Check, X } from "lucide-react";
 import { useAuth } from "../../../context/AuthContext";
 
 type PayStep = "plan" | "method" | "input" | "processing";
@@ -79,35 +79,15 @@ export default function TalentPremium({ isPremium: propIsPremium }: { isPremium?
                 <p className="text-sm text-slate-500 font-medium">L'essentiel pour démarrer</p>
               </div>
               <div className="p-8 flex-1 bg-white flex flex-col">
-                <ul className="space-y-5 mb-8 flex-1">
-                  <li className="flex items-start gap-3 text-sm text-slate-700">
-                    <CheckCircle size={20} className="text-slate-400 mt-0.5 flex-shrink-0" strokeWidth={2} />
-                    <span className="leading-relaxed"><span className="font-bold text-slate-800">Candidatures mensuelles :</span> 1 seule candidature par mois</span>
-                  </li>
-                  <li className="flex items-start gap-3 text-sm text-slate-700">
-                    <CheckCircle size={20} className="text-slate-400 mt-0.5 flex-shrink-0" strokeWidth={2} />
-                    <span className="leading-relaxed"><span className="font-bold text-slate-800">Visibilité du profil :</span> Standard</span>
-                  </li>
-                  <li className="flex items-start gap-3 text-sm text-slate-400">
-                    <XCircle size={20} className="text-slate-200 mt-0.5 flex-shrink-0" strokeWidth={2} />
-                    <span className="leading-relaxed">Badge "Profil Recommandé" : Non</span>
-                  </li>
-                  <li className="flex items-start gap-3 text-sm text-slate-400">
-                    <XCircle size={20} className="text-slate-200 mt-0.5 flex-shrink-0" strokeWidth={2} />
-                    <span className="leading-relaxed">Statistiques de vue du CV : Non</span>
-                  </li>
-                  <li className="flex items-start gap-3 text-sm text-slate-400">
-                    <XCircle size={20} className="text-slate-200 mt-0.5 flex-shrink-0" strokeWidth={2} />
-                    <span className="leading-relaxed">Ajout de CV : Non</span>
-                  </li>
-                  <li className="flex items-start gap-3 text-sm text-slate-400">
-                    <XCircle size={20} className="text-slate-200 mt-0.5 flex-shrink-0" strokeWidth={2} />
-                    <span className="leading-relaxed">Entretien vidéo IA : Non</span>
-                  </li>
-                  <li className="flex items-start gap-3 text-sm text-slate-400">
-                    <XCircle size={20} className="text-slate-200 mt-0.5 flex-shrink-0" strokeWidth={2} />
-                    <span className="leading-relaxed">Assistance 24h/24 : Non</span>
-                  </li>
+                <ul className="space-y-4 mb-8 flex-1">
+                  <li className="flex items-start gap-3"><Check className="text-[#32A8D7] mt-0.5 flex-shrink-0" size={20} /> <span className="text-slate-600">Création de profil Talent</span></li>
+                  <li className="flex items-start gap-3"><Check className="text-[#32A8D7] mt-0.5 flex-shrink-0" size={20} /> <span className="text-slate-600">Postuler aux offres</span></li>
+                  <li className="flex items-start gap-3"><Check className="text-[#32A8D7] mt-0.5 flex-shrink-0" size={20} /> <span className="text-slate-600">Affiliation <span className="text-xs font-semibold text-green-600 bg-green-50 px-2 py-0.5 rounded-full ml-1 border border-green-200">Gains par parrainage</span></span></li>
+                  <li className="flex items-start gap-3 opacity-50"><X className="text-slate-400 mt-0.5 flex-shrink-0" size={20} /> <span className="text-slate-500 line-through decoration-slate-300">Badge "Profil Certifié"</span></li>
+                  <li className="flex items-start gap-3 opacity-50"><X className="text-slate-400 mt-0.5 flex-shrink-0" size={20} /> <span className="text-slate-500 line-through decoration-slate-300">Entretien Vidéo par IA</span></li>
+                  <li className="flex items-start gap-3 opacity-50"><X className="text-slate-400 mt-0.5 flex-shrink-0" size={20} /> <span className="text-slate-500 line-through decoration-slate-300">Priorité dans les recherches des recruteurs</span></li>
+                  <li className="flex items-start gap-3 opacity-50"><X className="text-slate-400 mt-0.5 flex-shrink-0" size={20} /> <span className="text-slate-500 line-through decoration-slate-300">Statistiques de profil avancées</span></li>
+                  <li className="flex items-start gap-3 opacity-50"><X className="text-slate-400 mt-0.5 flex-shrink-0" size={20} /> <span className="text-slate-500 line-through decoration-slate-300">Coaching CV personnalisé par IA</span></li>
                 </ul>
 
                 <button
@@ -135,35 +115,15 @@ export default function TalentPremium({ isPremium: propIsPremium }: { isPremium?
               </div>
               
               <div className="p-8 flex-1 bg-white flex flex-col">
-                <ul className="space-y-5 mb-8 flex-1">
-                  <li className="flex items-start gap-3 text-sm text-slate-700">
-                    <CheckCircle size={20} className="text-[#32A8D7] mt-0.5 flex-shrink-0" strokeWidth={2.5} />
-                    <span className="leading-relaxed"><span className="font-bold text-[#32A8D7]">Candidatures mensuelles :</span> ILLIMITÉES</span>
-                  </li>
-                  <li className="flex items-start gap-3 text-sm text-slate-700">
-                    <CheckCircle size={20} className="text-[#32A8D7] mt-0.5 flex-shrink-0" strokeWidth={2.5} />
-                    <span className="leading-relaxed"><span className="font-bold text-slate-800">Visibilité du profil :</span> Prioritaire en tête de liste</span>
-                  </li>
-                  <li className="flex items-start gap-3 text-sm text-slate-700">
-                    <CheckCircle size={20} className="text-[#32A8D7] mt-0.5 flex-shrink-0" strokeWidth={2.5} />
-                    <span className="leading-relaxed"><span className="font-bold text-slate-800">Badge "Profil Recommandé" :</span> Inclus</span>
-                  </li>
-                  <li className="flex items-start gap-3 text-sm text-slate-700">
-                    <CheckCircle size={20} className="text-[#32A8D7] mt-0.5 flex-shrink-0" strokeWidth={2.5} />
-                    <span className="leading-relaxed"><span className="font-bold text-slate-800">Statistiques de vue du CV :</span> Inclus</span>
-                  </li>
-                  <li className="flex items-start gap-3 text-sm text-slate-700">
-                    <CheckCircle size={20} className="text-[#32A8D7] mt-0.5 flex-shrink-0" strokeWidth={2.5} />
-                    <span className="leading-relaxed"><span className="font-bold text-slate-800">Ajout de CV :</span> Inclus</span>
-                  </li>
-                  <li className="flex items-start gap-3 text-sm text-slate-700">
-                    <CheckCircle size={20} className="text-[#32A8D7] mt-0.5 flex-shrink-0" strokeWidth={2.5} />
-                    <span className="leading-relaxed"><span className="font-bold text-slate-800">Entretien vidéo IA :</span> Inclus</span>
-                  </li>
-                  <li className="flex items-start gap-3 text-sm text-slate-700">
-                    <CheckCircle size={20} className="text-[#32A8D7] mt-0.5 flex-shrink-0" strokeWidth={2.5} />
-                    <span className="leading-relaxed"><span className="font-bold text-slate-800">Assistance 24h/24 :</span> Inclus</span>
-                  </li>
+                <ul className="space-y-4 mb-8 flex-1">
+                  <li className="flex items-start gap-3"><Check className="text-[#32A8D7] mt-0.5 flex-shrink-0" size={20} /> <span className="text-slate-600 font-bold">Création de profil Talent</span></li>
+                  <li className="flex items-start gap-3"><Check className="text-[#32A8D7] mt-0.5 flex-shrink-0" size={20} /> <span className="text-slate-600 font-bold">Postuler aux offres</span></li>
+                  <li className="flex items-start gap-3"><Check className="text-[#32A8D7] mt-0.5 flex-shrink-0" size={20} /> <span className="text-slate-600 font-bold">Affiliation <span className="text-xs font-semibold text-green-600 bg-green-50 px-2 py-0.5 rounded-full ml-1 border border-green-200">Gains par parrainage</span></span></li>
+                  <li className="flex items-start gap-3"><Check className="text-[#32A8D7] mt-0.5 flex-shrink-0" size={20} /> <span className="text-slate-600 font-bold">Badge "Profil Certifié" <Sparkles className="inline text-yellow-400" size={16} /></span></li>
+                  <li className="flex items-start gap-3"><Check className="text-[#32A8D7] mt-0.5 flex-shrink-0" size={20} /> <span className="text-slate-600 font-bold">Entretien Vidéo par IA</span></li>
+                  <li className="flex items-start gap-3"><Check className="text-[#32A8D7] mt-0.5 flex-shrink-0" size={20} /> <span className="text-slate-600 font-bold">Priorité dans les recherches des recruteurs</span></li>
+                  <li className="flex items-start gap-3"><Check className="text-[#32A8D7] mt-0.5 flex-shrink-0" size={20} /> <span className="text-slate-600 font-bold">Statistiques de profil avancées</span></li>
+                  <li className="flex items-start gap-3"><Check className="text-[#32A8D7] mt-0.5 flex-shrink-0" size={20} /> <span className="text-slate-600 font-bold">Coaching CV personnalisé par IA</span></li>
                 </ul>
                 
                 <button

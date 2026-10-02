@@ -48,10 +48,27 @@ export async function GET(
 
     const session = await getServerSession(authOptions);
     const isPremium = session?.user?.isPremium === true;
-    const isAdmin = session?.user?.role === "ADMIN";
+    const isAdmin = ["SUPER ADMIN", "ADMIN RH / MODÉRATEUR", "MANAGER IA & CERTIFICATION", "GESTIONNAIRE FINANCIER", "SUPPORT CLIENT", "ADMIN"].includes(session?.user?.role?.toUpperCase() || "");
     
-    // Si c'est un recruteur non-premium, on masque certaines données
-    const shouldHideSensitive = !isAdmin && !isPremium;
+    let hasAppliedToRecruiter = false;
+    if (session?.user?.id && !isAdmin && !isPremium && profile) {
+      const application = await prisma.application.findFirst({
+        where: {
+          talentId: profile.id,
+          jobOffer: {
+            recruiter: {
+              userId: session.user.id
+            }
+          }
+        }
+      });
+      if (application) {
+        hasAppliedToRecruiter = true;
+      }
+    }
+
+    // Si c'est un recruteur non-premium et que le talent n'a pas postulé à l'une de ses offres, on masque certaines données
+    const shouldHideSensitive = !isAdmin && !isPremium && !hasAppliedToRecruiter;
 
     const formattedTalent = {
       id: talentUser.id,
@@ -62,7 +79,7 @@ export async function GET(
       date: new Date(talentUser.createdAt).toLocaleDateString('fr-FR'),
       updatedAt: profile?.updatedAt ? new Date(profile.updatedAt).toLocaleDateString('fr-FR') : "Récemment",
       status: talentUser.active ? "Actif" : "Suspendu",
-      videoUrl: profile?.videoUrl,
+      videoUrl: shouldHideSensitive ? "" : profile?.videoUrl,
       domaine: profile?.degree || "Général",
       location: (profile?.city && profile?.country) 
         ? `${profile.city}, ${profile.country}` 
@@ -76,6 +93,7 @@ export async function GET(
       isVerified: true,
       skills: skills,
       gender: profile?.gender || "Non précisé",
+      isContactUnmasked: !shouldHideSensitive,
       
       socials: shouldHideSensitive ? {
         facebook: "",
@@ -95,7 +113,7 @@ export async function GET(
       interviewSession: interviewSession ? {
         id: interviewSession.id,
         status: interviewSession.status,
-        videoRecordings: interviewSession.videoRecordings,
+        videoRecordings: shouldHideSensitive ? "" : interviewSession.videoRecordings,
         aiScore: interviewSession.aiScore,
         aiFeedback: interviewSession.aiFeedback,
       } : null,

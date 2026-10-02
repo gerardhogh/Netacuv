@@ -17,6 +17,7 @@ const registerSchema = z.object({
   email: z.string().email("Adresse email invalide"),
   password: passwordSchema,
   roleName: z.enum(["TALENT", "RECRUTEUR"]).default("TALENT"),
+  referralCode: z.string().optional(),
 });
 
 export async function POST(request: Request) {
@@ -33,7 +34,7 @@ export async function POST(request: Request) {
       );
     }
     
-    const { name, email, password, roleName } = validatedData.data;
+    const { name, email, password, roleName, referralCode } = validatedData.data;
 
     // Check if user already exists
     const existingUser = await prisma.user.findUnique({
@@ -61,9 +62,20 @@ export async function POST(request: Request) {
         data: {
           name: roleName,
           description: `Rôle par défaut pour les ${roleName.toLowerCase()}s`,
-          permissions: "{}",
+          isSystem: true,
         },
       });
+    }
+
+    // Handle referral code if provided
+    let referredById = undefined;
+    if (referralCode) {
+      const referrer = await prisma.user.findUnique({
+        where: { referralCode },
+      });
+      if (referrer) {
+        referredById = referrer.id;
+      }
     }
 
     // Create user and profile
@@ -73,6 +85,7 @@ export async function POST(request: Request) {
         email,
         passwordHash,
         roleId: role.id,
+        referredById,
         // Créer le profil associé de façon atomique
         talentProfile: roleName === "TALENT" ? { create: {} } : undefined,
         recruiterProfile: roleName === "RECRUTEUR" ? { create: {} } : undefined,

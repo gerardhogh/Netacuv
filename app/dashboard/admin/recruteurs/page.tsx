@@ -27,7 +27,7 @@ export default function AdminRecruteurs() {
       abonnement: "Standard",
       date: new Date(r.createdAt).toLocaleDateString("fr-FR"),
       status: r.active ? "Actif" : "Suspendu",
-      isAdmin: r.role?.name === "ADMIN"
+      isAdmin: ["SUPER ADMIN", "ADMIN RH / MODÉRATEUR", "MANAGER IA & CERTIFICATION", "GESTIONNAIRE FINANCIER", "SUPPORT CLIENT", "ADMIN"].includes(r.role?.name?.toUpperCase() || "")
     })) : [];
 
   const filtered = recruteurs.filter(r => 

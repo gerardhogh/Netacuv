@@ -3,25 +3,31 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "../../../context/AuthContext";
 import {
   Menu, Bell, ChevronDown, X, LogOut, Globe,
   Home, Users, Briefcase, Settings, History, Shield, AlertTriangle
 } from "lucide-react";
 import LogoutButton from "../../../components/LogoutButton";
-import { useLang, LOCALES } from "../../../context/LangContext";
+import { useTranslations, useLocale } from "next-intl";
+import LanguageSwitcher, { LOCALES, Locale } from "@/app/components/LanguageSwitcher";
 
-const sidebarItems = [
-  { href: "/dashboard/admin", icon: Home, label: "Tableau de bord", matchExact: true },
-  { href: "/dashboard/admin/talents", icon: Users, label: "Talents" },
-  { href: "/dashboard/admin/recruteurs", icon: Briefcase, label: "Recruteurs" },
-  { href: "/dashboard/admin/emplois", icon: Briefcase, label: "Offres d'emploi" },
-  { href: "/dashboard/admin/transactions", icon: History, label: "Transactions" },
-  { href: "/dashboard/admin/permissions", icon: Shield, label: "Permissions & Rôles" },
-  { href: "/dashboard/admin/parametres", icon: Settings, label: "Paramètres" },
-  { href: "/dashboard/admin/suppressions", icon: AlertTriangle, label: "Suppression de compte" },
-];
+const getSidebarItems = (role: string = "") => {
+  const upperRole = role.toUpperCase();
+  const isSuperAdmin = upperRole === "SUPER ADMIN" || upperRole === "ADMIN";
+
+  return [
+    { href: "/dashboard/admin", icon: Home, label: "Tableau de bord", matchExact: true, show: true },
+    { href: "/dashboard/admin/talents", icon: Users, label: "Talents", show: isSuperAdmin || upperRole.includes("RH") || upperRole.includes("SUPPORT") },
+    { href: "/dashboard/admin/recruteurs", icon: Briefcase, label: "Recruteurs", show: isSuperAdmin || upperRole.includes("RH") || upperRole.includes("SUPPORT") },
+    { href: "/dashboard/admin/emplois", icon: Briefcase, label: "Offres d'emploi", show: isSuperAdmin || upperRole.includes("RH") },
+    { href: "/dashboard/admin/transactions", icon: History, label: "Transactions", show: isSuperAdmin || upperRole.includes("FINANCIER") },
+    { href: "/dashboard/admin/permissions", icon: Shield, label: "Permissions & Rôles", show: isSuperAdmin },
+    { href: "/dashboard/admin/parametres", icon: Settings, label: "Paramètres", show: isSuperAdmin },
+    { href: "/dashboard/admin/suppressions", icon: AlertTriangle, label: "Suppression de compte", show: isSuperAdmin || upperRole.includes("RH") || upperRole.includes("SUPPORT") },
+  ].filter(item => item.show);
+};
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -30,7 +36,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const [langMenuOpen, setLangMenuOpen] = useState(false);
   const pathname = usePathname();
   const { user, logout } = useAuth();
-  const { locale, setLocale } = useLang();
+  const locale = useLocale();
+  const t = useTranslations();
+  const router = useRouter();
 
   return (
     <div className="flex min-h-screen" style={{ background: "#edeeef" }}>
@@ -42,7 +50,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       {/* Sidebar */}
       <aside
         className={`
-          fixed md:sticky top-0 left-0 z-40
+          fixed md:sticky top-0 left-0 z-[60]
           w-64 h-screen overflow-hidden bg-white border-r border-slate-200
           flex flex-col justify-between transition-transform duration-300
           ${sidebarOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"}
@@ -65,7 +73,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             </button>
           </div>
           <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
-            {sidebarItems.map(({ href, icon: Icon, label, matchExact }) => {
+            {getSidebarItems(user?.role).map(({ href, icon: Icon, label, matchExact }) => {
               const active = matchExact ? pathname === href : pathname.startsWith(href);
               return (
                 <Link key={href} href={href} className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all ${active ? "bg-blue-600 text-white shadow-md shadow-blue-500/20" : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"}`}>
@@ -80,7 +88,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col min-w-0">
         {/* Header */}
-        <header className="sticky top-0 z-20 bg-white border-b border-slate-200 px-6 py-4 flex items-center justify-between shadow-sm">
+        <header className="sticky top-0 z-[60] bg-white border-b border-slate-200 px-6 py-4 flex items-center justify-between shadow-sm">
           <div className="flex items-center gap-3">
             <button onClick={() => setSidebarOpen(true)} className="text-slate-500 hover:text-slate-700 p-1 md:hidden" aria-label="Menu">
               <Menu size={22} />
@@ -103,7 +111,13 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                   {LOCALES.map(({ code, label, flag }) => (
                     <button
                       key={code}
-                      onClick={() => { setLocale(code); setLangMenuOpen(false); }}
+                      onClick={() => {
+                        const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+                        const domainPart = isLocalhost ? '' : ' domain=.netacuv.com;';
+                        document.cookie = `NEXT_LOCALE=${code}; path=/;${domainPart} SameSite=Lax`;
+                        setLangMenuOpen(false);
+                        router.refresh();
+                      }}
                       className={`w-full text-left px-4 py-2 text-xs font-semibold flex items-center gap-2 transition-colors ${
                         locale === code ? "text-blue-600 bg-blue-50" : "text-slate-600 hover:bg-slate-50"
                       }`}

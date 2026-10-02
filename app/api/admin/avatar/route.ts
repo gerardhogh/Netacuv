@@ -23,7 +23,10 @@ export async function POST(req: NextRequest) {
       select: { role: true }
     });
 
-    if (user?.role?.name !== "ADMIN") {
+    const upperRole = user?.role?.name?.toUpperCase() || "";
+    const isAdmin = upperRole === "SUPER ADMIN" || upperRole === "ADMIN RH / MODÉRATEUR" || upperRole === "MANAGER IA & CERTIFICATION" || upperRole === "GESTIONNAIRE FINANCIER" || upperRole === "SUPPORT CLIENT" || upperRole === "ADMIN";
+
+    if (!isAdmin) {
       return NextResponse.json({ error: "Accès refusé" }, { status: 403 });
     }
     

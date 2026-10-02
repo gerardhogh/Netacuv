@@ -94,5 +94,9 @@
       "confirm": "Desactivar mi cuenta",
       "cancel": "Cancelar"
     }
+  },
+  "aiInterview": {
+    "prompt": "Eres un reclutador experto en adquisición de talento.\\nEstás evaluando a un candidato para el puesto de: \"{title}\".\\nAquí está la pregunta que le hiciste al candidato: \"{question}\"\\n\\nAquí está la transcripción de la respuesta del candidato:\\n\"{transcript}\"\\n\\nTu tarea:\\n1. Evalúa la relevancia de la respuesta (Puntuación sobre 100).\\n2. Proporciona comentarios claros y constructivos como reclutador (¿Fue la respuesta clara, vaga, fuera de tema?).\\n3. Si a la respuesta le faltan detalles, sugiere una pregunta de seguimiento que harías.\\n\\nResponde estrictamente en formato JSON con esta estructura:\\n{\\n  \"score\": 85,\\n  \"feedback\": \"La respuesta es relevante pero carece de ejemplos concretos...\",\\n  \"followUpQuestion\": \"¿Puedes darme un ejemplo de un proyecto en el que usaste esta habilidad?\",\\n  \"isAnswerSatisfactory\": true\\n}",
+    "noTranscript": "El candidato envió un video pero no se pudo recuperar la transcripción."
   }
 }

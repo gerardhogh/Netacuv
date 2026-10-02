@@ -5,6 +5,7 @@ import Image from "next/image";
 import { useState } from "react";
 import { useAuth } from "../context/AuthContext";
 import LogoutButton from "./LogoutButton";
+import LanguageSwitcher from "./LanguageSwitcher";
 import {
   Menu,
   X,
@@ -98,6 +99,7 @@ export default function Navbar({
 
         {/* CTA / Auth Actions */}
         <div className="hidden md:flex items-center gap-3">
+          <LanguageSwitcher />
           {user ? (
             <div className="flex items-center gap-3">
               <Link

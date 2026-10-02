@@ -16,6 +16,8 @@ import {
   Share2,
   CheckCircle,
 } from "lucide-react";
+import { useAuth } from "@/app/context/AuthContext";
+import PremiumRequiredModal from "@/app/components/PremiumRequiredModal";
 
 export interface CandidatData {
   id: string | number;
@@ -67,12 +69,14 @@ export default function CandidatProfilDetail({
   onBack,
   onSendEmail,
 }: CandidatProfilDetailProps) {
+  const { user } = useAuth();
   const [activeSubTab, setActiveSubTab] = useState<"informations" | "reseaux" | "video">("informations");
   const [isPlaying, setIsPlaying] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
   const [toastMsg, setToastMsg] = useState<string | null>(null);
   const [fullProfile, setFullProfile] = useState<FullCandidatProfile | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [showPremiumModal, setShowPremiumModal] = useState(false);
 
   // Fetch full data if candidat.id is provided
   useEffect(() => {
@@ -216,7 +220,12 @@ export default function CandidatProfilDetail({
 
             <button
               type="button"
-              onClick={() => {
+              onClick={(e) => {
+                e.preventDefault();
+                if (!user?.isPremium) {
+                  setShowPremiumModal(true);
+                  return;
+                }
                 if (onSendEmail) {
                   onSendEmail(email, name);
                 } else {
@@ -225,7 +234,11 @@ export default function CandidatProfilDetail({
                   window.open(gmailUrl, "_blank", "noopener,noreferrer");
                 }
               }}
-              className="w-full py-2.5 px-4 text-xs font-semibold text-slate-700 bg-white border border-slate-300 hover:bg-slate-50 rounded-lg transition-colors shadow-xs"
+              className={`w-full py-2.5 px-4 text-xs font-semibold rounded-lg transition-colors shadow-xs ${
+                !user?.isPremium
+                  ? 'bg-slate-50 border border-slate-200 text-slate-400 cursor-not-allowed opacity-70'
+                  : 'bg-white border border-slate-300 text-slate-700 hover:bg-slate-50'
+              }`}
             >
               Envoyer un mail
             </button>
@@ -548,6 +561,13 @@ export default function CandidatProfilDetail({
         </div>
 
       </div>
+
+      {showPremiumModal && (
+        <PremiumRequiredModal 
+          onClose={() => setShowPremiumModal(false)} 
+          message="Passez au plan Premium pour contacter ce talent et consulter ses informations détaillées."
+        />
+      )}
     </div>
   );
 }

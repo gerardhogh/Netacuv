@@ -17,7 +17,8 @@ import {
   X,
   ExternalLink,
   Copy,
-  Download
+  Download,
+  Lock
 } from "lucide-react";
 import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
@@ -104,12 +105,12 @@ function ProfilTalentContent({ initialTab = "informations" }: { initialTab?: Sub
 
           let pct = 0;
           if (isInfoComplete) pct += 25;
-          if (data.avatar) pct += 10;
+          if (data.avatar && data.avatar !== "/assets/avatar_africain.jpg") pct += 10;
           
-          const hasCv = !!(data.talentProfile?.cvUrl) || localStorage.getItem("check_cv_has_pdf") === "true";
+          const hasCv = !!(data.talentProfile?.cvUrl) || (typeof window !== "undefined" && localStorage.getItem("check_cv_has_pdf") === "true");
           if (hasCv) pct += 25;
 
-          const hasVid = !!(data.talentProfile?.videoUrl) || (user?.id && localStorage.getItem(`interview_recorded_${user.id}`) === "true");
+          const hasVid = !!(data.talentProfile?.videoUrl) || (typeof window !== "undefined" && user?.id && localStorage.getItem(`interview_recorded_${user.id}`) === "true");
           if (hasVid) pct += 40;
 
           setCompletionPercent(pct);
@@ -120,6 +121,10 @@ function ProfilTalentContent({ initialTab = "informations" }: { initialTab?: Sub
           else if (pct >= 40) setStars(2);
           else if (pct >= 1) setStars(1);
           else setStars(0);
+
+          if (typeof window !== "undefined") {
+            window.dispatchEvent(new CustomEvent("dashboardProfileUpdated"));
+          }
         }
       })
       .catch(console.error);
@@ -175,6 +180,11 @@ function ProfilTalentContent({ initialTab = "informations" }: { initialTab?: Sub
 
   // Handle CV Selection
   const handleCvFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!user?.isPremium) {
+      showToast("L'upload de CV est réservé aux talents Premium.");
+      e.target.value = '';
+      return;
+    }
     const file = e.target.files?.[0];
     if (!file) return;
     setSelectedCvFile(file);
@@ -372,27 +382,49 @@ function ProfilTalentContent({ initialTab = "informations" }: { initialTab?: Sub
 
             {/* CV Upload */}
             <div className="w-full text-left">
-              <h4 className="text-[15px] font-bold text-[#08304c] mb-3">
+              <h4 className="text-[15px] font-bold text-[#08304c] mb-3 flex items-center gap-2">
                 CV (Curriculum Vitae)
+                {!user?.isPremium && <Lock size={14} className="text-amber-500" />}
               </h4>
-              <div 
-                onClick={() => cvInputRef.current?.click()}
-                className="flex items-center border border-slate-200 rounded-md bg-white overflow-hidden mb-4 cursor-pointer hover:border-blue-400 transition-colors"
-              >
-                <div className="bg-slate-50 px-3 py-2 text-sm text-slate-600 border-r border-slate-200 hover:bg-slate-100 whitespace-nowrap font-medium">
-                  Parcourir...
+              
+              {user?.isPremium ? (
+                <>
+                  <div 
+                    onClick={() => cvInputRef.current?.click()}
+                    className="flex items-center border border-slate-200 rounded-md bg-white overflow-hidden mb-4 cursor-pointer hover:border-blue-400 transition-colors"
+                  >
+                    <div className="bg-slate-50 px-3 py-2 text-sm text-slate-600 border-r border-slate-200 hover:bg-slate-100 whitespace-nowrap font-medium">
+                      Parcourir...
+                    </div>
+                    <div className="px-3 py-2 text-sm text-slate-500 truncate flex-1">
+                      {selectedCvName || "Aucun fichier sélectionné."}
+                    </div>
+                  </div>
+                  <button
+                    onClick={handleCvUpdate}
+                    className="w-full flex items-center justify-center gap-2 bg-[#008de4] hover:bg-blue-600 text-white font-bold py-2.5 rounded-md text-sm transition-colors shadow-sm"
+                  >
+                    <FileText size={16} />
+                    Mettre à jour
+                  </button>
+                </>
+              ) : (
+                <div className="flex flex-col items-center justify-center p-6 bg-slate-50 border border-slate-200 rounded-lg text-center">
+                  <div className="bg-amber-100 p-3 rounded-full mb-3">
+                    <Lock size={24} className="text-amber-600" />
+                  </div>
+                  <h5 className="text-sm font-bold text-slate-800 mb-2">Fonctionnalité Premium</h5>
+                  <p className="text-xs text-slate-500 font-medium mb-4">
+                    L'ajout et la modification du CV sont réservés aux membres Premium.
+                  </p>
+                  <button
+                    onClick={() => {/* Rediriger vers l'upgrade */ window.location.href = "/dashboard/talent?tab=abonnement"}}
+                    className="px-4 py-2 bg-gradient-to-r from-amber-400 to-orange-500 text-white text-xs font-bold rounded-lg shadow-sm hover:from-amber-500 hover:to-orange-600 transition-all"
+                  >
+                    Passer Premium
+                  </button>
                 </div>
-                <div className="px-3 py-2 text-sm text-slate-500 truncate flex-1">
-                  {selectedCvName || "Aucun fichier sélectionné."}
-                </div>
-              </div>
-              <button
-                onClick={handleCvUpdate}
-                className="w-full flex items-center justify-center gap-2 bg-[#008de4] hover:bg-blue-600 text-white font-bold py-2.5 rounded-md text-sm transition-colors shadow-sm"
-              >
-                <FileText size={16} />
-                Mettre à jour
-              </button>
+              )}
             </div>
           </div>
 
@@ -678,20 +710,21 @@ function InformationsTab({ onUpdate }: { onUpdate: () => void }) {
         body: JSON.stringify(payload)
       });
       if (res.ok) {
-        showTabToast("Informations mises à jour avec succès ✓", "success");
+        showTabToast("Informations mises à jour avec succès ✓.success");
         if (onUpdate) onUpdate();
       } else {
-        showTabToast("Erreur lors de la mise à jour", "error");
+        showTabToast("Erreur lors de la mise à jour.error");
       }
     } catch (e) {
       console.error(e);
-      showTabToast("Erreur lors de la mise à jour", "error");
+      showTabToast("Erreur lors de la mise à jour.error");
     } finally {
       setIsSaving(false);
     }
   };
 
-  const profileLink = typeof window !== "undefined" && formData.username ? `https://netacuv.com/talents/${formData.username}` : "";
+  const origin = typeof window !== "undefined" ? window.location.origin : "https://netacuv.com";
+  const profileLink = formData.username ? `${origin}/talents/${formData.username}` : "";
 
   const handleCopyLink = () => {
     if (!profileLink) return;
@@ -990,13 +1023,13 @@ function ReseauxTab() {
         body: JSON.stringify(formData)
       });
       if (res.ok) {
-        showTabToast("Réseaux sociaux mis à jour avec succès ✓", "success");
+        showTabToast("Réseaux sociaux mis à jour avec succès ✓.success");
       } else {
-        showTabToast("Erreur lors de la mise à jour", "error");
+        showTabToast("Erreur lors de la mise à jour.error");
       }
     } catch (e) {
       console.error(e);
-      showTabToast("Erreur lors de la mise à jour", "error");
+      showTabToast("Erreur lors de la mise à jour.error");
     } finally {
       setIsSaving(false);
     }
@@ -1128,6 +1161,18 @@ function VideoTab() {
             const url = URL.createObjectURL(blob);
             setVideoUrl(url);
             setHasVideo(true);
+
+            // Auto-sync local video to server so admin can see it
+            const formData = new FormData();
+            const ext = blob.type?.includes("mp4") ? "mp4" : "webm";
+            formData.append("video", blob, `interview-sync.${ext}`);
+            if (user?.id) formData.append("userId", user.id);
+            fetch("/api/talents/video", {
+              method: "POST",
+              body: formData,
+              credentials: "include"
+            }).catch(console.error);
+
           } else {
             setHasVideo(false);
             setVideoUrl(null);

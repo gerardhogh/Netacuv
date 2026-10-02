@@ -7,7 +7,7 @@ const rateLimitMap = new Map<string, { count: number; lastReset: number }>();
 const RATE_LIMIT_WINDOW_MS = 60 * 1000; // 1 minute
 const MAX_REQUESTS_PER_WINDOW = 30; // 30 reqs / min
 
-export async function middleware(req: NextRequest) {
+async function handleMiddleware(req: NextRequest) {
   // Use getToken directly. It automatically handles secure cookies on production/HTTPS.
   const token = await getToken({
     req,
@@ -63,10 +63,17 @@ export async function middleware(req: NextRequest) {
 
   // Comportement pour les utilisateurs connectés
   if (token) {
-    const role = (token.role as string)?.toUpperCase();
+    const role = (token.role as string)?.toUpperCase() || "";
     
     // Logique pour l'Administrateur
-    if (role === "ADMIN") {
+    const isAdmin = role === "SUPER ADMIN" || 
+                    role === "ADMIN RH / MODÉRATEUR" || 
+                    role === "MANAGER IA & CERTIFICATION" || 
+                    role === "GESTIONNAIRE FINANCIER" || 
+                    role === "SUPPORT CLIENT" ||
+                    role === "ADMIN";
+
+    if (isAdmin) {
       // Forcer le sous-domaine admin pour les routes du dashboard
       if (!isAdminSubdomain && path.startsWith("/dashboard")) {
         return NextResponse.redirect(new URL(adminUrl, req.url));
@@ -79,6 +86,11 @@ export async function middleware(req: NextRequest) {
 
       // Si l'admin est déjà connecté et visite la page de connexion, le rediriger vers l'accueil (qui affiche le dashboard)
       if (path === "/admin") {
+        return NextResponse.redirect(new URL(adminUrl, req.url));
+      }
+
+      // Si l'admin visite /dashboard tout court sur le sous-domaine admin
+      if (isAdminSubdomain && path === "/dashboard") {
         return NextResponse.redirect(new URL(adminUrl, req.url));
       }
     } 
@@ -116,6 +128,28 @@ export async function middleware(req: NextRequest) {
   }
 
   return NextResponse.next();
+}
+
+export async function middleware(req: NextRequest) {
+  const res = await handleMiddleware(req);
+
+  // Set NEXT_LOCALE cookie if not present or invalid
+  const locales = ['fr', 'en', 'es', 'zh'];
+  let locale = req.cookies.get('NEXT_LOCALE')?.value;
+  
+  if (!locale || !locales.includes(locale)) {
+    locale = 'fr';
+    const isLocalhost = req.headers.get("host")?.includes("localhost");
+    const domain = isLocalhost ? undefined : '.netacuv.com';
+    res.cookies.set('NEXT_LOCALE', locale, {
+      domain,
+      path: '/',
+      sameSite: 'lax',
+      secure: !isLocalhost,
+    });
+  }
+
+  return res;
 }
 
 export const config = {

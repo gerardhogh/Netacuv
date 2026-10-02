@@ -7,6 +7,8 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth } from "../context/AuthContext";
+import { useTranslations, useLocale } from "next-intl";
+import LanguageSwitcher from "@/app/components/LanguageSwitcher";
 import {
   Bell,
   ChevronDown,
@@ -110,43 +112,35 @@ function playBeep(ctx: AudioContext, freq = 440, duration = 0.3, vol = 0.1) {
 }
 
 // ─── Speak question ───────────────────────────────────────────────────────────
-async function speakText(text: string, subtitle?: string) {
+async function speakText(text: string, subtitle?: string, langCode: string = "fr") {
   const fullText = subtitle ? `${text}. ${subtitle}` : text;
   
-  // // Structure modulaire pour provider externe (ex: ElevenLabs / OpenAI)
-  // const useExternalTTS = false;
-  // if (useExternalTTS) {
-  //   try {
-  //     const audioUrl = await fetchExternalTTS(fullText);
-  //     const audio = new Audio(audioUrl);
-  //     audio.play();
-  //     return;
-  //   } catch (e) {
-  //     console.error("External TTS failed, fallback to native", e);
-  //   }
-  // }
-
   if (typeof window === "undefined" || !window.speechSynthesis) return;
   window.speechSynthesis.cancel();
   
   const utter = new SpeechSynthesisUtterance(fullText);
-  utter.lang = "fr-FR";
-  // Pitch and rate adjusted slightly for a more grounded, calm (natural) tone
+  
+  // Mapping language code to SpeechSynthesis locale
+  const langMap: Record<string, string> = {
+    fr: "fr-FR",
+    en: "en-US",
+    es: "es-ES",
+    pt: "pt-PT",
+    zh: "zh-CN"
+  };
+  utter.lang = langMap[langCode] || "fr-FR";
   utter.rate = 0.95;
   utter.pitch = 1.0;
 
   const voices = window.speechSynthesis.getVoices();
-  const frVoices = voices.filter((v) => v.lang.startsWith("fr"));
+  const validVoices = voices.filter((v) => v.lang.startsWith(utter.lang.split('-')[0]));
   
-  // Priorité : Neural2, Natural, Google (sans Thomas), puis Hortense/Denise/Amélie
-  let selectedVoice = frVoices.find(v => v.name.includes("Neural2") && v.name.includes("Female"));
-  if (!selectedVoice) selectedVoice = frVoices.find(v => v.name.includes("Neural2"));
-  if (!selectedVoice) selectedVoice = frVoices.find(v => v.name.toLowerCase().includes("natural") && v.name.toLowerCase().includes("female"));
-  if (!selectedVoice) selectedVoice = frVoices.find(v => v.name.includes("Google") && !v.name.includes("Thomas"));
-  if (!selectedVoice) selectedVoice = frVoices.find(v => v.name.includes("Hortense"));
-  if (!selectedVoice) selectedVoice = frVoices.find(v => v.name.includes("Denise"));
-  if (!selectedVoice) selectedVoice = frVoices.find(v => v.name.includes("Amélie"));
-  if (!selectedVoice) selectedVoice = frVoices[0]; // fallback
+  // Prioritize Neural / Natural voices
+  let selectedVoice = validVoices.find(v => v.name.includes("Neural2") && v.name.includes("Female"));
+  if (!selectedVoice) selectedVoice = validVoices.find(v => v.name.includes("Neural2"));
+  if (!selectedVoice) selectedVoice = validVoices.find(v => v.name.toLowerCase().includes("natural") && v.name.toLowerCase().includes("female"));
+  if (!selectedVoice) selectedVoice = validVoices.find(v => v.name.includes("Google") && !v.name.includes("Thomas"));
+  if (!selectedVoice) selectedVoice = validVoices[0]; // fallback
   
   if (selectedVoice) utter.voice = selectedVoice;
 
@@ -159,6 +153,8 @@ import { StartInterviewModal, CancelInterviewModal } from "../components/modals/
 export default function InterviewPage() {
   const router = useRouter();
   const { user, logout } = useAuth();
+  const lang = useLocale();
+  const t = useTranslations();
   const [menuDrawerOpen, setMenuDrawerOpen] = useState(false);
 
   // Randomised questions (stable per session, randomised on mount)
@@ -181,6 +177,9 @@ export default function InterviewPage() {
   const [recordingTime, setRecordingTime] = useState(0);
   const [triesLeft, setTriesLeft] = useState(3);
   const [recordedVideoUrl, setRecordedVideoUrl] = useState<string | null>(null);
+  const [transcript, setTranscript] = useState("");
+  const transcriptRef = useRef("");
+  const recognitionRef = useRef<any>(null);
 
   // Camera/mic states
   const [cameraOn, setCameraOn] = useState(true);
@@ -239,6 +238,13 @@ export default function InterviewPage() {
     }
     if (typeof window !== "undefined" && window.speechSynthesis) {
       window.speechSynthesis.cancel();
+    }
+    if (recognitionRef.current) {
+      try {
+        recognitionRef.current.stop();
+      } catch (e) {
+        console.warn("SpeechRecognition stop error:", e);
+      }
     }
   }, []);
 
@@ -367,37 +373,93 @@ export default function InterviewPage() {
     if (phase === "recording" && currentQuestion) {
       // Small delay so beep finishes
       const t = setTimeout(() => {
-        speakText(currentQuestion.text, currentQuestion.subtitle);
+        speakText(currentQuestion.text, currentQuestion.subtitle, lang);
       }, 600);
       return () => clearTimeout(t);
     }
-  }, [phase, questionIndex]);
+  }, [phase, questionIndex, currentQuestion, lang]);
+
+  // ── Speech Recognition setup per question ────────────────────────────────────
+  useEffect(() => {
+    if (typeof window !== "undefined" && ("SpeechRecognition" in window || "webkitSpeechRecognition" in window)) {
+      const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+      if (!recognitionRef.current) {
+        recognitionRef.current = new SpeechRecognition();
+        recognitionRef.current.continuous = true;
+        recognitionRef.current.interimResults = true;
+      }
+      
+      const recognition = recognitionRef.current;
+      // Set recognition language based on app language
+      const langMap: Record<string, string> = { fr: "fr-FR", en: "en-US", es: "es-ES", pt: "pt-PT", zh: "zh-CN" };
+      recognition.lang = langMap[lang] || "fr-FR";
+
+      recognition.onresult = (event: any) => {
+        let finalTranscript = "";
+        for (let i = 0; i < event.results.length; ++i) {
+          finalTranscript += event.results[i][0].transcript;
+        }
+        setTranscript(finalTranscript);
+        transcriptRef.current = finalTranscript;
+      };
+    }
+  }, [lang]);
+
+  // ── AI Evaluation Trigger ────────────────────────────────────────────────────
+  const evaluateAnswer = useCallback((currentQuestionIndex: number, textToEvaluate: string) => {
+    if (!textToEvaluate || textToEvaluate.trim() === "") return;
+    
+    // API call in background
+    fetch("/api/ai/evaluate-interview", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        interviewSessionId: "temp_session_id", // Remplacer par le vrai ID quand implémenté
+        questionIndex: currentQuestionIndex,
+        transcript: textToEvaluate
+      })
+    }).catch(console.error);
+  }, []);
 
   // ── Recording timer ───────────────────────────────────────────────────────────
   useEffect(() => {
-    if (phase !== "recording" || !currentQuestion) return;
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setRecordingTime(0);
-    const maxDuration = currentQuestion.duration;
-    const timer = setInterval(() => {
-      setRecordingTime((prev) => {
-        if (prev >= maxDuration) {
-          clearInterval(timer);
-          window.speechSynthesis?.cancel();
-          const nextIndex = questionIndex + 1;
-          if (nextIndex < totalQuestions) {
-            setQuestionIndex(nextIndex);
-            setPhase("countdown");
-          } else {
-            setPhase("finished");
+    if (phase === "recording" && currentQuestion) {
+      setRecordingTime(0);
+      setTranscript("");
+      transcriptRef.current = "";
+      if (recognitionRef.current) {
+        try { recognitionRef.current.start(); } catch (e) { console.warn(e); }
+      }
+
+      const maxDuration = currentQuestion.duration;
+      const timer = setInterval(() => {
+        setRecordingTime((prev) => {
+          if (prev >= maxDuration) {
+            clearInterval(timer);
+            window.speechSynthesis?.cancel();
+            
+            if (recognitionRef.current) {
+              try { recognitionRef.current.stop(); } catch (e) { console.warn(e); }
+            }
+            
+            // Évaluer la réponse en arrière-plan
+            evaluateAnswer(questionIndex, transcriptRef.current);
+
+            const nextIndex = questionIndex + 1;
+            if (nextIndex < totalQuestions) {
+              setQuestionIndex(nextIndex);
+              setPhase("countdown");
+            } else {
+              setPhase("finished");
+            }
+            return maxDuration;
           }
-          return maxDuration;
-        }
-        return prev + 1;
-      });
-    }, 1000);
-    return () => clearInterval(timer);
-  }, [phase, questionIndex, questions]);
+          return prev + 1;
+        });
+      }, 1000);
+      return () => clearInterval(timer);
+    }
+  }, [phase, questionIndex, questions, totalQuestions, currentQuestion, evaluateAnswer]);
 
   const getSupportedMimeType = () => {
     if (typeof MediaRecorder === "undefined") return undefined;
@@ -436,7 +498,14 @@ export default function InterviewPage() {
 
   const handleSkip = () => {
     window.speechSynthesis?.cancel();
-    // eslint-disable-next-line react-hooks/set-state-in-effect
+    
+    if (recognitionRef.current) {
+      try { recognitionRef.current.stop(); } catch (e) { console.warn(e); }
+    }
+    
+    // Évaluer la réponse en arrière-plan
+    evaluateAnswer(questionIndex, transcriptRef.current);
+
     setRecordingTime(0);
     const nextIndex = questionIndex + 1;
     if (nextIndex < totalQuestions) {

@@ -80,7 +80,7 @@ export async function GET(request: NextRequest) {
         role = await prisma.role.create({
           data: {
             name: roleName,
-            permissions: JSON.stringify([]),
+            isSystem: true,
           },
         });
       }

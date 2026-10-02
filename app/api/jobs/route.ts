@@ -9,17 +9,60 @@ export async function GET(req: Request) {
     const { searchParams } = new URL(req.url);
     const mine = searchParams.get("mine") === "true";
 
-    let whereClause = {};
+    let whereClause: any = { status: "PUBLISHED" };
+
+    const recommended = searchParams.get("recommended") === "true";
 
     if (mine) {
       const session = await getServerSession(authOptions);
-      if (session && session.user?.id && ["RECRUTEUR", "RECRUITER", "ADMIN"].includes(session.user?.role || "")) {
+      if (session && session.user?.id && ["RECRUTEUR", "RECRUITER", ...["SUPER ADMIN", "ADMIN RH / MODÉRATEUR", "MANAGER IA & CERTIFICATION", "GESTIONNAIRE FINANCIER", "SUPPORT CLIENT", "ADMIN"]].includes(session.user?.role?.toUpperCase() || "")) {
         const recruiterProfile = await prisma.recruiterProfile.findFirst({
           where: { userId: session.user.id as string },
         });
         if (recruiterProfile) {
           whereClause = { recruiterId: recruiterProfile.id };
         }
+      }
+    } else if (recommended) {
+      const session = await getServerSession(authOptions);
+      if (session && session.user?.id) {
+        const talentProfile = await prisma.talentProfile.findFirst({
+          where: { userId: session.user.id as string },
+        });
+        
+        if (talentProfile) {
+          const keywords: string[] = [];
+          
+          // Ajouter les compétences comme mots-clés
+          if (talentProfile.skills) {
+            keywords.push(...talentProfile.skills.split(',').map(s => s.trim()).filter(Boolean));
+          }
+          
+          // Ajouter les mots significatifs de la bio
+          if (talentProfile.bio) {
+            const bioWords = talentProfile.bio.split(/\s+/).filter(w => w.length > 4);
+            keywords.push(...bioWords);
+          }
+          
+          // Dédupliquer les mots-clés
+          const uniqueKeywords = Array.from(new Set(keywords.map(k => k.toLowerCase())));
+
+          if (uniqueKeywords.length > 0) {
+            whereClause = {
+              status: "PUBLISHED",
+              OR: uniqueKeywords.flatMap(skill => [
+                { title: { contains: skill, mode: "insensitive" } },
+                { description: { contains: skill, mode: "insensitive" } }
+              ])
+            };
+          } else {
+            whereClause = { id: "no-recommendation" };
+          }
+        } else {
+          whereClause = { id: "no-recommendation" };
+        }
+      } else {
+        whereClause = { id: "no-recommendation" };
       }
     }
 
@@ -72,7 +115,7 @@ export async function POST(req: Request) {
   const session = await getServerSession(authOptions);
 
   // Vérification stricte des droits
-  if (!session || !session.user?.id || !["RECRUTEUR", "RECRUITER", "ADMIN"].includes(session.user?.role || "")) {
+  if (!session || !session.user?.id || !["RECRUTEUR", "RECRUITER", ...["SUPER ADMIN", "ADMIN RH / MODÉRATEUR", "MANAGER IA & CERTIFICATION", "GESTIONNAIRE FINANCIER", "SUPPORT CLIENT", "ADMIN"]].includes(session.user?.role?.toUpperCase() || "")) {
     return NextResponse.json(
       { error: "Accès refusé. Seuls les recruteurs et administrateurs peuvent publier une offre." },
       { status: 403 }
@@ -108,7 +151,7 @@ export async function POST(req: Request) {
 
     // --- VÉRIFICATION PREMIUM ---
     // Si l'utilisateur n'est pas ADMIN, on vérifie la limite
-    if (session.user.role !== "ADMIN") {
+    if (!["SUPER ADMIN", "ADMIN RH / MODÉRATEUR", "MANAGER IA & CERTIFICATION", "GESTIONNAIRE FINANCIER", "SUPPORT CLIENT", "ADMIN"].includes(session.user.role?.toUpperCase() || "")) {
       const userRecord = await prisma.user.findUnique({
         where: { id: userId },
         select: { isPremium: true }

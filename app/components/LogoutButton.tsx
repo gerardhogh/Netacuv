@@ -8,12 +8,14 @@ export default function LogoutButton({
   children, 
   className,
   title,
-  onClick
+  onClick,
+  onCancelClick
 }: { 
   children: React.ReactNode; 
   className?: string;
   title?: string;
   onClick?: () => void;
+  onCancelClick?: () => void;
 }) {
   const [showModal, setShowModal] = useState(false);
   const { logout } = useAuth();
@@ -34,7 +36,10 @@ export default function LogoutButton({
       
       {showModal && (
         <LogoutModal 
-          onCancel={() => setShowModal(false)}
+          onCancel={() => {
+            setShowModal(false);
+            if (onCancelClick) onCancelClick();
+          }}
           onConfirm={() => {
             setShowModal(false);
             logout();

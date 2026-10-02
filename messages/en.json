@@ -94,5 +94,9 @@
       "confirm": "Deactivate my account",
       "cancel": "Cancel"
     }
+  },
+  "aiInterview": {
+    "prompt": "You are an expert recruiter in talent acquisition.\\nYou are evaluating a candidate for the position of: \"{title}\".\\nHere is the question you asked the candidate: \"{question}\"\\n\\nHere is the transcript of the candidate's response:\\n\"{transcript}\"\\n\\nYour task:\\n1. Evaluate the relevance of the response (Score out of 100).\\n2. Provide clear and constructive feedback as a recruiter (Was the response clear, vague, off-topic?).\\n3. If the response lacks detail, suggest a follow-up question you would ask.\\n\\nRespond strictly in JSON format with this structure:\\n{\\n  \"score\": 85,\\n  \"feedback\": \"The response is relevant but lacks concrete examples...\",\\n  \"followUpQuestion\": \"Can you give me an example of a project where you used this skill?\",\\n  \"isAnswerSatisfactory\": true\\n}",
+    "noTranscript": "The candidate submitted a video but the transcript could not be retrieved."
   }
 }

@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import { Eye, EyeOff, Shield, Bell, Globe2, AlertTriangle } from "lucide-react";
-import { useLang, LOCALES } from "../../../context/LangContext";
+import { useTranslations, useLocale } from "next-intl";
+import LanguageSwitcher, { LOCALES, Locale } from "@/app/components/LanguageSwitcher";
 import { useRouter } from "next/navigation";
 import { signOut } from "next-auth/react";
 
@@ -15,7 +16,8 @@ export default function ParametresTab() {
   const [showCurrent, setShowCurrent] = useState(false);
   const [showNew, setShowNew] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
-  const { locale: lang, setLocale: setLang } = useLang();
+  const lang = useLocale();
+  const t = useTranslations();
   const [pwdSuccess, setPwdSuccess] = useState(false);
   const [deleteModal, setDeleteModal] = useState(false);
   const [reason, setReason] = useState("");
@@ -121,7 +123,13 @@ export default function ParametresTab() {
           <div className="relative">
             <select
               value={lang}
-              onChange={(e) => setLang(e.target.value as any)}
+              onChange={(e) => {
+                const newLocale = e.target.value as Locale;
+                const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+                const domainPart = isLocalhost ? '' : ' domain=.netacuv.com;';
+                document.cookie = `NEXT_LOCALE=${newLocale}; path=/;${domainPart} SameSite=Lax`;
+                router.refresh();
+              }}
               className="w-full bg-[#f8fafc] border border-slate-200 rounded-lg px-4 py-3 text-sm text-slate-800 outline-none focus:ring-2 focus:ring-blue-100 appearance-none cursor-pointer"
             >
               {LOCALES.map(({ code, label, flag }) => (

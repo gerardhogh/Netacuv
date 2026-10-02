@@ -82,7 +82,7 @@ export async function GET(req: Request) {
     }
 
     // 3. ADMIN : accès global
-    if (effectiveRole === "ADMIN") {
+    if (["SUPER ADMIN", "ADMIN RH / MODÉRATEUR", "MANAGER IA & CERTIFICATION", "GESTIONNAIRE FINANCIER", "SUPPORT CLIENT", "ADMIN"].includes(effectiveRole?.toUpperCase() || "")) {
       const applications = await prisma.application.findMany({
         include: { talent: true, jobOffer: true },
         orderBy: { createdAt: "desc" },
@@ -137,22 +137,15 @@ export async function POST(req: Request) {
 
     // Vérification du quota Freemium
     if (!session.user.isPremium) {
-      const startOfMonth = new Date();
-      startOfMonth.setDate(1);
-      startOfMonth.setHours(0, 0, 0, 0);
-
-      const applicationsThisMonth = await prisma.application.count({
+      const totalApplications = await prisma.application.count({
         where: {
           talentId: talentProfile.id,
-          createdAt: {
-            gte: startOfMonth,
-          },
         },
       });
 
-      if (applicationsThisMonth >= 1) {
+      if (totalApplications >= 1) {
         return NextResponse.json(
-          { error: "Vous avez atteint votre limite de 1 candidature gratuite ce mois-ci. Passez au Premium pour candidater en illimité !" },
+          { error: "Vous avez atteint votre limite de 1 candidature gratuite. Passez au Premium pour candidater en illimité !" },
           { status: 403 }
         );
       }

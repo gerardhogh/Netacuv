@@ -10,7 +10,8 @@ import {
   Search, 
   X,
   ArrowLeft,
-  ArrowRight
+  ArrowRight,
+  Crown
 } from "lucide-react";
 import TalentCard from "@/app/components/TalentCard";
 import { useAuth } from "@/app/context/AuthContext";
@@ -212,8 +213,20 @@ export default function RechercheProfil() {
         </div>
 
         {/* Filters */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
-          <div className="relative">
+        <div className="relative">
+          {!isPremiumRecruiter && (
+            <div 
+              className="absolute inset-0 z-10 bg-white/50 backdrop-blur-[2px] flex items-center justify-center rounded-lg border border-slate-200/50 cursor-pointer transition-all hover:bg-white/40"
+              onClick={() => setShowPremiumModal(true)}
+            >
+              <div className="bg-white/95 px-4 py-2.5 rounded-full shadow-sm border border-amber-100 flex items-center gap-2">
+                <Crown className="w-4 h-4 text-amber-500" />
+                <span className="text-sm font-semibold text-slate-800">Filtres avancés réservés aux membres Premium</span>
+              </div>
+            </div>
+          )}
+          <div className={`grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 ${!isPremiumRecruiter ? 'pointer-events-none opacity-60' : ''}`}>
+            <div className="relative">
             <select 
               value={filterDegree} 
               onChange={(e) => {
@@ -280,6 +293,7 @@ export default function RechercheProfil() {
             </select>
             <ChevronDown className="w-4 h-4 text-slate-500 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
           </div>
+        </div>
         </div>
 
         {/* Talent Grid */}

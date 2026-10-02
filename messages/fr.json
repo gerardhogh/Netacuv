@@ -94,5 +94,31 @@
       "confirm": "Désactiver mon compte",
       "cancel": "Annuler"
     }
+  },
+  "aiInterview": {
+    "prompt": "Tu es un recruteur expert en acquisition de talents.\\nTu évalues un candidat pour le poste de : \"{title}\".\\nVoici la question que tu as posée au candidat : \"{question}\"\\n\\nVoici la transcription de la réponse du candidat :\\n\"{transcript}\"\\n\\nTa tâche :\\n1. Évalue la pertinence de la réponse (Score sur 100).\\n2. Fournis un feedback clair et constructif en tant que recruteur (Est-ce que la réponse était claire, floue, hors-sujet ?).\\n3. Si la réponse manque de détails, suggère une question de relance que tu poserais.\\n\\nRéponds obligatoirement au format JSON strict avec cette structure :\\n{\\n  \"score\": 85,\\n  \"feedback\": \"La réponse est pertinente mais manque un peu d'exemples concrets...\",\\n  \"followUpQuestion\": \"Pouvez-vous me donner un exemple de projet où vous avez utilisé cette compétence ?\",\\n  \"isAnswerSatisfactory\": true\\n}",
+    "noTranscript": "Le candidat a soumis une vidéo mais la transcription n'a pas pu être récupérée."
+  },
+  "roles": {
+    "superAdmin": {
+      "name": "Super Admin",
+      "description": "Administrateur principal du système. Accès total."
+    },
+    "moderator": {
+      "name": "Admin RH / Modérateur",
+      "description": "Valider les annonces d'emploi et modérer les candidats/recruteurs."
+    },
+    "aiManager": {
+      "name": "Manager IA & Certification",
+      "description": "Gérer les grilles d'évaluation et les questions des entretiens vidéo IA."
+    },
+    "financialManager": {
+      "name": "Gestionnaire Financier",
+      "description": "Suivi des abonnements Freemium et statut Premium."
+    },
+    "helpdesk": {
+      "name": "Support Client",
+      "description": "Assistance utilisateur avec accès en lecture seule."
+    }
   }
 }

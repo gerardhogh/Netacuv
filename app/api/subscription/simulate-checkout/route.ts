@@ -16,7 +16,7 @@ export async function POST() {
     // Vérifier si l'utilisateur est déjà Premium (idempotent)
     const currentUser = await prisma.user.findUnique({
       where: { id: userId },
-      select: { isPremium: true, role: true },
+      select: { isPremium: true, role: true, referredById: true },
     });
 
     if (currentUser?.isPremium) {
@@ -30,8 +30,8 @@ export async function POST() {
     const roleName = currentUser?.role?.name;
     const amount = roleName === "RECRUTEUR" ? 1000 : 700;
 
-    // AS-05: Transaction atomique — mise à jour User + création Transaction
-    const [updatedUser] = await prisma.$transaction([
+    // Build transaction array
+    const txOperations: any[] = [
       prisma.user.update({
         where: { id: userId },
         data: { isPremium: true },
@@ -46,7 +46,20 @@ export async function POST() {
           paymentMethod: "SIMULATION",
         },
       }),
-    ]);
+    ];
+
+    // Affiliate reward
+    if (currentUser?.referredById) {
+      txOperations.push(
+        prisma.user.update({
+          where: { id: currentUser.referredById },
+          data: { affiliateBalance: { increment: 2500 } },
+        })
+      );
+    }
+
+    // AS-05: Transaction atomique — mise à jour User + création Transaction + Reward Parrain
+    const [updatedUser] = await prisma.$transaction(txOperations);
 
     logger.info("Premium subscription simulated", { userId, amount, role: roleName });
 

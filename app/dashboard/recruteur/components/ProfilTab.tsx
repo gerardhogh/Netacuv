@@ -134,13 +134,13 @@ export default function ProfilTab() {
       });
 
       if (res.ok) {
-        showToast("Profil mis à jour avec succès !", "success");
+        showToast("Profil mis à jour avec succès !.success");
       } else {
-        showToast("Erreur lors de la mise à jour", "error");
+        showToast("Erreur lors de la mise à jour.error");
       }
     } catch (error) {
       console.error(error);
-      showToast("Erreur lors de la mise à jour", "error");
+      showToast("Erreur lors de la mise à jour.error");
     } finally {
       setSaving(false);
     }

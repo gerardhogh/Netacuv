@@ -14,13 +14,14 @@ export default async function PublicProfilePage({
 }) {
   const { username } = await params;
 
-  // Récupérer le talent via le nom d'utilisateur, ID du profil ou ID du user
+  // Récupérer le talent via le nom d'utilisateur, ID du profil, ID du user, ou préfixe de l'email
   const talentProfile = await prisma.talentProfile.findFirst({
     where: {
       OR: [
         { username },
         { id: username },
-        { userId: username }
+        { userId: username },
+        { user: { email: { startsWith: `${username}@` } } }
       ]
     },
     include: { user: true },

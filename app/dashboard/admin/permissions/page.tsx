@@ -2,12 +2,21 @@
 import React, { useState, useEffect } from "react";
 import { Search, Plus, Trash2, Edit2, Eye, X, ChevronLeft, ChevronRight, Shield, ChevronDown } from "lucide-react";
 import { toast, Toaster } from "react-hot-toast";
+import { createPortal } from "react-dom";
+
+const ModalPortal = ({ children }: { children: React.ReactNode }) => {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+  if (!mounted) return null;
+  return createPortal(children, document.body);
+};
 
 type Role = {
   id: string;
   name: string;
   description: string | null;
-  permissions: string;
+  isSystem: boolean;
+  rolePermissions: { permission: { code: string } }[];
   active: boolean;
   _count?: { users: number };
   createdAt: string;
@@ -33,13 +42,22 @@ type AuditLog = {
 };
 
 const permissionsCategories = [
-  { id: "manage_users", label: "Gérer les utilisateurs", category: "Utilisateurs" },
-  { id: "validate_profiles", label: "Valider les profils", category: "Utilisateurs" },
-  { id: "manage_jobs", label: "Créer ou modérer des offres", category: "Offres" },
-  { id: "manage_applications", label: "Gérer les candidatures", category: "Offres" },
-  { id: "view_interviews", label: "Accès aux vidéos d'entretien", category: "Système" },
-  { id: "view_stats", label: "Voir les statistiques", category: "Système" },
-  { id: "manage_settings", label: "Accès aux paramètres globaux", category: "Système" }
+  { id: "*:*", label: "Accès total (bypass rules)", category: "System" },
+  { id: "jobs:approve", label: "Approuver les offres", category: "Jobs" },
+  { id: "jobs:delete", label: "Supprimer les offres", category: "Jobs" },
+  { id: "users:read", label: "Voir les utilisateurs", category: "Users" },
+  { id: "users:moderate", label: "Modérer les utilisateurs", category: "Users" },
+  { id: "reviews:read", label: "Lire les avis", category: "Reviews" },
+  { id: "ai:configure", label: "Configurer l'IA", category: "AI" },
+  { id: "ai:audit", label: "Auditer l'IA", category: "AI" },
+  { id: "questions:manage", label: "Gérer les questions", category: "Questions" },
+  { id: "certifications:read", label: "Voir les certifications", category: "Certifications" },
+  { id: "subscriptions:read", label: "Voir les abonnements", category: "Finance" },
+  { id: "payments:refund", label: "Rembourser les paiements", category: "Finance" },
+  { id: "metrics:view", label: "Voir les métriques", category: "Finance" },
+  { id: "premium:toggle", label: "Activer/Désactiver Premium", category: "Finance" },
+  { id: "tickets:manage", label: "Gérer les tickets", category: "Tickets" },
+  { id: "emails:resend", label: "Renvoyer les emails", category: "Emails" }
 ];
 
 export default function AdminPermissions() {
@@ -105,13 +123,9 @@ export default function AdminPermissions() {
     setRoleModalMode(mode);
     if (role) {
       setCurrentRole(role);
-      try {
-        setSelectedPermissions(JSON.parse(role.permissions));
-      } catch {
-        setSelectedPermissions([]);
-      }
+      setSelectedPermissions(role.rolePermissions?.map(rp => rp.permission.code) || []);
     } else {
-      setCurrentRole({ name: "", description: "" });
+      setCurrentRole({ name: "", description: "", isSystem: false });
       setSelectedPermissions([]);
     }
     setIsRoleModalOpen(true);
@@ -366,18 +380,23 @@ export default function AdminPermissions() {
                       </td>
                       <td className="px-6 py-4 align-top pt-6">
                         <div className="flex flex-col gap-1 items-start text-xs font-semibold">
-                          <button 
-                            onClick={() => {
-                              setUserToAssign(u);
-                              const inferredRoleName = u.role?.name || ((u as any).talentProfile ? "TALENT" : (u as any).recruiterProfile ? "RECRUTEUR" : null);
-                              const matchingRole = roles.find(r => r.name === inferredRoleName);
-                              setSelectedRoleIdForUser(u.roleId || matchingRole?.id || "none");
-                              setIsAssignRoleModalOpen(true);
-                            }} 
-                            className="text-[#32A8D7] hover:underline flex items-center gap-1"
-                          >
-                            <Shield size={12}/> Gérer les rôles
-                          </button>
+                          <div className="relative w-full max-w-[140px]">
+                            <select 
+                              value={u.roleId || "none"}
+                              onChange={(e) => {
+                                setUserToAssign(u);
+                                setSelectedRoleIdForUser(e.target.value);
+                                setIsAssignRoleModalOpen(true);
+                              }}
+                              className="w-full bg-[#f4f9fd] border border-slate-200 text-[#0c2f4a] rounded-lg pl-2 pr-6 py-1.5 text-xs focus:ring-[#32A8D7] focus:outline-none cursor-pointer appearance-none"
+                            >
+                              <option value="none">Aucun rôle</option>
+                              {roles.map(r => (
+                                <option key={r.id} value={r.id}>{r.name}</option>
+                              ))}
+                            </select>
+                            <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={12} />
+                          </div>
                           <div className="flex items-center gap-1.5 mt-2" onClick={() => handleToggleUserStatus(u)}>
                             <div className={`w-8 h-4 rounded-full p-0.5 flex items-center transition-colors cursor-pointer ${u.active ? 'bg-[#10b981]' : 'bg-slate-300'}`}>
                               <div className={`w-3 h-3 bg-white rounded-full transition-transform ${u.active ? 'translate-x-4' : 'translate-x-0'}`}></div>
@@ -443,12 +462,15 @@ export default function AdminPermissions() {
                 ) : (
                   filteredRoles.map(p => (
                     <tr key={p.id} className="hover:bg-slate-50/50">
-                      <td className="px-6 py-4 text-[#1e4869] font-medium">{p.name}</td>
+                      <td className="px-6 py-4 text-[#1e4869] font-medium flex items-center gap-2">
+                        {p.name}
+                        {p.isSystem && <span title="Rôle Système"><Shield size={14} className="text-amber-500" /></span>}
+                      </td>
                       <td className="px-6 py-4 text-[#1e4869] max-w-xs truncate">{p.description}</td>
                       <td className="px-6 py-4 text-[#1e4869]">{p._count?.users || 0}</td>
                       <td className="px-6 py-4 text-[#1e4869]">{formatDate(p.updatedAt)}</td>
                       <td className="px-6 py-4">
-                        {p.name !== "Super Admin" ? (
+                        {!p.isSystem && p.name !== "Super Admin" ? (
                           <div className="flex flex-col gap-1 items-start text-xs font-semibold">
                             <button onClick={() => handleOpenRoleModal("view", p)} className="text-[#32A8D7] hover:underline flex items-center gap-1"><Eye size={12}/> Voir</button>
                             <button onClick={() => handleOpenRoleModal("edit", p)} className="text-[#32A8D7] hover:underline flex items-center gap-1"><Edit2 size={12}/> Modifier</button>
@@ -552,7 +574,8 @@ export default function AdminPermissions() {
 
       {/* Role Create/Edit/View Modal */}
       {isRoleModalOpen && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+        <ModalPortal>
+        <div className="fixed inset-0 bg-black/50 z-[9999] flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl shadow-xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[90vh]">
             <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
               <h3 className="text-xl font-bold text-[#0c2f4a]">
@@ -639,11 +662,13 @@ export default function AdminPermissions() {
             </div>
           </div>
         </div>
+        </ModalPortal>
       )}
 
       {/* Delete Confirmation Modal */}
       {isDeleteModalOpen && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+        <ModalPortal>
+        <div className="fixed inset-0 bg-black/50 z-[9999] flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6 text-center">
             <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
               <Trash2 className="text-red-500" size={24} />
@@ -668,11 +693,13 @@ export default function AdminPermissions() {
             </div>
           </div>
         </div>
+        </ModalPortal>
       )}
 
       {/* Assign Role Modal */}
       {isAssignRoleModalOpen && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+        <ModalPortal>
+        <div className="fixed inset-0 bg-black/50 z-[9999] flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl shadow-xl w-full max-w-md">
             <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
               <h3 className="text-xl font-bold text-[#0c2f4a]">Gérer le rôle de l'utilisateur</h3>
@@ -682,23 +709,8 @@ export default function AdminPermissions() {
             </div>
             <div className="p-6">
               <p className="text-sm text-slate-500 mb-4">
-                Sélectionnez un rôle pour <strong>{userToAssign?.name}</strong> ({userToAssign?.email})
+                Voulez-vous vraiment assigner le rôle <strong>{selectedRoleIdForUser === "none" ? "Aucun rôle" : roles.find(r => r.id === selectedRoleIdForUser)?.name}</strong> à <strong>{userToAssign?.name}</strong> ({userToAssign?.email}) ?
               </p>
-              <div className="space-y-4">
-                <div className="relative">
-                  <select 
-                    value={selectedRoleIdForUser}
-                    onChange={(e) => setSelectedRoleIdForUser(e.target.value)}
-                    className="w-full px-4 py-3 bg-[#f8f9fa] border-none rounded-xl text-sm focus:ring-2 focus:ring-[#32A8D7] appearance-none cursor-pointer"
-                  >
-                    <option value="none">Aucun rôle</option>
-                    {roles.map(r => (
-                      <option key={r.id} value={r.id}>{r.name}</option>
-                    ))}
-                  </select>
-                  <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={16} />
-                </div>
-              </div>
             </div>
             <div className="p-6 border-t border-slate-100 flex justify-end gap-3">
               <button 
@@ -716,11 +728,13 @@ export default function AdminPermissions() {
             </div>
           </div>
         </div>
+        </ModalPortal>
       )}
 
       {/* Add User Modal */}
       {isAddUserModalOpen && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+        <ModalPortal>
+        <div className="fixed inset-0 bg-black/50 z-[9999] flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl shadow-xl w-full max-w-md">
             <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
               <h3 className="text-xl font-bold text-[#0c2f4a]">Ajouter un Utilisateur</h3>
@@ -792,6 +806,7 @@ export default function AdminPermissions() {
             </div>
           </div>
         </div>
+        </ModalPortal>
       )}
 
     </div>

@@ -16,10 +16,10 @@ import {
   FileText,
   X,
 } from "lucide-react";
-import CandidatProfilDetail, { CandidatData } from "./CandidatProfilDetail";
 import DetailOffreView, { JobDetailData } from "./DetailOffreView";
 import ModifierOffreView from "./ModifierOffreView";
 import useSWR from "swr";
+import { useRouter } from "next/navigation";
 
 // ─── Mock data ────────────────────────────────────────────────────────────────
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -48,7 +48,7 @@ function StatutBadge({ statut }: { statut: "Accepté" | "En attente" | "Rejeté"
     Rejeté: { bg: "bg-red-50 text-red-500 border-red-100", icon: <XCircle size={11} /> },
   }[statut];
   return (
-    <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold border ${cfg.bg}`}>
+    <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold border whitespace-nowrap ${cfg.bg}`}>
       {cfg.icon} {statut}
     </span>
   );
@@ -85,12 +85,12 @@ export default function CandidaturesTab() {
   type ViewState =
     | { type: "list" }
     | { type: "detail-offre"; offreId: string }
-    | { type: "edit-offre" }
-    | { type: "profil-candidat"; candidatId: string | number };
+    | { type: "edit-offre" };
 
   const [view, setView] = useState<ViewState>({ type: "list" });
   const [currentPage, setCurrentPage] = useState(1);
   const [toastMsg, setToastMsg] = useState<string | null>(null);
+  const router = useRouter();
 
   const fetcher = (url: string) => fetch(url).then(res => res.json());
   const { data: candidaturesFetched = [], mutate } = useSWR("/api/applications?role=recruiter", fetcher);
@@ -135,21 +135,7 @@ export default function CandidaturesTab() {
     }
   };
 
-  // Selected candidate for profile view
-  const selectedCandidatId = view.type === "profil-candidat" ? view.candidatId : null;
-  const selectedCandidatData = candidatures.find((c) => c.id === selectedCandidatId);
-  const candidatForDetail: CandidatData | undefined = selectedCandidatData
-    ? {
-        id: selectedCandidatData.talentUserId || selectedCandidatData.id,
-        name: selectedCandidatData.talent,
-        profession: "Développeur",
-        location: "Non spécifié",
-        email: "",
-        phone: "",
-        imageUrl: selectedCandidatData.imageUrl,
-        status: selectedCandidatData.statut,
-      }
-    : undefined;
+  // (Removed inline profile logic)
 
   // ── Render ──────────────────────────────────────────────────────────────────
   if (view.type === "detail-offre") {
@@ -162,7 +148,9 @@ export default function CandidaturesTab() {
         onBack={() => setView({ type: "list" })}
         onEdit={() => setView({ type: "edit-offre" })}
         onDelete={() => { setView({ type: "list" }); showToast("Offre supprimée."); }}
-        onViewCandidate={(id) => setView({ type: "profil-candidat", candidatId: id })}
+        onViewCandidate={(id) => {
+          router.push(`/dashboard/recruteur/talents/${id}`);
+        }}
       />
     );
   }
@@ -172,15 +160,6 @@ export default function CandidaturesTab() {
       <ModifierOffreView
         onBack={() => setView({ type: "list" })}
         onSave={() => { showToast("Offre mise à jour avec succès !"); }}
-      />
-    );
-  }
-
-  if (view.type === "profil-candidat") {
-    return (
-      <CandidatProfilDetail
-        candidat={candidatForDetail}
-        onBack={() => setView({ type: "list" })}
       />
     );
   }
@@ -268,12 +247,12 @@ export default function CandidaturesTab() {
                   </td>
                 </tr>
               ) : (
-                paginated.map((c) => (
+                paginated.map((c, index) => (
                   <tr key={c.id} className="hover:bg-slate-50/70 transition-colors">
-                    <td className="px-4 py-3.5 text-xs text-slate-400 font-medium">
-                      {String(c.id).padStart(2, "0")}
+                    <td className="px-4 py-3.5 text-xs text-slate-400 font-medium align-middle">
+                      {String((currentPage - 1) * perPage + index + 1).padStart(2, "0")}
                     </td>
-                    <td className="px-4 py-3.5">
+                    <td className="px-4 py-3.5 align-middle">
                       <div className="flex items-center gap-2.5">
                         <div className="w-8 h-8 rounded-full overflow-hidden bg-slate-200 relative shrink-0">
                           <Image
@@ -289,7 +268,7 @@ export default function CandidaturesTab() {
                         <span className="text-xs font-semibold text-slate-800 whitespace-nowrap">{c.talent}</span>
                       </div>
                     </td>
-                    <td className="px-4 py-3.5">
+                    <td className="px-4 py-3.5 align-middle">
                       <button
                         onClick={() => setView({ type: "detail-offre", offreId: c.offreId })}
                         className="text-xs font-semibold text-[#32A8D7] hover:underline whitespace-nowrap"
@@ -297,19 +276,23 @@ export default function CandidaturesTab() {
                         {c.offre}
                       </button>
                     </td>
-                    <td className="px-4 py-3.5 text-xs text-slate-500 whitespace-nowrap">{c.dateCandidat}</td>
-                    <td className="px-4 py-3.5">
+                    <td className="px-4 py-3.5 text-xs text-slate-500 whitespace-nowrap align-middle">{c.dateCandidat}</td>
+                    <td className="px-4 py-3.5 align-middle">
                       <span className="text-xs font-medium text-slate-600 bg-slate-100 px-2 py-0.5 rounded-full whitespace-nowrap">
                         {c.typeEmploi}
                       </span>
                     </td>
-                    <td className="px-4 py-3.5">
+                    <td className="px-4 py-3.5 align-middle">
                       <StatutBadge statut={c.statut} />
                     </td>
-                    <td className="px-4 py-3.5">
+                    <td className="px-4 py-3.5 align-middle">
                       {c.videoTest ? (
                         <button
-                          onClick={() => setView({ type: "profil-candidat", candidatId: c.id })}
+                          onClick={() => {
+                            if (c.talentUserId) {
+                              router.push(`/dashboard/recruteur/talents/${c.talentUserId}`);
+                            }
+                          }}
                           className="inline-flex items-center gap-1 text-[10px] font-semibold text-[#32A8D7] hover:underline"
                         >
                           <Video size={10} /> Oui · Voir
@@ -320,7 +303,7 @@ export default function CandidaturesTab() {
                         </span>
                       )}
                     </td>
-                    <td className="px-4 py-3.5">
+                    <td className="px-4 py-3.5 align-middle">
                       {c.cvJoint ? (
                         <button
                           className="inline-flex items-center gap-1 text-[10px] font-semibold text-[#32A8D7] hover:underline"
@@ -333,10 +316,14 @@ export default function CandidaturesTab() {
                         </span>
                       )}
                     </td>
-                    <td className="px-4 py-3.5">
+                    <td className="px-4 py-3.5 align-middle">
                       <div className="flex items-center gap-1.5">
                         <button
-                          onClick={() => setView({ type: "profil-candidat", candidatId: c.id })}
+                          onClick={() => {
+                            if (c.talentUserId) {
+                              router.push(`/dashboard/recruteur/talents/${c.talentUserId}`);
+                            }
+                          }}
                           className="inline-flex items-center gap-1 px-2.5 py-1 bg-[#32A8D7] hover:bg-[#2896c2] text-white text-[10px] font-semibold rounded-lg transition-colors whitespace-nowrap"
                         >
                           <Eye size={10} /> Voir

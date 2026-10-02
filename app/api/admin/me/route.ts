@@ -30,7 +30,10 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: "Utilisateur non trouvé" }, { status: 404 });
     }
 
-    if (user.role?.name !== "ADMIN") {
+    const upperRole = user.role?.name?.toUpperCase() || "";
+    const isAdmin = upperRole === "SUPER ADMIN" || upperRole === "ADMIN RH / MODÉRATEUR" || upperRole === "MANAGER IA & CERTIFICATION" || upperRole === "GESTIONNAIRE FINANCIER" || upperRole === "SUPPORT CLIENT" || upperRole === "ADMIN";
+
+    if (!isAdmin) {
       return NextResponse.json({ error: "Accès refusé" }, { status: 403 });
     }
 
@@ -61,7 +64,10 @@ export async function PUT(req: NextRequest) {
       select: { role: true }
     });
 
-    if (user?.role?.name !== "ADMIN") {
+    const upperRole = user?.role?.name?.toUpperCase() || "";
+    const isAdmin = upperRole === "SUPER ADMIN" || upperRole === "ADMIN RH / MODÉRATEUR" || upperRole === "MANAGER IA & CERTIFICATION" || upperRole === "GESTIONNAIRE FINANCIER" || upperRole === "SUPPORT CLIENT" || upperRole === "ADMIN";
+
+    if (!isAdmin) {
       return NextResponse.json({ error: "Accès refusé" }, { status: 403 });
     }
 

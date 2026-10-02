@@ -4,13 +4,12 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcrypt";
 
-export async function GET() {
-  const session = await getServerSession(authOptions);
+import { hasPermission } from "@/lib/permissions";
 
-  // Vérification : Seul un ADMIN peut voir la liste des utilisateurs
-  if (!session || (session.user?.role as string)?.toUpperCase() !== "ADMIN") {
+export async function GET() {
+  if (!(await hasPermission('manage_users'))) {
     return NextResponse.json(
-      { error: "Accès refusé. Droits d'administrateur requis." },
+      { error: "Accès refusé. Droits requis." },
       { status: 403 }
     );
   }
@@ -40,15 +39,14 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
-  const session = await getServerSession(authOptions);
-
-  // Vérification : Seul un ADMIN peut créer un utilisateur manuellement
-  if (!session || (session.user?.role as string)?.toUpperCase() !== "ADMIN") {
+  if (!(await hasPermission('manage_users'))) {
     return NextResponse.json(
-      { error: "Accès refusé. Droits d'administrateur requis." },
+      { error: "Accès refusé. Droits requis." },
       { status: 403 }
     );
   }
+
+  const session = await getServerSession(authOptions);
 
   try {
     const { name, email, password, roleId } = await request.json();
@@ -80,7 +78,7 @@ export async function POST(request: Request) {
     await prisma.auditLog.create({
       data: {
         action: `Création d'un nouvel utilisateur (${email})`,
-        by: session.user.name || session.user.email || "Admin",
+        by: session?.user?.name || session?.user?.email || "Admin",
         details: roleId ? `Attribué au rôle ID: ${roleId}` : "Aucun rôle spécifique"
       }
     });

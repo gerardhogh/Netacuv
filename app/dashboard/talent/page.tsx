@@ -5,7 +5,8 @@ import Image from "next/image";
 import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "../../context/AuthContext";
-import { useLang, LOCALES } from "../../context/LangContext";
+import { useTranslations, useLocale } from "next-intl";
+import LanguageSwitcher from "@/app/components/LanguageSwitcher";
 import LogoutButton from "../../components/LogoutButton";
 import {
   Menu,
@@ -61,8 +62,8 @@ export default function TalentDashboard() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const [notifMenuOpen, setNotifMenuOpen] = useState(false);
-  const { locale: lang, setLocale: setLang } = useLang();
-  const [langMenuOpen, setLangMenuOpen] = useState(false);
+  const lang = useLocale();
+  const t = useTranslations();
 
   // Dynamic Dashboard States
   const [profilePct, setProfilePct] = useState(0);
@@ -82,6 +83,7 @@ export default function TalentDashboard() {
   const [withdrawalModalOpen, setWithdrawalModalOpen] = useState(false);
   const [withdrawPhone, setWithdrawPhone] = useState("");
   const [withdrawMethod, setWithdrawMethod] = useState("MTN MoMo");
+  const [withdrawAmount, setWithdrawAmount] = useState("");
 
   // Modals state
   const [videoModalOpen, setVideoModalOpen] = useState(false);
@@ -156,8 +158,14 @@ export default function TalentDashboard() {
               }).replace(':', 'h'));
             }
           } else {
-            setCvFileName("Aucun CV ajouté");
-            setCvUploadedAt("Pas de CV");
+            const hasLocalCv = typeof window !== "undefined" && localStorage.getItem("check_cv_has_pdf") === "true";
+            if (hasLocalCv) {
+              setCvFileName(localStorage.getItem("check_cv_name") || "CV.pdf");
+              setCvUploadedAt(localStorage.getItem("check_cv_date") || "Mis à jour récemment");
+            } else {
+              setCvFileName("Aucun CV ajouté");
+              setCvUploadedAt("Pas de CV");
+            }
           }
           
           let hasVid = false;
@@ -175,46 +183,31 @@ export default function TalentDashboard() {
           const hasSocial = !!(data.talentProfile?.facebook && data.talentProfile?.linkedin && data.talentProfile?.twitter && data.talentProfile?.pinterest && data.talentProfile?.behance);
           setHasSocialLinks(hasSocial);
 
-          // Personal info requires all main fields
+          // Personal info requires all main fields + skills
           const isInfoComplete = !!(
-            data.name &&
-            data.talentProfile?.degree &&
-            data.talentProfile?.gender &&
-            data.talentProfile?.country &&
-            data.talentProfile?.city &&
-            data.talentProfile?.phone &&
-            data.talentProfile?.bio
+            data.name?.trim() &&
+            data.talentProfile?.degree?.trim() &&
+            data.talentProfile?.gender?.trim() &&
+            data.talentProfile?.country?.trim() &&
+            data.talentProfile?.city?.trim() &&
+            data.talentProfile?.phone?.trim() &&
+            data.talentProfile?.bio?.trim() &&
+            data.talentProfile?.skills?.trim()
           );
           setHasPersonalInfo(isInfoComplete);
 
-          // Calculate profile percentage — 4 steps (social links are optional, not counted)
-          // Weights: info=25, avatar=10, cv=25, video=40
-          let pct = 0;
-          if (isInfoComplete) pct += 25;
-          if (data.avatar) pct += 10;
-          if (data.talentProfile?.cvUrl) pct += 25;
-          if (hasVid) pct += 40;
+          // The completion percentage is now dynamically calculated by a useEffect based on these states.
+        }
+      })
+      .catch(console.error);
 
-          setProfilePct(pct);
-
-          // Stars derived from pct: same thresholds as ProfilTalent
-          if (pct === 100) setStars(5);
-          else if (pct >= 80) setStars(4);
-          else if (pct >= 60) setStars(3);
-          else if (pct >= 40) setStars(2);
-          else if (pct >= 1) setStars(1);
-          else setStars(0);
-
-          if (pct === 100) {
-            const hasSeenConfetti = typeof window !== "undefined" && localStorage.getItem("confetti_shown");
-            if (!hasSeenConfetti) {
-              setShowConfetti(true);
-              setTimeout(() => setShowConfetti(false), 4000);
-              if (typeof window !== "undefined") {
-                localStorage.setItem("confetti_shown", "true");
-              }
-            }
-          }
+    fetch("/api/affiliation/me", { cache: 'no-store' })
+      .then(res => res.json())
+      .then(data => {
+        if (data && !data.error) {
+          setAffiliationBalance(data.cagnotte || 0);
+          setAffiliations(data.affilies || []);
+          setAffiliationCount(data.affilies?.length || 0);
         }
       })
       .catch(console.error);
@@ -222,7 +215,40 @@ export default function TalentDashboard() {
 
   useEffect(() => {
     fetchDashboardData();
+
+    // Listen for profile updates from child components (e.g. ProfilTalent)
+    const handleUpdate = () => fetchDashboardData();
+    window.addEventListener("dashboardProfileUpdated", handleUpdate);
+    return () => window.removeEventListener("dashboardProfileUpdated", handleUpdate);
   }, []);
+
+  useEffect(() => {
+    let pct = 0;
+    if (hasPersonalInfo) pct += 25;
+    if (userAvatar && userAvatar !== "/assets/avatar_africain.jpg") pct += 10;
+    if (cvFileName && cvFileName !== "Aucun CV ajouté" && cvFileName !== "Pas de CV") pct += 25;
+    if (hasValidVideo) pct += 40;
+    
+    setProfilePct(pct);
+    
+    if (pct === 100) setStars(5);
+    else if (pct >= 80) setStars(4);
+    else if (pct >= 60) setStars(3);
+    else if (pct >= 40) setStars(2);
+    else if (pct >= 1) setStars(1);
+    else setStars(0);
+    
+    if (pct === 100) {
+      const hasSeenConfetti = typeof window !== "undefined" && localStorage.getItem("confetti_shown");
+      if (!hasSeenConfetti) {
+        setShowConfetti(true);
+        setTimeout(() => setShowConfetti(false), 4000);
+        if (typeof window !== "undefined") {
+          localStorage.setItem("confetti_shown", "true");
+        }
+      }
+    }
+  }, [hasPersonalInfo, userAvatar, cvFileName, hasValidVideo]);
 
   const [userTitle, setUserTitle] = useState("Aucun profil");
   const [userPhone, setUserPhone] = useState((user as any)?.phone || "+229 97 00 00 00");
@@ -233,8 +259,18 @@ export default function TalentDashboard() {
   // Jobs state
   const [jobSearch, setJobSearch] = useState("");
   const [appliedJobs, setAppliedJobs] = useState<string[]>([]);
-  const [allJobs] = useState<any[]>([]);
+  const [allJobs, setAllJobs] = useState<any[]>([]);
 
+  useEffect(() => {
+    fetch("/api/jobs?recommended=true&limit=10")
+      .then(res => res.json())
+      .then(data => {
+        if (data && data.jobs) {
+          setAllJobs(data.jobs);
+        }
+      })
+      .catch(err => console.error("Error fetching recommended jobs:", err));
+  }, []);
   // Notifications
   const [notifications, setNotifications] = useState<any[]>([]);
 
@@ -244,11 +280,15 @@ export default function TalentDashboard() {
   };
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!isPremium) {
+      showToast("L'upload de CV est réservé aux talents Premium.");
+      e.target.value = '';
+      return;
+    }
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
       setCvFileName(file.name);
       setCvUploadedAt("Mis à jour à l'instant");
-      setProfilePct(Math.min(100, profilePct + 15));
       showToast(`CV "${file.name}" importé et analysé avec succès !`);
     }
   };
@@ -262,13 +302,35 @@ export default function TalentDashboard() {
   const handleCompleteVideoInterview = () => {
     setVideoStep("done");
     setHasValidVideo(true);
-    setStars(5);
-    setProfilePct(100);
-    showToast("Félicitations ! Entretien vidéo validé avec succès (Score 5 étoiles)");
+    showToast("Félicitations ! Entretien vidéo validé avec succès");
     setTimeout(() => {
       setVideoModalOpen(false);
       setVideoStep("intro");
     }, 1500);
+  };
+
+  const handleWithdrawalRequest = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setWithdrawalModalOpen(false);
+    try {
+      const montant = Number(withdrawAmount);
+      const res = await fetch("/api/affiliation/withdraw", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ montant, operateur: withdrawMethod, numero: withdrawPhone })
+      });
+      if (res.ok) {
+        showToast(`Demande de retrait de ${montant.toLocaleString()} CFA via ${withdrawMethod} envoyée !`);
+        setAffiliationBalance(prev => prev - montant);
+        setWithdrawAmount("");
+        setWithdrawPhone("");
+      } else {
+        const err = await res.json();
+        showToast(err.error || "Erreur lors de la demande de retrait");
+      }
+    } catch (error) {
+      showToast("Erreur de connexion.");
+    }
   };
 
   const handleCopyAffiliation = () => {
@@ -322,7 +384,7 @@ export default function TalentDashboard() {
       {/* ── SIDEBAR ── */}
       <aside
         className={`
-          fixed md:sticky top-0 left-0 z-40
+          fixed md:sticky top-0 left-0 z-[60]
           w-64 h-screen overflow-hidden bg-white border-r border-slate-200
           flex flex-col justify-between transition-transform duration-300
           ${sidebarOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"}
@@ -383,7 +445,7 @@ export default function TalentDashboard() {
       <div className="flex-1 flex flex-col min-h-screen min-w-0">
         <PremiumBanner isPremium={isPremium} />
         {/* Top Header */}
-        <header className="sticky top-0 z-20 bg-white/95 backdrop-blur-md border-b border-slate-200 px-6 py-4 flex items-center justify-between shadow-xs">
+        <header className="sticky top-0 z-[60] bg-white/95 backdrop-blur-md border-b border-slate-200 px-6 py-4 flex items-center justify-between shadow-xs">
           <div className="flex items-center gap-4">
             <button
               onClick={() => setSidebarOpen(true)}
@@ -425,32 +487,7 @@ export default function TalentDashboard() {
             )}
 
             {/* Language Switcher */}
-            <div className="relative">
-              <button
-                onClick={() => { setLangMenuOpen(!langMenuOpen); setNotifMenuOpen(false); setProfileMenuOpen(false); }}
-                className="flex items-center gap-1.5 p-2.5 rounded-full hover:bg-slate-100 transition-colors text-slate-500 hover:text-slate-800"
-                aria-label="Langue"
-              >
-                <Globe size={18} />
-                <span className="notranslate text-xs font-bold uppercase">{lang.toUpperCase()}</span>
-              </button>
-              {langMenuOpen && (
-                <div className="absolute right-0 mt-2 w-40 bg-white rounded-2xl shadow-xl border border-slate-100 py-2 z-30 animate-fade-in">
-                  {LOCALES.map(({ code, label, flag }) => (
-                    <button
-                      key={code}
-                      onClick={() => { setLang(code); setLangMenuOpen(false); }}
-                      className={`w-full text-left px-4 py-2 text-xs font-semibold flex items-center gap-2 transition-colors ${
-                        lang === code ? "text-blue-600 bg-blue-50" : "text-slate-600 hover:bg-slate-50"
-                      }`}
-                    >
-                      <span className="text-base">{flag}</span>
-                      <span>{label}</span>
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
+            <LanguageSwitcher />
 
             {/* Notification Bell with interactive dropdown */}
             <div className="relative">
@@ -458,7 +495,6 @@ export default function TalentDashboard() {
                 onClick={() => {
                   setNotifMenuOpen(!notifMenuOpen);
                   setProfileMenuOpen(false);
-                  setLangMenuOpen(false);
                 }}
                 className="relative text-slate-500 hover:text-slate-800 p-2.5 rounded-full hover:bg-slate-100 transition-colors"
                 aria-label="Notifications"
@@ -563,6 +599,7 @@ export default function TalentDashboard() {
                     <Settings size={14} /> Paramètres
                   </button>
                   <LogoutButton
+                    onCancelClick={() => setProfileMenuOpen(false)}
                     className="w-full text-left px-4 py-2 text-xs text-red-600 hover:bg-red-50 font-semibold border-t border-slate-100 mt-1 flex items-center gap-2"
                   >
                     <LogOut size={14} /> Déconnexion
@@ -655,8 +692,8 @@ export default function TalentDashboard() {
                     <div className="mt-4 pt-4 border-t border-slate-100 space-y-2 animate-fade-in">
                       {[
                         { label: "Informations personnelles", done: hasPersonalInfo, pct: 25, tab: "profil" },
-                        { label: "Photo de profil", done: !!userAvatar, pct: 10, tab: "profil" },
-                        { label: "CV uploadé", done: cvFileName !== "Aucun CV ajouté", pct: 25, tab: "profil" },
+                        { label: "Photo de profil", done: !!userAvatar && userAvatar !== "/assets/avatar_africain.jpg", pct: 10, tab: "profil" },
+                        { label: "CV uploadé", done: cvFileName !== "Aucun CV ajouté" && cvFileName !== "Pas de CV", pct: 25, tab: "profil" },
                         { label: "Entretien vidéo validé", done: hasValidVideo, pct: 40, tab: "video" },
                       ].map((item) => (
                         <div key={item.label} className="flex items-center justify-between gap-3">
@@ -1181,6 +1218,74 @@ export default function TalentDashboard() {
           </div>
         </div>
       )}
+
+      {/* ── MODAL: RETRAIT ── */}
+      {withdrawalModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm">
+          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md p-6 relative animate-scale-up">
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h3 className="text-xl font-bold text-slate-900">Demande de retrait</h3>
+                <p className="text-sm text-slate-500">Solde : <span className="font-bold text-green-600">{affiliationBalance.toLocaleString()} FCFA</span></p>
+              </div>
+              <button onClick={() => setWithdrawalModalOpen(false)} className="p-2 text-slate-400 hover:bg-slate-100 rounded-full">
+                <X size={20} />
+              </button>
+            </div>
+            <form onSubmit={handleWithdrawalRequest} className="space-y-4">
+              <div>
+                <label className="block text-sm font-semibold text-slate-700 mb-1.5">Opérateur Mobile Money</label>
+                <div className="relative">
+                  <select
+                    value={withdrawMethod}
+                    onChange={(e) => setWithdrawMethod(e.target.value)}
+                    className="w-full appearance-none px-4 py-3 rounded-xl border border-slate-200 bg-slate-50 text-sm text-slate-800 outline-none focus:border-[#32A8D7] focus:bg-white"
+                  >
+                    <option>MTN MoMo</option>
+                    <option>Moov Money</option>
+                    <option>Wave</option>
+                    <option>Orange Money</option>
+                  </select>
+                  <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-slate-700 mb-1.5">Numéro de téléphone</label>
+                <input
+                  type="tel"
+                  required
+                  value={withdrawPhone}
+                  onChange={(e) => setWithdrawPhone(e.target.value)}
+                  placeholder="+229 90 00 00 00"
+                  className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50 text-sm text-slate-800 outline-none focus:border-[#32A8D7] focus:bg-white"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-slate-700 mb-1.5">Montant à retirer (FCFA)</label>
+                <input
+                  type="number"
+                  required
+                  min={500}
+                  max={affiliationBalance}
+                  value={withdrawAmount}
+                  onChange={(e) => setWithdrawAmount(e.target.value)}
+                  placeholder="Ex: 5000"
+                  className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50 text-sm text-slate-800 outline-none focus:border-[#32A8D7] focus:bg-white"
+                />
+              </div>
+              <div className="flex gap-3 pt-2">
+                <button type="button" onClick={() => setWithdrawalModalOpen(false)} className="flex-1 py-3 border border-slate-200 text-slate-600 rounded-xl font-semibold hover:bg-slate-50">
+                  Annuler
+                </button>
+                <button type="submit" className="flex-1 py-3 bg-[#32A8D7] text-white rounded-xl font-semibold hover:bg-[#2896c2]">
+                  Retirer
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }

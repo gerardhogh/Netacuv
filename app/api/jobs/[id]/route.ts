@@ -33,7 +33,7 @@ export async function DELETE(
 
     // Vérification : L'utilisateur doit être le créateur de l'offre ou un ADMIN
     const isOwner = job.recruiter?.userId === session.user.id;
-    const isAdmin = session.user.role === "ADMIN";
+    const isAdmin = ["SUPER ADMIN", "ADMIN RH / MODÉRATEUR", "MANAGER IA & CERTIFICATION", "GESTIONNAIRE FINANCIER", "SUPPORT CLIENT", "ADMIN"].includes(session.user.role?.toUpperCase() || "");
 
     if (!isOwner && !isAdmin) {
       return NextResponse.json(
@@ -74,7 +74,7 @@ export async function PATCH(
     if (!job) return NextResponse.json({ error: "Offre introuvable." }, { status: 404 });
 
     const isOwner = job.recruiter?.userId === session.user.id;
-    const isAdmin = session.user.role === "ADMIN";
+    const isAdmin = ["SUPER ADMIN", "ADMIN RH / MODÉRATEUR", "MANAGER IA & CERTIFICATION", "GESTIONNAIRE FINANCIER", "SUPPORT CLIENT", "ADMIN"].includes(session.user.role?.toUpperCase() || "");
 
     if (!isOwner && !isAdmin) {
       return NextResponse.json({ error: "Interdit" }, { status: 403 });
@@ -109,7 +109,7 @@ export async function PUT(
     if (!job) return NextResponse.json({ error: "Offre introuvable." }, { status: 404 });
 
     const isOwner = job.recruiter?.userId === session.user.id;
-    const isAdmin = session.user.role === "ADMIN";
+    const isAdmin = ["SUPER ADMIN", "ADMIN RH / MODÉRATEUR", "MANAGER IA & CERTIFICATION", "GESTIONNAIRE FINANCIER", "SUPPORT CLIENT", "ADMIN"].includes(session.user.role?.toUpperCase() || "");
 
     if (!isOwner && !isAdmin) {
       return NextResponse.json({ error: "Interdit" }, { status: 403 });

@@ -169,7 +169,7 @@ export const authOptions: NextAuthOptions = {
               data: {
                 name: expectedRoleName,
                 description: `Rôle par défaut pour les ${expectedRoleName.toLowerCase()}s`,
-                permissions: "{}",
+                isSystem: true,
               },
             });
           }

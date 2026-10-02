@@ -4,7 +4,7 @@ import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import Link from "next/link";
 import Image from "next/image";
-import { CheckCircle, XCircle } from "lucide-react";
+import { CheckCircle, XCircle, Check, X } from "lucide-react";
 
 export default function TalentsPage() {
   return (
@@ -31,7 +31,7 @@ export default function TalentsPage() {
         {/* Hero Image */}
         <div className="max-w-3xl mx-auto flex justify-center mb-16 relative">
           <Image
-            src="/assets/Frame 10000048306.png"
+            src="/assets/Frame 1000004830.png"
             alt="Talents"
             width={700}
             height={500}
@@ -83,82 +83,69 @@ export default function TalentsPage() {
             Devenez Talent Premium sur Netacuv
           </h2>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-white p-2 rounded-3xl shadow-xl shadow-slate-200/50">
-            {/* Gratuit */}
-            <div className="rounded-2xl overflow-hidden border border-slate-100 bg-white">
-              <div className="bg-[#005a82] text-white text-center py-4 font-bold text-lg">
-                Gratuit
-              </div>
-              <div className="p-8 text-center border-b border-slate-100">
-                <div className="text-4xl font-black text-slate-800 mb-1">
-                  0 CFA<span className="text-base font-normal text-slate-500">/gratuit</span>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+            {/* Free Tier */}
+            <div className="bg-white rounded-3xl p-8 border border-slate-200 shadow-sm flex flex-col h-full">
+              <div className="mb-8">
+                <h3 className="text-xl font-bold text-slate-500 mb-2">Option Gratuite</h3>
+                <div className="flex items-baseline gap-2">
+                  <span className="text-5xl font-black text-[#0F172A]">0</span>
+                  <span className="text-slate-500 font-semibold">FCFA / mois</span>
                 </div>
-                <p className="text-sm text-slate-500">Pour commencer à parcourir les avantages</p>
+                <p className="text-sm text-slate-500 mt-2">Pour découvrir la plateforme</p>
               </div>
-              <div className="bg-[#005a82] text-white text-center py-3 font-semibold text-sm">
-                Version gratuite
-              </div>
-              <div className="p-6">
-                <ul className="space-y-4">
-                  {[
-                    "Possibilité de créer et compléter son profil",
-                    "Consultation d'offres d'emploi publiques",
-                    "Entretien vidéo auto-évalué",
-                    "Accès à la communauté exclusive WhatsApp",
-                    "Affiliation : Gagne de l'argent en parrainant",
-                  ].map((item, i) => (
-                    <li key={i} className="flex items-start gap-3 text-sm text-slate-700">
-                      <CheckCircle size={18} className="text-blue-600 mt-0.5 flex-shrink-0" />
-                      {item}
-                    </li>
-                  ))}
-                  {[
-                    "Ajout de CV/Curriculum Vitae en format PDF",
-                    "Entretien vidéo automatisé",
-                    "Visibilité accrue sur des recruteurs sérieux à la recherche de votre profil",
-                    "Support technique rapide et disponible à plein temps sur la plateforme",
-                  ].map((item, i) => (
-                    <li key={i} className="flex items-start gap-3 text-sm text-slate-400">
-                      <XCircle size={18} className="text-red-400 mt-0.5 flex-shrink-0" />
-                      {item}
-                    </li>
-                  ))}
-                </ul>
-              </div>
+              <ul className="space-y-4 mb-8 flex-1">
+                <li className="flex items-start gap-3"><Check className="text-[#2BAFE3] mt-0.5 flex-shrink-0" size={20} /> <span className="text-slate-600">Communauté WhatsApp exclusive</span></li>
+                <li className="flex items-start gap-3"><Check className="text-[#2BAFE3] mt-0.5 flex-shrink-0" size={20} /> <span className="text-slate-600">Affiliation <span className="text-xs font-semibold text-green-600 bg-green-50 px-2 py-0.5 rounded-full ml-1 border border-green-200">Gains par parrainage</span></span></li>
+                <li className="flex items-start gap-3"><Check className="text-[#2BAFE3] mt-0.5 flex-shrink-0" size={20} /> <span className="text-slate-600">Création de profil basique</span></li>
+                <li className="flex items-start gap-3"><Check className="text-[#2BAFE3] mt-0.5 flex-shrink-0" size={20} /> <span className="text-slate-600">1 candidature gratuite</span></li>
+                <li className="flex items-start gap-3 opacity-50"><X className="text-slate-400 mt-0.5 flex-shrink-0" size={20} /> <span className="text-slate-500 line-through decoration-slate-300">Candidatures illimitées</span></li>
+                <li className="flex items-start gap-3 opacity-50"><X className="text-slate-400 mt-0.5 flex-shrink-0" size={20} /> <span className="text-slate-500 line-through decoration-slate-300">Aperçu des profils recruteurs</span></li>
+                <li className="flex items-start gap-3 opacity-50"><X className="text-slate-400 mt-0.5 flex-shrink-0" size={20} /> <span className="text-slate-500 line-through decoration-slate-300">Obtention de badge</span></li>
+                <li className="flex items-start gap-3 opacity-50"><X className="text-slate-400 mt-0.5 flex-shrink-0" size={20} /> <span className="text-slate-500 line-through decoration-slate-300">Ajout de CV au format PDF</span></li>
+                <li className="flex items-start gap-3 opacity-50"><X className="text-slate-400 mt-0.5 flex-shrink-0" size={20} /> <span className="text-slate-500 line-through decoration-slate-300">Entretien vidéo certifié par l'IA</span></li>
+                <li className="flex items-start gap-3 opacity-50"><X className="text-slate-400 mt-0.5 flex-shrink-0" size={20} /> <span className="text-slate-500 line-through decoration-slate-300">Profil prioritaire auprès des recruteurs</span></li>
+              </ul>
+              <Link
+                href="https://talent.netacuv.com/register"
+                className="w-full py-4 rounded-full font-bold text-[#0F172A] bg-slate-100 hover:bg-slate-200 transition-colors text-center"
+              >
+                Commencer gratuitement
+              </Link>
             </div>
 
-            {/* Plan mensuel */}
-            <div className="rounded-2xl overflow-hidden border border-slate-100 bg-white shadow-lg relative">
-              <div className="bg-blue-400 text-white text-center py-4 font-bold text-lg flex items-center justify-center gap-2">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M2 20h20"/><path d="M5 20V4a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16"/><path d="M9 16v4"/><path d="M15 16v4"/></svg>
-                Plan mensuel
+            {/* Premium Tier */}
+            <div 
+              className="rounded-[2rem] p-8 shadow-2xl relative flex flex-col h-full text-white border border-[#0076a8]/30"
+              style={{ background: "linear-gradient(180deg, #0076a8 0%, #005a82 100%)" }}
+            >
+              <div className="absolute top-0 right-6 -translate-y-1/2 bg-[#F59E0B] text-[#0F172A] font-bold text-xs uppercase tracking-wider py-1.5 px-4 rounded-full shadow-lg">
+                Recommandé
               </div>
-              <div className="p-8 text-center border-b border-slate-100">
-                <div className="text-4xl font-black text-blue-600 mb-1">
-                  700 CFA<span className="text-base font-normal text-slate-500">/par mois</span>
+              <div className="mb-8">
+                <h3 className="text-xl font-bold text-blue-300 mb-2">Option Premium</h3>
+                <div className="flex items-baseline gap-2">
+                  <span className="text-5xl font-black text-white">700</span>
+                  <span className="text-slate-400 font-semibold">FCFA / mois</span>
                 </div>
-                <p className="text-sm text-slate-500">Pour commencer à vous démarquer</p>
+                <p className="text-sm text-slate-400 mt-2">Accès illimité sans engagement</p>
               </div>
-              <div className="bg-blue-400 text-white text-center py-3 font-semibold text-sm">
-                Version premium
-              </div>
-              <div className="p-6">
-                <ul className="space-y-4">
-                  {[
-                    "Toutes les fonctionnalités du plan gratuit, plus",
-                    "Accès illimité aux offres d'emploi premium",
-                    "Visibilité accrue par des recruteurs sérieux à la recherche de votre profil",
-                    "Ajout de CV/Curriculum Vitae en format PDF",
-                    "Entretien vidéo automatisé",
-                    "Support technique rapide et disponible à plein temps sur la plateforme",
-                  ].map((item, i) => (
-                    <li key={i} className="flex items-start gap-3 text-sm text-slate-700">
-                      <CheckCircle size={18} className="text-blue-600 mt-0.5 flex-shrink-0" />
-                      {item}
-                    </li>
-                  ))}
-                </ul>
-              </div>
+              <ul className="space-y-4 mb-8 flex-1">
+                <li className="flex items-start gap-3"><Check className="text-[#F59E0B] mt-0.5 flex-shrink-0" size={20} /> <span className="text-white font-semibold">Communauté WhatsApp exclusive</span></li>
+                <li className="flex items-start gap-3"><Check className="text-[#F59E0B] mt-0.5 flex-shrink-0" size={20} /> <span className="text-white font-semibold">Affiliation <span className="text-xs font-bold text-[#0F172A] bg-[#F59E0B] px-2 py-0.5 rounded-full ml-1">Gains par parrainage</span></span></li>
+                <li className="flex items-start gap-3"><Check className="text-blue-300 mt-0.5 flex-shrink-0" size={20} /> <span className="text-blue-50">Candidatures illimitées</span></li>
+                <li className="flex items-start gap-3"><Check className="text-blue-300 mt-0.5 flex-shrink-0" size={20} /> <span className="text-blue-50">Aperçu des profils recruteurs</span></li>
+                <li className="flex items-start gap-3"><Check className="text-blue-300 mt-0.5 flex-shrink-0" size={20} /> <span className="text-blue-50">Obtention de badge</span></li>
+                <li className="flex items-start gap-3"><Check className="text-blue-300 mt-0.5 flex-shrink-0" size={20} /> <span className="text-blue-50">Ajout de CV au format PDF</span></li>
+                <li className="flex items-start gap-3"><Check className="text-blue-300 mt-0.5 flex-shrink-0" size={20} /> <span className="text-blue-50">Entretien vidéo certifié par l'IA</span></li>
+                <li className="flex items-start gap-3"><Check className="text-blue-300 mt-0.5 flex-shrink-0" size={20} /> <span className="text-blue-50">Profil prioritaire auprès des recruteurs</span></li>
+              </ul>
+              <Link
+                href="https://talent.netacuv.com/register"
+                className="w-full py-4 rounded-full font-bold text-white bg-[#2BAFE3] hover:bg-[#1E8CB8] transition-colors text-center shadow-lg shadow-[#2BAFE3]/20"
+              >
+                Passer en Premium
+              </Link>
             </div>
           </div>
           

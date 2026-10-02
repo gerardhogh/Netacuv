@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import useSWR from "swr";
 import {
   Users,
   Copy,
@@ -118,14 +119,17 @@ function RetraitModal({ cagnotte, onClose, onConfirm }: RetraitModalProps) {
 }
 
 export default function AffiliationTab() {
-  const cagnotte = 7500;
-  const referralCode = "REC-GG-2024-X9K1";
+  const fetcher = (url: string) => fetch(url).then(res => res.json());
+  const { data, error, isLoading } = useSWR("/api/affiliation/me", fetcher);
+
+  const cagnotte = data?.cagnotte || 0;
+  const referralCode = data?.referralCode || "En attente...";
   const referralLink = `https://netacuv.com/inscription?ref=${referralCode}`;
+  const affilies: Affilie[] = data?.affilies || [];
 
   const [copied, setCopied] = useState(false);
   const [showRetraitModal, setShowRetraitModal] = useState(false);
   const [toastMsg, setToastMsg] = useState<string | null>(null);
-  const [affilies] = useState<Affilie[]>(MOCK_AFFILIES);
 
   const showToast = (msg: string) => {
     setToastMsg(msg);
@@ -133,15 +137,30 @@ export default function AffiliationTab() {
   };
 
   const copyLink = () => {
+    if (!data?.referralCode) return;
     navigator.clipboard?.writeText(referralLink).catch(() => {});
     setCopied(true);
     showToast("Lien de parrainage copié !");
     setTimeout(() => setCopied(false), 2500);
   };
 
-  const handleRetrait = (montant: number, operateur: string) => {
+  const handleRetrait = async (montant: number, operateur: string, numero: string) => {
     setShowRetraitModal(false);
-    showToast(`Demande de retrait de ${montant.toLocaleString()} CFA via ${operateur} envoyée !`);
+    try {
+      const res = await fetch("/api/affiliation/withdraw", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ montant, operateur, numero })
+      });
+      if (res.ok) {
+        showToast(`Demande de retrait de ${montant.toLocaleString()} CFA via ${operateur} envoyée !`);
+      } else {
+        const err = await res.json();
+        showToast(err.error || "Erreur lors de la demande de retrait");
+      }
+    } catch (error) {
+      showToast("Erreur de connexion.");
+    }
   };
 
   const inscrits = affilies.filter((a) => a.statut === "Inscrit").length;

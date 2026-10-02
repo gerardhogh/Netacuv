@@ -8,7 +8,7 @@ export async function GET() {
   const session = await getServerSession(authOptions);
 
   // Vérification des droits administrateur
-  if (!session || session.user?.role !== "ADMIN") {
+  if (!session || !["SUPER ADMIN", "ADMIN RH / MODÉRATEUR", "MANAGER IA & CERTIFICATION", "GESTIONNAIRE FINANCIER", "SUPPORT CLIENT", "ADMIN"].includes(session.user?.role?.toUpperCase() || "")) {
     return NextResponse.json(
       { error: "Accès refusé. Seuls les administrateurs peuvent consulter les journaux d'audit." },
       { status: 403 }

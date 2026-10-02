@@ -13,13 +13,15 @@ import {
   CheckCircle,
 } from "lucide-react";
 import { DeleteAccountModal } from "./Modals";
-import { useLang, LOCALES } from "../../../context/LangContext";
+import { useTranslations, useLocale } from "next-intl";
+import LanguageSwitcher, { LOCALES, Locale } from "@/app/components/LanguageSwitcher";
 import { useRouter } from "next/navigation";
 import { signOut } from "next-auth/react";
 
 export default function ParametresTab() {
   // i18n
-  const { locale, setLocale, t } = useLang();
+  const locale = useLocale();
+  const t = useTranslations();
 
   // Notifications
   const [emailNotif, setEmailNotif] = useState(true);
@@ -260,17 +262,20 @@ export default function ParametresTab() {
           <div className="w-8 h-8 rounded-xl bg-indigo-50 flex items-center justify-center">
             <Globe size={15} className="text-indigo-600" />
           </div>
-          <h3 className="font-bold text-slate-900 text-sm">{t("settings", "language")}</h3>
+          <h3 className="font-bold text-slate-900 text-sm">{t("settings.language")}</h3>
         </div>
 
         <div className="relative">
           <select
             value={locale}
             onChange={(e) => {
-              const newLocale = e.target.value as typeof locale;
-              setLocale(newLocale);
+              const newLocale = e.target.value as Locale;
+              const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+              const domainPart = isLocalhost ? '' : ' domain=.netacuv.com;';
+              document.cookie = `NEXT_LOCALE=${newLocale}; path=/;${domainPart} SameSite=Lax`;
               const label = LOCALES.find((l) => l.code === newLocale)?.label ?? newLocale;
-              showToast(`${t("settings", "languageUpdated")} : ${label}`);
+              showToast(`${t("settings.languageUpdated")} : ${label}`);
+              router.refresh();
             }}
             className="w-full appearance-none px-4 py-3 rounded-xl border border-slate-200 bg-slate-50 text-sm text-slate-800 font-medium outline-none focus:border-[#32A8D7] focus:bg-white transition-colors cursor-pointer"
           >

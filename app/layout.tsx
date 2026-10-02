@@ -13,18 +13,21 @@ export const metadata: Metadata = {
   },
 };
 
+import { NextIntlClientProvider } from 'next-intl';
+import { getLocale, getMessages } from 'next-intl/server';
 import Providers from "./components/Providers";
-import { LangProvider } from "./context/LangContext";
 import NextTopLoader from 'nextjs-toploader';
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const locale = await getLocale();
+  const messages = await getMessages();
+
   return (
-    // lang is kept as "fr" initially; LangContext updates it client-side via document.documentElement.lang
-    <html lang="fr">
+    <html lang={locale}>
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
@@ -35,9 +38,9 @@ export default function RootLayout({
       </head>
       <body>
         <NextTopLoader color="#f97316" showSpinner={false} />
-        <LangProvider>
+        <NextIntlClientProvider messages={messages}>
           <Providers>{children}</Providers>
-        </LangProvider>
+        </NextIntlClientProvider>
       </body>
     </html>
   );

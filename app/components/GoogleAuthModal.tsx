@@ -181,10 +181,7 @@ export default function GoogleAuthModal({
                   <button
                     onClick={() => {
                       setRole("recruteur");
-                      handleSelectAccount(
-                        "Grand-G Corp",
-                        "contact.grandg@gmail.com"
-                      );
+                      handleSelectAccount("Grand-G Corp", "contact.grandg@gmail.com");
                     }}
                     disabled={isLoading}
                     className="w-full flex items-center gap-3.5 p-3.5 rounded-2xl border border-slate-200 hover:border-blue-500 hover:bg-blue-50/40 transition-all text-left group"

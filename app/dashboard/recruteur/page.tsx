@@ -31,7 +31,8 @@ import {
   Crown,
   Star,
 } from "lucide-react";
-import { useLang, LOCALES } from "../../context/LangContext";
+import { useTranslations, useLocale } from "next-intl";
+import LanguageSwitcher from "@/app/components/LanguageSwitcher";
 import TalentCard from "@/app/components/TalentCard";
 import CandidaturesTab from "./components/CandidaturesTab";
 import EmploisTab from "./components/EmploisTab";
@@ -62,7 +63,8 @@ type RecruiterTab =
 // ─── Component ─────────────────────────────────────────────────────────────────
 export default function RecruteurDashboard() {
   const { user, logout } = useAuth();
-  const { locale, setLocale, t } = useLang();
+  const locale = useLocale();
+  const t = useTranslations();
   
   const [searchQuery, setSearchQuery] = useState("");
   const { data: talentsRaw } = useSWR(`/api/talents?q=${encodeURIComponent(searchQuery)}`, fetcher);
@@ -97,7 +99,6 @@ export default function RecruteurDashboard() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const [notifMenuOpen, setNotifMenuOpen] = useState(false);
-  const [langMenuOpen, setLangMenuOpen] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   useEffect(() => {
@@ -152,14 +153,14 @@ export default function RecruteurDashboard() {
 
   // ─── Sidebar items ───────────────────────────────────────────────────────────
   const sidebarItems = [
-    { key: "dashboard" as RecruiterTab, icon: LayoutDashboard, label: t("nav", "home") },
-    { key: "recherche" as RecruiterTab, icon: Search, label: t("nav", "searchTalents") },
-    { key: "candidatures" as RecruiterTab, icon: Users, label: t("nav", "applications") },
-    { key: "emplois" as RecruiterTab, icon: Briefcase, label: t("nav", "myJobs") },
+    { key: "dashboard" as RecruiterTab, icon: LayoutDashboard, label: t("nav.home") },
+    { key: "recherche" as RecruiterTab, icon: Search, label: t("nav.searchTalents") },
+    { key: "candidatures" as RecruiterTab, icon: Users, label: t("nav.applications") },
+    { key: "emplois" as RecruiterTab, icon: Briefcase, label: t("nav.myJobs") },
     { key: "transactions" as RecruiterTab, icon: CreditCard, label: "Transactions" },
-    { key: "favoris" as RecruiterTab, icon: Bookmark, label: t("nav", "favorites") },
-    { key: "affiliation" as RecruiterTab, icon: Share2, label: t("nav", "affiliation") },
-    { key: "parametres" as RecruiterTab, icon: Settings, label: t("nav", "settings") },
+    { key: "favoris" as RecruiterTab, icon: Bookmark, label: t("nav.favorites") },
+    { key: "affiliation" as RecruiterTab, icon: Share2, label: t("nav.affiliation") },
+    { key: "parametres" as RecruiterTab, icon: Settings, label: t("nav.settings") },
     { key: "premium" as RecruiterTab, icon: Crown, label: "Premium" },
   ];
 
@@ -186,7 +187,7 @@ export default function RecruteurDashboard() {
       {/* ── SIDEBAR ───────────────────────────────────────────────────────────── */}
       <aside
         className={`
-          fixed md:sticky top-0 left-0 z-40
+          fixed md:sticky top-0 left-0 z-[60]
           w-64 h-screen bg-white border-r border-slate-200
           flex flex-col transition-transform duration-300
           ${sidebarOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"}
@@ -234,16 +235,6 @@ export default function RecruteurDashboard() {
           })}
         </nav>
 
-        {/* Logout */}
-        <div className="p-4 border-t border-slate-100 shrink-0">
-          <LogoutButton
-            onClick={() => setSidebarOpen(false)}
-            className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-medium text-red-500 hover:bg-red-50 transition-colors"
-          >
-            <LogOut size={18} />
-            <span>{t("nav", "logout")}</span>
-          </LogoutButton>
-        </div>
       </aside>
 
       {/* ── MAIN CONTENT AREA ─────────────────────────────────────────────────── */}
@@ -252,7 +243,7 @@ export default function RecruteurDashboard() {
         <PremiumBanner isPremium={isPremium} onUpgrade={() => handleTabChange("premium")} />
 
         {/* ── TOP HEADER ──────────────────────────────────────────────────────── */}
-        <header className="sticky top-0 z-20 bg-white border-b border-slate-200 h-16 flex items-center justify-between px-4 sm:px-6">
+        <header className="sticky top-0 z-[60] bg-white border-b border-slate-200 h-16 flex items-center justify-between px-4 sm:px-6">
           {/* Left: burger + Titre de la page */}
           <div className="flex items-center gap-3 sm:gap-4">
             <button
@@ -331,37 +322,12 @@ export default function RecruteurDashboard() {
             )}
 
             {/* Lang */}
-            <div className="relative">
-              <button
-                onClick={() => { setLangMenuOpen(!langMenuOpen); setNotifMenuOpen(false); setProfileMenuOpen(false); }}
-                className="p-2 text-slate-500 hover:bg-slate-100 rounded-full transition-colors relative"
-                aria-label="Language"
-              >
-                <Globe size={20} />
-              </button>
-
-              {langMenuOpen && (
-                <div className="absolute right-0 mt-3 w-40 bg-white rounded-2xl shadow-2xl border border-slate-100 py-2 z-30 animate-fade-in">
-                  {LOCALES.map(({ code, label, flag }) => (
-                    <button
-                      key={code}
-                      onClick={() => { setLocale(code); setLangMenuOpen(false); }}
-                      className={`w-full text-left px-4 py-2 text-xs font-medium flex items-center gap-2 transition-colors ${
-                        locale === code ? "text-[#32A8D7] bg-sky-50/50" : "text-slate-600 hover:bg-slate-50"
-                      }`}
-                    >
-                      <span className="text-base">{flag}</span>
-                      <span>{label}</span>
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
+            <LanguageSwitcher />
 
             {/* Bell */}
             <div className="relative">
               <button
-                onClick={() => { setNotifMenuOpen(!notifMenuOpen); setLangMenuOpen(false); setProfileMenuOpen(false); }}
+                onClick={() => { setNotifMenuOpen(!notifMenuOpen); setProfileMenuOpen(false); }}
                 className="p-2 text-slate-500 hover:bg-slate-100 rounded-full transition-colors relative"
                 aria-label="Notifications"
               >
@@ -402,7 +368,7 @@ export default function RecruteurDashboard() {
             {/* Avatar */}
             <div className="relative">
               <button
-                onClick={() => { setProfileMenuOpen(!profileMenuOpen); setNotifMenuOpen(false); setLangMenuOpen(false); }}
+                onClick={() => { setProfileMenuOpen(!profileMenuOpen); setNotifMenuOpen(false); }}
                 className="flex items-center gap-2 p-1 pr-2 rounded-full hover:bg-slate-100 transition-colors border border-transparent hover:border-slate-200"
               >
                 <div className="w-8 h-8 rounded-full overflow-hidden bg-slate-200 relative">
@@ -427,19 +393,19 @@ export default function RecruteurDashboard() {
                     onClick={() => { handleTabChange("profil"); setProfileMenuOpen(false); }}
                     className="w-full text-left px-4 py-2 text-xs text-slate-600 hover:bg-slate-50 font-medium flex items-center gap-2"
                   >
-                    <User size={14} /> {t("nav", "myProfile")}
+                    <User size={14} /> {t("nav.myProfile")}
                   </button>
                   <button
                     onClick={() => { handleTabChange("parametres"); setProfileMenuOpen(false); }}
                     className="w-full text-left px-4 py-2 text-xs text-slate-600 hover:bg-slate-50 font-medium flex items-center gap-2"
                   >
-                    <Settings size={14} /> {t("nav", "settings")}
+                    <Settings size={14} /> {t("nav.settings")}
                   </button>
                   <LogoutButton
-                    onClick={() => setProfileMenuOpen(false)}
+                    onCancelClick={() => setProfileMenuOpen(false)}
                     className="w-full text-left px-4 py-2 text-xs text-red-600 hover:bg-red-50 font-semibold border-t border-slate-100 mt-1 flex items-center gap-2"
                   >
-                    <LogOut size={14} /> {t("nav", "logout")}
+                    <LogOut size={14} /> {t("nav.logout")}
                   </LogoutButton>
                 </div>
               )}
@@ -610,15 +576,30 @@ export default function RecruteurDashboard() {
               </div>
 
               {/* Filters */}
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 relative">
+                {!isPremium && (
+                  <div 
+                    className="absolute inset-0 z-10 flex items-center justify-center bg-white/60 backdrop-blur-[1px] rounded-lg cursor-pointer"
+                    onClick={() => setActiveTab("premium")}
+                    title="Passer Premium pour utiliser les filtres avancés"
+                  >
+                    <div className="flex items-center gap-2 bg-white px-4 py-2 rounded-full shadow-sm border border-slate-200">
+                      <Crown size={16} className="text-yellow-500" />
+                      <span className="text-sm font-bold text-slate-700">Filtres Premium</span>
+                    </div>
+                  </div>
+                )}
                 {[
-                  { label: "License", options: ["Toutes les licenses", "Licence Pro", "Master / Ingénieur", "Doctorat", "Certifié Netacuv"] },
+                  { label: "Diplôme", options: ["Toutes les licenses", "Licence Pro", "Master / Ingénieur", "Doctorat", "Certifié Netacuv"] },
                   { label: "Genre", options: ["Tous les genres", "Femme", "Homme"] },
                   { label: "Pays", options: ["Tous les pays", "Bénin", "Côte d'Ivoire", "Sénégal", "Togo", "Cameroun", "France"] },
                   { label: "Ville", options: ["Toutes les villes", "Cotonou", "Porto-Novo", "Abidjan", "Dakar", "Lomé", "Douala", "Paris"] },
                 ].map((filter) => (
                   <div key={filter.label} className="relative">
-                    <select className="w-full appearance-none bg-slate-100 hover:bg-slate-200/70 border border-slate-200/80 rounded-md py-2.5 pl-4 pr-9 text-sm font-medium text-slate-700 outline-none hover:border-slate-300 focus:border-[#32A8D7] focus:bg-white cursor-pointer transition-colors">
+                    <select 
+                      disabled={!isPremium}
+                      className="w-full appearance-none bg-slate-100 hover:bg-slate-200/70 border border-slate-200/80 rounded-md py-2.5 pl-4 pr-9 text-sm font-medium text-slate-700 outline-none hover:border-slate-300 focus:border-[#32A8D7] focus:bg-white cursor-pointer transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
                       <option value="">{filter.label}</option>
                       {filter.options.map((opt) => (
                         <option key={opt} value={opt}>{opt}</option>

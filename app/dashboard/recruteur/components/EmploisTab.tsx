@@ -25,6 +25,7 @@ import {
 import { ConfirmModal, SuccessModal } from "./Modals";
 import useSWR from "swr";
 import { useAuth } from "../../../context/AuthContext";
+import PremiumRequiredModal from "../../../components/PremiumRequiredModal";
 
 const fetcher = (url: string) => fetch(url, { headers: { 'Cache-Control': 'no-cache' } }).then(res => res.json());
 
@@ -61,8 +62,11 @@ const MOCK_CANDIDATES: any[] = [];
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
 function CandidateCard({ c }: { c: typeof MOCK_CANDIDATES[number] }) {
+  const { user } = useAuth();
+  const [showPremiumModal, setShowPremiumModal] = useState(false);
   return (
-    <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden flex flex-col">
+    <>
+      <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden flex flex-col">
       {/* Photo */}
       <div className="relative w-full aspect-[4/3] bg-pink-100">
         <Image
@@ -70,7 +74,7 @@ function CandidateCard({ c }: { c: typeof MOCK_CANDIDATES[number] }) {
           alt={c.nom}
           fill
           sizes="(max-width: 640px) 100vw, 33vw"
-          className="object-cover object-top"
+          className={`object-cover object-top ${!user?.isPremium ? 'blur-md select-none' : ''}`}
           onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
         />
         {c.certifie && (
@@ -83,8 +87,8 @@ function CandidateCard({ c }: { c: typeof MOCK_CANDIDATES[number] }) {
       <div className="p-3 flex-1">
         <div className="flex items-start justify-between gap-1">
           <div>
-            <p className="font-bold text-slate-900 text-sm">{c.nom}</p>
-            <p className="text-[11px] text-slate-400">{c.localisation}</p>
+            <p className={`font-bold text-slate-900 text-sm ${!user?.isPremium ? 'blur-sm select-none' : ''}`}>{!user?.isPremium ? "Profil Confidentiel" : c.nom}</p>
+            <p className={`text-[11px] text-slate-400 ${!user?.isPremium ? 'blur-sm select-none' : ''}`}>{!user?.isPremium ? "Localisation Masquée" : c.localisation}</p>
             <p className="text-[11px] text-slate-500 mt-0.5">
               <span className="font-semibold">Profession :</span> {c.profession}
             </p>
@@ -94,7 +98,23 @@ function CandidateCard({ c }: { c: typeof MOCK_CANDIDATES[number] }) {
           </button>
         </div>
         <div className="flex gap-1.5 mt-3">
-          <button className="flex-1 py-1.5 rounded-lg border border-slate-200 text-[11px] font-semibold text-slate-600 hover:bg-slate-50 flex items-center justify-center gap-1 transition-colors">
+          <button
+            onClick={(e) => {
+              e.preventDefault();
+              if (!user?.isPremium) {
+                setShowPremiumModal(true);
+                return;
+              }
+              const subject = encodeURIComponent(`Contact Candidat ${c.nom}`);
+              const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=candidat@example.com&su=${subject}`;
+              window.open(gmailUrl, "_blank", "noopener,noreferrer");
+            }}
+            className={`flex-1 py-1.5 rounded-lg border text-[11px] font-semibold flex items-center justify-center gap-1 transition-colors ${
+              !user?.isPremium 
+                ? 'border-slate-200 text-slate-400 bg-slate-50 opacity-70 cursor-not-allowed'
+                : 'border-slate-200 text-slate-600 hover:bg-slate-50'
+            }`}
+          >
             <Mail size={11} /> Envoyer un mail
           </button>
           <button className="flex-1 py-1.5 rounded-lg bg-[#32A8D7] hover:bg-[#2896c2] text-white text-[11px] font-semibold transition-colors">
@@ -102,7 +122,15 @@ function CandidateCard({ c }: { c: typeof MOCK_CANDIDATES[number] }) {
           </button>
         </div>
       </div>
-    </div>
+      </div>
+      
+      {showPremiumModal && (
+        <PremiumRequiredModal 
+          onClose={() => setShowPremiumModal(false)} 
+          message="Passez au plan Premium pour contacter ce talent et consulter son profil complet."
+        />
+      )}
+    </>
   );
 }
 
