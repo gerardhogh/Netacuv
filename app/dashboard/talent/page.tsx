@@ -447,7 +447,7 @@ export default function TalentDashboard() {
 
       {/* ── MAIN CONTENT AREA ── */}
       <div className="flex-1 flex flex-col min-h-screen min-w-0">
-        <PremiumBanner isPremium={isPremium} />
+        <PremiumBanner isPremium={isPremium} onUpgrade={() => setActiveTab("premium")} />
         {/* Top Header */}
         <header className="sticky top-0 z-[40] bg-white/95 backdrop-blur-md border-b border-slate-200 px-6 py-4 flex items-center justify-between shadow-xs">
           <div className="flex items-center gap-4">
