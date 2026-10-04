@@ -219,7 +219,21 @@ export default function TalentDashboard() {
     // Listen for profile updates from child components (e.g. ProfilTalent)
     const handleUpdate = () => fetchDashboardData();
     window.addEventListener("dashboardProfileUpdated", handleUpdate);
-    return () => window.removeEventListener("dashboardProfileUpdated", handleUpdate);
+
+    // Rafraîchit isPremium quand l'utilisateur revient sur l'onglet (depuis un autre appareil / page)
+    const handleVisibility = () => {
+      if (document.visibilityState === "visible") fetchDashboardData();
+    };
+    document.addEventListener("visibilitychange", handleVisibility);
+
+    // Rafraîchit toutes les 60 secondes → sync cross-appareils garanti
+    const interval = setInterval(fetchDashboardData, 60_000);
+
+    return () => {
+      window.removeEventListener("dashboardProfileUpdated", handleUpdate);
+      document.removeEventListener("visibilitychange", handleVisibility);
+      clearInterval(interval);
+    };
   }, []);
 
   useEffect(() => {

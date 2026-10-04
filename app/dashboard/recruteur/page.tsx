@@ -74,7 +74,7 @@ export default function RecruteurDashboard() {
 
   const [isPremium, setIsPremium] = useState<boolean>(false);
 
-  useEffect(() => {
+  const fetchPremiumStatus = () => {
     fetch("/api/recruiters/me", { cache: "no-store" })
       .then((res) => res.json())
       .then((data) => {
@@ -83,6 +83,24 @@ export default function RecruteurDashboard() {
         }
       })
       .catch((err) => console.error("Erreur chargement profil:", err));
+  };
+
+  useEffect(() => {
+    fetchPremiumStatus();
+
+    // Rafraîchit quand l'utilisateur revient sur l'onglet (sync cross-appareils)
+    const handleVisibility = () => {
+      if (document.visibilityState === "visible") fetchPremiumStatus();
+    };
+    document.addEventListener("visibilitychange", handleVisibility);
+
+    // Rafraîchit toutes les 60 secondes
+    const interval = setInterval(fetchPremiumStatus, 60_000);
+
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibility);
+      clearInterval(interval);
+    };
   }, []);
 
   const [activeTab, setActiveTab] = useState<RecruiterTab>("dashboard");
