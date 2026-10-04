@@ -179,7 +179,7 @@ export default function RecruteurDashboard() {
       {/* ── Mobile overlay ────────────────────────────────────────────────────── */}
       {sidebarOpen && (
         <div
-          className="fixed inset-0 bg-black/50 z-30 md:hidden backdrop-blur-sm"
+          className="fixed inset-0 bg-black/50 z-[50] md:hidden backdrop-blur-sm"
           onClick={() => setSidebarOpen(false)}
         />
       )}
@@ -233,6 +233,10 @@ export default function RecruteurDashboard() {
               </button>
             );
           })}
+          
+          <div className="mt-2 pt-2 border-t border-slate-100 px-4">
+            <LanguageSwitcher />
+          </div>
         </nav>
 
       </aside>
@@ -243,7 +247,7 @@ export default function RecruteurDashboard() {
         <PremiumBanner isPremium={isPremium} onUpgrade={() => handleTabChange("premium")} />
 
         {/* ── TOP HEADER ──────────────────────────────────────────────────────── */}
-        <header className="sticky top-0 z-[60] bg-white border-b border-slate-200 h-16 flex items-center justify-between px-4 sm:px-6">
+        <header className="sticky top-0 z-[40] bg-white border-b border-slate-200 h-16 flex items-center justify-between px-4 sm:px-6">
           {/* Left: burger + Titre de la page */}
           <div className="flex items-center gap-3 sm:gap-4">
             <button
@@ -321,8 +325,7 @@ export default function RecruteurDashboard() {
               </div>
             )}
 
-            {/* Lang */}
-            <LanguageSwitcher />
+
 
             {/* Bell */}
             <div className="relative">

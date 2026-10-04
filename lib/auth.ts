@@ -44,6 +44,7 @@ export const authOptions: NextAuthOptions = {
   secret: process.env.NEXTAUTH_SECRET,
   session: {
     strategy: "jwt",
+    maxAge: 4 * 60 * 60, // 4 heures
   },
   providers: [
     // Authentification Google

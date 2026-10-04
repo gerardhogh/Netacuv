@@ -37,24 +37,24 @@ export default function LanguageSwitcher() {
     const domainPart = isLocalhost ? '' : ' domain=.netacuv.com;';
     document.cookie = `NEXT_LOCALE=${code}; path=/;${domainPart} SameSite=Lax`;
     setOpen(false);
-    router.refresh();
+    window.location.reload();
   };
 
   return (
     <div className="relative" ref={dropdownRef}>
       <button
         onClick={() => setOpen(!open)}
-        className="flex items-center justify-between space-x-2 bg-white/10 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors px-3 py-2 rounded-full border border-slate-200 shadow-sm"
+        className="w-full flex items-center justify-between gap-2 bg-white hover:bg-slate-50 transition-colors px-4 py-2.5 rounded-xl border border-slate-200 shadow-sm"
       >
-        <span className="flex items-center space-x-2 text-sm font-medium text-slate-700 dark:text-slate-300">
+        <div className="flex items-center gap-2">
           <span className="text-base">{current.flag}</span>
-          <span className="hidden sm:inline">{current.label}</span>
-        </span>
-        <ChevronDown size={14} className="text-slate-500" />
+          <span className="text-sm font-semibold text-slate-700">{current.label}</span>
+        </div>
+        <ChevronDown size={14} className="text-slate-500 shrink-0" />
       </button>
 
       {open && (
-        <div className="absolute right-0 mt-2 w-40 bg-white dark:bg-slate-900 border border-slate-100 shadow-lg rounded-2xl overflow-hidden z-50">
+        <div className="absolute left-0 right-0 mt-2 min-w-[140px] bg-white border border-slate-100 shadow-xl rounded-2xl overflow-hidden z-50">
           <ul className="py-2">
             {LOCALES.map((loc) => (
               <li key={loc.code}>

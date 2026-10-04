@@ -376,7 +376,7 @@ export default function TalentDashboard() {
       {/* Mobile Overlay */}
       {sidebarOpen && (
         <div
-          className="fixed inset-0 bg-black/50 z-30 md:hidden backdrop-blur-xs"
+          className="fixed inset-0 bg-black/50 z-[50] md:hidden backdrop-blur-xs"
           onClick={() => setSidebarOpen(false)}
         />
       )}
@@ -437,6 +437,10 @@ export default function TalentDashboard() {
                 </button>
               );
             })}
+
+            <div className="mt-2 pt-2 border-t border-slate-100 px-4">
+              <LanguageSwitcher />
+            </div>
           </nav>
         </div>
       </aside>
@@ -445,7 +449,7 @@ export default function TalentDashboard() {
       <div className="flex-1 flex flex-col min-h-screen min-w-0">
         <PremiumBanner isPremium={isPremium} />
         {/* Top Header */}
-        <header className="sticky top-0 z-[60] bg-white/95 backdrop-blur-md border-b border-slate-200 px-6 py-4 flex items-center justify-between shadow-xs">
+        <header className="sticky top-0 z-[40] bg-white/95 backdrop-blur-md border-b border-slate-200 px-6 py-4 flex items-center justify-between shadow-xs">
           <div className="flex items-center gap-4">
             <button
               onClick={() => setSidebarOpen(true)}
@@ -486,8 +490,7 @@ export default function TalentDashboard() {
               </div>
             )}
 
-            {/* Language Switcher */}
-            <LanguageSwitcher />
+
 
             {/* Notification Bell with interactive dropdown */}
             <div className="relative">

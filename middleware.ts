@@ -84,8 +84,8 @@ async function handleMiddleware(req: NextRequest) {
         return NextResponse.redirect(new URL(adminUrl, req.url));
       }
 
-      // Si l'admin est déjà connecté et visite la page de connexion, le rediriger vers l'accueil (qui affiche le dashboard)
-      if (path === "/admin") {
+      // Si l'admin est déjà connecté et visite la page de connexion ou l'accueil principal, le rediriger vers l'accueil admin (qui affiche le dashboard)
+      if (path === "/admin" || (!isAdminSubdomain && path === "/")) {
         return NextResponse.redirect(new URL(adminUrl, req.url));
       }
 
@@ -108,7 +108,7 @@ async function handleMiddleware(req: NextRequest) {
 
       // Rediriger l'accueil ou les pages de connexion vers le dashboard par défaut
       const isAccountDeleted = (token as any).error === "DeletedAccount";
-      if (!isAccountDeleted && (path === "/dashboard" || isAuthRoute)) {
+      if (!isAccountDeleted && (path === "/" || path === "/dashboard" || isAuthRoute)) {
         return NextResponse.redirect(new URL(defaultDashboardPath, req.url));
       }
 
