@@ -6,7 +6,7 @@ import { Search, X, Download, ArrowUpRight } from "lucide-react";
 type TxStatus = "success" | "failed" | "pending";
 
 interface Transaction {
-  id: number;
+  id: string;
   date: string;
   reference: string;
   method: string;
@@ -15,7 +15,7 @@ interface Transaction {
   status: TxStatus;
 }
 
-const MOCK_TRANSACTIONS: Transaction[] = [];
+import useSWR from "swr";
 
 const statusConfig: Record<TxStatus, { label: string; dotClass: string; textClass: string; bgClass: string }> = {
   success: { label: "Réussie", dotClass: "bg-green-500", textClass: "text-green-700", bgClass: "bg-green-50 border-green-200" },
@@ -23,12 +23,31 @@ const statusConfig: Record<TxStatus, { label: string; dotClass: string; textClas
   pending: { label: "En attente", dotClass: "bg-yellow-500", textClass: "text-yellow-700", bgClass: "bg-yellow-50 border-yellow-200" },
 };
 
+const fetcher = (url: string) => fetch(url).then(res => res.json());
+
 export default function TransactionsTab() {
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<"all" | TxStatus>("all");
   const [detailTx, setDetailTx] = useState<Transaction | null>(null);
 
-  const filtered = MOCK_TRANSACTIONS.filter((tx) => {
+  const { data: apiData } = useSWR('/api/transactions', fetcher);
+  
+  const transactions: Transaction[] = apiData?.transactions?.map((t: any) => ({
+    id: t.id,
+    date: new Date(t.createdAt).toLocaleDateString('fr-FR', {
+      day: '2-digit', month: '2-digit', year: 'numeric',
+      hour: '2-digit', minute: '2-digit'
+    }),
+    reference: t.id.substring(0, 10).toUpperCase(),
+    method: t.paymentMethod || "Carte Bancaire",
+    amount: t.amount,
+    service: t.type || "Abonnement Premium",
+    status: (t.status === "SUCCESS" || t.status === "COMPLETED") ? "success" 
+          : (t.status === "FAILED" || t.status === "ERROR") ? "failed" 
+          : "pending"
+  })) || [];
+
+  const filtered = transactions.filter((tx) => {
     const matchSearch =
       tx.reference.toLowerCase().includes(search.toLowerCase()) ||
       tx.method.toLowerCase().includes(search.toLowerCase()) ||
@@ -37,9 +56,9 @@ export default function TransactionsTab() {
     return matchSearch && matchFilter;
   });
 
-  const total = MOCK_TRANSACTIONS.reduce((a, b) => a + b.amount, 0);
-  const successCount = MOCK_TRANSACTIONS.filter((t) => t.status === "success").length;
-  const pendingCount = MOCK_TRANSACTIONS.filter((t) => t.status === "pending").length;
+  const total = transactions.reduce((a, b) => a + b.amount, 0);
+  const successCount = transactions.filter((t) => t.status === "success").length;
+  const pendingCount = transactions.filter((t) => t.status === "pending").length;
 
   return (
     <div className="space-y-6">
@@ -54,7 +73,7 @@ export default function TransactionsTab() {
         />
         <SummaryCard
           label="Transactions"
-          value={MOCK_TRANSACTIONS.length.toString()}
+          value={transactions.length.toString()}
           onClick={() => setFilter("all")}
         />
         <SummaryCard
@@ -107,11 +126,11 @@ export default function TransactionsTab() {
                   </td>
                 </tr>
               ) : (
-                filtered.map((tx) => {
-                  const cfg = statusConfig[tx.status];
+                filtered.map((tx, index) => {
+                  const cfg = statusConfig[tx.status] || statusConfig.pending;
                   return (
                     <tr key={tx.id} className="hover:bg-slate-50/60 transition-colors">
-                      <td className="px-5 py-3.5 text-[#32A8D7] font-semibold">{tx.id}</td>
+                      <td className="px-5 py-3.5 text-[#32A8D7] font-semibold">{index + 1}</td>
                       <td className="px-5 py-3.5 text-slate-600 whitespace-nowrap">{tx.date}</td>
                       <td className="px-5 py-3.5 text-slate-700 font-medium">{tx.reference}</td>
                       <td className="px-5 py-3.5 text-slate-600">{tx.method}</td>

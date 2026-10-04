@@ -44,7 +44,8 @@ export const authOptions: NextAuthOptions = {
   secret: process.env.NEXTAUTH_SECRET,
   session: {
     strategy: "jwt",
-    maxAge: 4 * 60 * 60, // 4 heures
+    maxAge: 4 * 60 * 60,   // 4 heures
+    updateAge: 60,          // Rafraîchit le token toutes les 60s → isPremium toujours à jour
   },
   providers: [
     // Authentification Google

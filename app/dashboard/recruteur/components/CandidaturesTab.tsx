@@ -290,7 +290,7 @@ export default function CandidaturesTab() {
                         <button
                           onClick={() => {
                             if (c.talentUserId) {
-                              router.push(`/dashboard/recruteur/talents/${c.talentUserId}`);
+                              router.push(`/dashboard/recruteur/talents/${c.talentUserId}?tab=video`);
                             }
                           }}
                           className="inline-flex items-center gap-1 text-[10px] font-semibold text-[#32A8D7] hover:underline"
@@ -306,6 +306,11 @@ export default function CandidaturesTab() {
                     <td className="px-4 py-3.5 align-middle">
                       {c.cvJoint ? (
                         <button
+                          onClick={() => {
+                            if (c.talentUserId) {
+                              router.push(`/dashboard/recruteur/talents/${c.talentUserId}?tab=informations`);
+                            }
+                          }}
                           className="inline-flex items-center gap-1 text-[10px] font-semibold text-[#32A8D7] hover:underline"
                         >
                           <FileText size={10} /> Oui · Voir

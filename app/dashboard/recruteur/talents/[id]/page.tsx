@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 import { useAuth } from "@/app/context/AuthContext";
@@ -401,6 +401,7 @@ const SIDEBAR_ITEMS = [
 export default function TalentDetailPage() {
   const params = useParams();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { user, logout } = useAuth();
 
   const id = Array.isArray(params?.id) ? params.id[0] : params?.id;
@@ -427,7 +428,17 @@ export default function TalentDetailPage() {
     }
   }, [id]);
 
-  const [activeTab, setActiveTab] = useState<"informations" | "reseaux" | "video">("informations");
+  const initialTab = (searchParams.get("tab") as "informations" | "reseaux" | "video") || "informations";
+  const [activeTab, setActiveTab] = useState<"informations" | "reseaux" | "video">(initialTab);
+  
+  // Update activeTab when URL param changes
+  useEffect(() => {
+    const tabParam = searchParams.get("tab");
+    if (tabParam === "informations" || tabParam === "reseaux" || tabParam === "video") {
+      setActiveTab(tabParam);
+    }
+  }, [searchParams]);
+
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
 
@@ -435,6 +446,38 @@ export default function TalentDetailPage() {
   const [notifMenuOpen, setNotifMenuOpen] = useState(false);
   const [toastMsg, setToastMsg] = useState<string | null>(null);
   const [isFavorite, setIsFavorite] = useState(false);
+
+  useEffect(() => {
+    const saved = localStorage.getItem("favorites");
+    if (saved && id) {
+      try {
+        const favs = JSON.parse(saved);
+        if (favs.includes(String(id))) {
+          setIsFavorite(true);
+        }
+      } catch (e) {}
+    }
+  }, [id]);
+
+  const toggleFavorite = () => {
+    const saved = localStorage.getItem("favorites");
+    let favs: string[] = [];
+    if (saved) {
+      try { favs = JSON.parse(saved); } catch (e) {}
+    }
+    const strId = String(id);
+    if (favs.includes(strId)) {
+      favs = favs.filter(f => f !== strId);
+      setIsFavorite(false);
+      showToast("Retiré des favoris");
+    } else {
+      favs.push(strId);
+      setIsFavorite(true);
+      showToast("Ajouté aux favoris !");
+    }
+    localStorage.setItem("favorites", JSON.stringify(favs));
+  };
+
   const [showPremiumModal, setShowPremiumModal] = useState(false);
 
   const companyName = (user as any)?.company || "Grand-G Corp";
@@ -693,10 +736,7 @@ export default function TalentDetailPage() {
                 {/* Actions */}
                 <div className="w-full mt-5 space-y-2.5">
                   <button
-                    onClick={() => {
-                      setIsFavorite(!isFavorite);
-                      showToast(isFavorite ? "Retiré des favoris" : "Ajouté aux favoris !");
-                    }}
+                    onClick={toggleFavorite}
                     className={`w-full py-2.5 rounded-xl text-sm font-semibold border transition-all flex items-center justify-center gap-2 ${
                       isFavorite
                         ? "bg-[#32A8D7] text-white border-[#32A8D7] shadow-sm"

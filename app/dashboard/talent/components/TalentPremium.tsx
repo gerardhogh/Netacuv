@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { CheckCircle, XCircle, CreditCard, ArrowLeft, CheckCheck, Sparkles, Loader2, Check, X } from "lucide-react";
 import { useAuth } from "../../../context/AuthContext";
+import { useSession } from "next-auth/react";
 
 type PayStep = "plan" | "method" | "input" | "processing";
 
@@ -18,6 +19,7 @@ const PAYMENT_METHODS = [
 export default function TalentPremium({ isPremium: propIsPremium }: { isPremium?: boolean }) {
   const router = useRouter();
   const { user } = useAuth();
+  const { update } = useSession();
   const isPremium = propIsPremium !== undefined ? propIsPremium : user?.isPremium;
   const [step, setStep] = useState<PayStep>("plan");
   const [method, setMethod] = useState("");
@@ -39,8 +41,12 @@ export default function TalentPremium({ isPremium: propIsPremium }: { isPremium?
       const data = await res.json();
       
       if (res.ok && data.success) {
-        // Success: Reload the page to reflect premium status
-        window.location.reload();
+        // Force le rafraîchissement du token JWT depuis la DB sur TOUS les appareils
+        // updateAge: 60 dans auth.ts assure la sync automatique en 60s max
+        await update({ isPremium: true });
+        // Puis recharge la page pour refléter le nouveau statut
+        router.refresh();
+        setTimeout(() => window.location.reload(), 300);
       } else {
         setError(data.error || "Impossible de simuler le paiement");
         setStep("plan");

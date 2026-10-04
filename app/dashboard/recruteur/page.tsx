@@ -124,8 +124,16 @@ export default function RecruteurDashboard() {
     }
   }, []);
 
-  // Search Query already initialized above
   const [favorites, setFavorites] = useState<string[]>([]);
+
+  useEffect(() => {
+    const saved = localStorage.getItem("favorites");
+    if (saved) {
+      try {
+        setFavorites(JSON.parse(saved));
+      } catch (e) {}
+    }
+  }, []);
 
   // Notifications
   const [notifications, setNotifications] = useState<any[]>([]);
@@ -142,13 +150,16 @@ export default function RecruteurDashboard() {
   const toggleFavorite = (id?: string | number) => {
     if (!id) return;
     const strId = String(id);
+    let newFavorites;
     if (favorites.includes(strId)) {
-      setFavorites(favorites.filter((f) => f !== strId));
+      newFavorites = favorites.filter((f) => f !== strId);
       showToast("Profil retiré des favoris.");
     } else {
-      setFavorites([...favorites, strId]);
+      newFavorites = [...favorites, strId];
       showToast("Profil ajouté aux favoris !");
     }
+    setFavorites(newFavorites);
+    localStorage.setItem("favorites", JSON.stringify(newFavorites));
   };
 
   // ─── Sidebar items ───────────────────────────────────────────────────────────
