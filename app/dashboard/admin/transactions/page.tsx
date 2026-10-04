@@ -62,6 +62,7 @@ export default function AdminTransactions() {
   };
 
   const getTypeInFrench = (type: string) => {
+    if (type === "SUBSCRIPTION_PREMIUM") return "Abonnement Premium";
     if (type === "SUBSCRIPTION") return "Abonnement";
     if (type === "ONE_TIME") return "Achat unique";
     return type;
@@ -164,19 +165,19 @@ export default function AdminTransactions() {
           </div>
         ) : filteredTx.length > 0 ? (
           <div className="overflow-x-auto">
-            <table className="w-full text-sm text-left">
+            <table className="w-full text-sm text-left min-w-[900px]">
               <thead className="bg-[#f4f9fd] border-b border-slate-100">
                 <tr>
-                  <th className="px-4 py-4 font-semibold text-[#1e4869]">No</th>
-                  <th className="px-4 py-4 font-semibold text-[#1e4869]">Date</th>
-                  <th className="px-4 py-4 font-semibold text-[#1e4869]">Référence</th>
-                  <th className="px-4 py-4 font-semibold text-[#1e4869]">Utilisateurs</th>
-                  <th className="px-4 py-4 font-semibold text-[#1e4869]">Profil</th>
-                  <th className="px-4 py-4 font-semibold text-[#1e4869]">Moyen de paiement</th>
-                  <th className="px-4 py-4 font-semibold text-[#1e4869]">Montant</th>
-                  <th className="px-4 py-4 font-semibold text-[#1e4869]">Service</th>
-                  <th className="px-4 py-4 font-semibold text-[#1e4869]">Statut</th>
-                  <th className="px-4 py-4 font-semibold text-[#1e4869]">Action</th>
+                  <th className="px-3 py-3 font-semibold text-[#1e4869] text-xs whitespace-nowrap">No</th>
+                  <th className="px-3 py-3 font-semibold text-[#1e4869] text-xs whitespace-nowrap">Date</th>
+                  <th className="px-3 py-3 font-semibold text-[#1e4869] text-xs whitespace-nowrap">Référence</th>
+                  <th className="px-3 py-3 font-semibold text-[#1e4869] text-xs whitespace-nowrap">Utilisateur</th>
+                  <th className="px-3 py-3 font-semibold text-[#1e4869] text-xs whitespace-nowrap">Profil</th>
+                  <th className="px-3 py-3 font-semibold text-[#1e4869] text-xs whitespace-nowrap">Moyen</th>
+                  <th className="px-3 py-3 font-semibold text-[#1e4869] text-xs whitespace-nowrap">Montant</th>
+                  <th className="px-3 py-3 font-semibold text-[#1e4869] text-xs whitespace-nowrap">Service</th>
+                  <th className="px-3 py-3 font-semibold text-[#1e4869] text-xs whitespace-nowrap">Statut</th>
+                  <th className="px-3 py-3 font-semibold text-[#1e4869] text-xs whitespace-nowrap">Action</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
@@ -184,27 +185,46 @@ export default function AdminTransactions() {
                   const statusFr = getStatusInFrench(t.status);
                   return (
                     <tr key={t.id} className="hover:bg-slate-50/50 transition-colors">
-                      <td className="px-4 py-3 text-[#1e4869]">#{index + 1}</td>
-                      <td className="px-4 py-3 text-[#1e4869] whitespace-pre-line leading-relaxed">
-                        {new Date(t.createdAt).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }).replace(',', '\n')}
+                      <td className="px-3 py-3 text-[#1e4869] text-xs whitespace-nowrap">#{index + 1}</td>
+                      <td className="px-3 py-3 text-[#1e4869] text-xs whitespace-nowrap">
+                        {new Date(t.createdAt).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' })}
+                        <br />
+                        <span className="text-slate-400 text-[10px]">
+                          {new Date(t.createdAt).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
+                        </span>
                       </td>
-                      <td className="px-4 py-3 text-[#1e4869] font-mono text-xs">{t.id.slice(-8)}</td>
-                      <td className="px-4 py-3 text-[#1e4869]">{t.user?.name || "Inconnu"}</td>
-                      <td className="px-4 py-3 text-[#1e4869]">{t.user?.role?.name || "Non défini"}</td>
-                      <td className="px-4 py-3 text-[#1e4869]">{t.paymentMethod}</td>
-                      <td className="px-4 py-3 font-bold text-[#1e4869]">{t.amount} {t.currency}</td>
-                      <td className="px-4 py-3 text-[#1e4869] max-w-[150px]">{getTypeInFrench(t.type)}</td>
-                      <td className="px-4 py-3">
-                        <div className="flex items-center gap-1.5 px-2 py-1 rounded-full w-max text-[11px] font-semibold" style={{
-                          backgroundColor: t.status === 'SUCCESS' ? '#f0fdf4' : t.status === 'PENDING' ? '#fefce8' : '#fef2f2',
-                          color: '#475569'
-                        }}>
+                      <td className="px-3 py-3 text-[#1e4869] font-mono text-xs whitespace-nowrap">{t.id.slice(-8).toUpperCase()}</td>
+                      <td className="px-3 py-3 text-[#1e4869] text-xs whitespace-nowrap">{t.user?.name || "Inconnu"}</td>
+                      <td className="px-3 py-3 text-xs whitespace-nowrap">
+                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                          t.user?.role?.name === 'RECRUTEUR'
+                            ? 'bg-blue-50 text-blue-700 border border-blue-200'
+                            : 'bg-purple-50 text-purple-700 border border-purple-200'
+                        }`}>
+                          {t.user?.role?.name || "—"}
+                        </span>
+                      </td>
+                      <td className="px-3 py-3 text-[#1e4869] text-xs whitespace-nowrap">{t.paymentMethod}</td>
+                      <td className="px-3 py-3 font-bold text-[#1e4869] text-xs whitespace-nowrap">{t.amount} {t.currency}</td>
+                      <td className="px-3 py-3 text-xs whitespace-nowrap">
+                        <span className="px-2 py-0.5 bg-sky-50 text-sky-700 border border-sky-200 rounded-full text-[10px] font-semibold">
+                          {getTypeInFrench(t.type)}
+                        </span>
+                      </td>
+                      <td className="px-3 py-3 whitespace-nowrap">
+                        <div className={`inline-flex items-center gap-1.5 px-2 py-1 rounded-full text-[10px] font-semibold border ${
+                          t.status === 'SUCCESS' ? 'bg-green-50 text-green-700 border-green-200'
+                          : t.status === 'PENDING' ? 'bg-yellow-50 text-yellow-700 border-yellow-200'
+                          : 'bg-red-50 text-red-700 border-red-200'
+                        }`}>
+                          <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${
+                            t.status === 'SUCCESS' ? 'bg-green-500' : t.status === 'PENDING' ? 'bg-yellow-500' : 'bg-red-500'
+                          }`} />
                           {statusFr}
-                          <span className={`w-1.5 h-1.5 rounded-full ${t.status === 'SUCCESS' ? 'bg-green-500' : t.status === 'PENDING' ? 'bg-yellow-500' : 'bg-red-500'}`}></span>
                         </div>
                       </td>
-                      <td className="px-4 py-3">
-                        <button onClick={() => setSelectedTx(t)} className="text-[#32A8D7] font-semibold hover:underline">Voir</button>
+                      <td className="px-3 py-3 whitespace-nowrap">
+                        <button onClick={() => setSelectedTx(t)} className="text-[#32A8D7] font-semibold hover:underline text-xs">Voir</button>
                       </td>
                     </tr>
                   );
