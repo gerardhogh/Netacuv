@@ -99,7 +99,7 @@ export default function ForgotPasswordPage() {
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       placeholder="Entrer l'e-mail"
-                      className="w-full pl-10 pr-4 py-3 bg-white/5 border border-white/10 rounded-xl text-sm text-white placeholder-slate-400 focus:outline-none focus:border-[#32A8D7] transition-all [&:-webkit-autofill]:shadow-[0_0_0_1000px_#0A192F_inset] [&:-webkit-autofill]:text-white"
+                      className="w-full pl-10 pr-4 py-3 bg-white/5 border border-white/10 rounded-xl text-sm text-white placeholder-slate-400 focus:outline-none focus:border-[#32A8D7] transition-all [&:-webkit-autofill]:shadow-[0_0_0_1000px_#0A192F_inset] [&:-webkit-autofill]:[-webkit-text-fill-color:white]"
                     />
                   </div>
                 </div>

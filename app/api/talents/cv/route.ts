@@ -17,6 +17,16 @@ export async function POST(req: NextRequest) {
 
     const userId = (session.user as any).id;
     
+    // --- SÉCURITÉ PREMIUM : Vérification côté serveur ---
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { isPremium: true }
+    });
+    if (!user?.isPremium) {
+      return NextResponse.json({ error: "Cette fonctionnalité est réservée aux membres Premium." }, { status: 403 });
+    }
+    // -----------------------------------------------------
+    
     const formData = await req.formData();
     const file = formData.get("cv") as File;
 

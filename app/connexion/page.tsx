@@ -231,7 +231,7 @@ export default function ConnexionPage() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="exemple@email.com"
-                  className="w-full pl-10 pr-4 py-2.5 bg-white/5 border border-white/10 rounded-xl text-white placeholder-blue-200/50 focus:outline-none focus:ring-2 focus:ring-[#32A8D7] focus:border-transparent transition-all [&:-webkit-autofill]:[transition:background-color_9999s_ease-in-out_0s] [&:-webkit-autofill]:[-webkit-text-fill-color:white]"
+                  className="w-full pl-10 pr-4 py-2.5 bg-white/5 border border-white/10 rounded-xl text-white placeholder-blue-200/50 focus:outline-none focus:ring-2 focus:ring-[#32A8D7] focus:border-transparent transition-all [&:-webkit-autofill]:shadow-[0_0_0_1000px_#002B49_inset] [&:-webkit-autofill]:[-webkit-text-fill-color:white]"
                   id="email-connexion"
                 />
               </div>
@@ -248,7 +248,7 @@ export default function ConnexionPage() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••••••"
-                  className="w-full pl-10 pr-11 py-2.5 bg-white/5 border border-white/10 rounded-xl text-white placeholder-blue-200/50 focus:outline-none focus:ring-2 focus:ring-[#32A8D7] focus:border-transparent transition-all [&:-webkit-autofill]:[transition:background-color_9999s_ease-in-out_0s] [&:-webkit-autofill]:[-webkit-text-fill-color:white]"
+                  className="w-full pl-10 pr-11 py-2.5 bg-white/5 border border-white/10 rounded-xl text-white placeholder-blue-200/50 focus:outline-none focus:ring-2 focus:ring-[#32A8D7] focus:border-transparent transition-all [&:-webkit-autofill]:shadow-[0_0_0_1000px_#002B49_inset] [&:-webkit-autofill]:[-webkit-text-fill-color:white]"
                   id="password-connexion"
                 />
                 <button

@@ -35,7 +35,7 @@ export default async function RootLayout({
   });
   const isMaintenance = maintenanceSetting?.value === "true";
 
-  const headersList = headers();
+  const headersList = await headers();
   const host = headersList.get("host") || "";
   const isAdminSubdomain = host.startsWith("admin.");
 
