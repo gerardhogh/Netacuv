@@ -29,11 +29,17 @@ export default async function RootLayout({
   const locale = await getLocale();
   const messages = await getMessages();
 
-  // Check Maintenance Mode
-  const maintenanceSetting = await prisma.systemSetting.findUnique({
-    where: { key: "MAINTENANCE_MODE" },
-  });
-  const isMaintenance = maintenanceSetting?.value === "true";
+  // Check Maintenance Mode (safe fallback if table not yet migrated)
+  let isMaintenance = false;
+  try {
+    const maintenanceSetting = await prisma.systemSetting.findUnique({
+      where: { key: "MAINTENANCE_MODE" },
+    });
+    isMaintenance = maintenanceSetting?.value === "true";
+  } catch {
+    // Table may not exist yet in production — ignore and continue
+    isMaintenance = false;
+  }
 
   const headersList = await headers();
   const host = headersList.get("host") || "";
