@@ -213,6 +213,10 @@ export default function ParametresTab() {
                     });
                     if (res.ok) {
                       setDeleteModal(false);
+                      localStorage.removeItem("check_cv_name");
+                      localStorage.removeItem("check_cv_date");
+                      localStorage.removeItem("check_cv_has_pdf");
+                      localStorage.removeItem("confetti_shown");
                       await signOut({ callbackUrl: "/?account_deleted=true" });
                     } else {
                       alert("Erreur lors de la suppression.");

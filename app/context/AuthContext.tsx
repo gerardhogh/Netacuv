@@ -34,6 +34,15 @@ export function useAuth() {
 
   const logout = () => {
     if (typeof window !== "undefined") {
+      // Clear all cached states in localStorage
+      localStorage.removeItem("check_cv_name");
+      localStorage.removeItem("check_cv_date");
+      localStorage.removeItem("check_cv_has_pdf");
+      localStorage.removeItem("confetti_shown");
+      if (user?.id) {
+        localStorage.removeItem(`interview_recorded_${user.id}`);
+      }
+      
       const isAdmin = window.location.hostname.startsWith("admin.");
       const callbackUrl = isAdmin
         ? `${window.location.protocol}//${window.location.host}/admin`
