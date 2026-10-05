@@ -12,6 +12,7 @@ import {
 import LogoutButton from "../../../components/LogoutButton";
 import { useTranslations, useLocale } from "next-intl";
 import LanguageSwitcher, { LOCALES, Locale } from "@/app/components/LanguageSwitcher";
+import MaintenanceToggle from "./MaintenanceToggle";
 
 const getSidebarItems = (role: string = "") => {
   const upperRole = role.toUpperCase();
@@ -83,6 +84,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             
             <div className="mt-4 pt-4 border-t border-slate-100 px-2">
               <LanguageSwitcher />
+            </div>
+
+            <div className="mt-4 pt-4 border-t border-slate-100 px-2">
+              <MaintenanceToggle />
             </div>
           </nav>
         </div>
