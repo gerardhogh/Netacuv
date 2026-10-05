@@ -16,7 +16,7 @@ export const metadata: Metadata = {
 import { NextIntlClientProvider } from 'next-intl';
 import { getLocale, getMessages } from 'next-intl/server';
 import { headers } from 'next/headers';
-import prisma from "@/lib/prisma";
+import { prisma } from "@/lib/prisma";
 import Providers from "./components/Providers";
 import NextTopLoader from 'nextjs-toploader';
 import Image from "next/image";
