@@ -7,7 +7,7 @@ import bcrypt from "bcrypt";
 import { hasPermission } from "@/lib/permissions";
 
 export async function GET() {
-  if (!(await hasPermission('manage_users'))) {
+  if (!(await hasPermission('users:read')) && !(await hasPermission('users:moderate'))) {
     return NextResponse.json(
       { error: "Accès refusé. Droits requis." },
       { status: 403 }
@@ -39,7 +39,7 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
-  if (!(await hasPermission('manage_users'))) {
+  if (!(await hasPermission('users:moderate'))) {
     return NextResponse.json(
       { error: "Accès refusé. Droits requis." },
       { status: 403 }

@@ -156,9 +156,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                     Paramètres
                   </Link>
                   <LogoutButton 
-                    className="w-full text-left px-4 py-2 text-xs text-red-600 hover:bg-red-50 font-semibold border-t border-slate-100 mt-1 block"
+                    onCancelClick={() => setProfileMenuOpen(false)}
+                    className="w-full text-left px-4 py-2 text-xs text-red-600 hover:bg-red-50 font-semibold border-t border-slate-100 mt-1 flex items-center gap-2"
                   >
-                    Déconnexion
+                    <LogOut size={14} /> Déconnexion
                   </LogoutButton>
                 </div>
               )}
