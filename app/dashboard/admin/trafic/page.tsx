@@ -3,8 +3,10 @@ import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { redirect } from "next/navigation";
+import dynamic from "next/dynamic";
 import { Globe, Users, Activity } from "lucide-react";
-import TrafficClient from "./TrafficClient";
+
+const TrafficClient = dynamic(() => import("./TrafficClient"), { ssr: false });
 
 export const dynamic = "force-dynamic";
 
