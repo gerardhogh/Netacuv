@@ -51,8 +51,15 @@ export default function AdminProfil() {
         body: JSON.stringify({ name, email }),
       });
       
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Erreur de mise à jour");
+      let data;
+      const text = await res.text();
+      try {
+        data = JSON.parse(text);
+      } catch (e) {
+        throw new Error(`Erreur serveur (${res.status}): ${text.substring(0, 80)}`);
+      }
+      
+      if (!res.ok) throw new Error(data?.error || "Erreur de mise à jour");
       
       showToast("Profil mis à jour avec succès");
       

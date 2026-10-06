@@ -244,3 +244,11 @@ model SystemSetting {
   key   String @unique
   value String
 }
+
+model Visitor {
+  id        String   @id @default(cuid())
+  ip        String?
+  userAgent String?
+  path      String?
+  visitedAt DateTime @default(now())
+}
