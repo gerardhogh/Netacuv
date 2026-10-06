@@ -63,7 +63,9 @@ export default async function TraficPage() {
     const dateStr = v.visitedAt.toISOString().split('T')[0];
     if (dailyDataMap[dateStr]) {
       dailyDataMap[dateStr].visits++;
-      dailyDataMap[dateStr].unique.add(v.ip);
+      if (v.ip) {
+        dailyDataMap[dateStr].unique.add(v.ip);
+      }
     }
   });
 

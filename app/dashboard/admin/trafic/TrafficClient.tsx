@@ -14,9 +14,9 @@ interface ChartData {
 
 interface Visit {
   id: string;
-  ip: string;
-  userAgent: string;
-  path: string;
+  ip: string | null;
+  userAgent: string | null;
+  path: string | null;
   visitedAt: Date;
 }
 
@@ -30,8 +30,8 @@ export default function TrafficClient({
   const [searchTerm, setSearchTerm] = useState("");
 
   const filteredVisits = recentVisits.filter(v => 
-    v.ip.includes(searchTerm) || 
-    v.path.toLowerCase().includes(searchTerm.toLowerCase())
+    (v.ip && v.ip.includes(searchTerm)) || 
+    (v.path && v.path.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
   return (
