@@ -175,14 +175,18 @@ export const authOptions: NextAuthOptions = {
               },
             });
           }
-          await prisma.user.update({
-            where: { id: token.sub },
-            data: { 
-              roleId: role.id,
-              talentProfile: expectedRoleName === "TALENT" ? { create: {} } : undefined,
-              recruiterProfile: expectedRoleName === "RECRUTEUR" ? { create: {} } : undefined,
-            }
-          });
+          try {
+            await prisma.user.update({
+              where: { id: token.sub },
+              data: { 
+                roleId: role.id,
+                talentProfile: expectedRoleName === "TALENT" ? { upsert: { create: {}, update: {} } } : undefined,
+                recruiterProfile: expectedRoleName === "RECRUTEUR" ? { upsert: { create: {}, update: {} } } : undefined,
+              }
+            });
+          } catch (updateError) {
+            console.error("Failed to update user or create profile in JWT callback:", updateError);
+          }
           token.role = expectedRoleName;
         } else {
           // Utilisateur sans rôle et pas de première connexion (cas inhabituel)
