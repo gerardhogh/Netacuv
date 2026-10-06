@@ -10,7 +10,8 @@ const WINDOW_MS = 15 * 60 * 1000; // 15 minutes
 export async function POST(request: NextRequest) {
   try {
     // Basic IP Rate Limiting
-    const ip = request.ip || request.headers.get("x-forwarded-for") || "unknown";
+    const forwardedFor = request.headers.get("x-forwarded-for");
+    const ip = forwardedFor ? forwardedFor.split(",")[0].trim() : "unknown";
     const now = Date.now();
     const rateRecord = rateLimitMap.get(ip);
     
