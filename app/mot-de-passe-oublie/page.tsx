@@ -20,16 +20,12 @@ export default function ForgotPasswordPage() {
     setError("");
 
     try {
-      const res = await fetch("/api/auth/forgot-password", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email }),
+      const { error: resetError } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${typeof window !== "undefined" ? window.location.origin : ""}/mise-a-jour-mot-de-passe`,
       });
 
-      const data = await res.json();
-
-      if (!res.ok) {
-        setError(data.error || "Une erreur est survenue lors de l'envoi de l'e-mail.");
+      if (resetError) {
+        setError(resetError.message || "Une erreur est survenue lors de l'envoi de l'e-mail.");
       } else {
         setIsSuccess(true);
       }
