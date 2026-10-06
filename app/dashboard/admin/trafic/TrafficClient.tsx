@@ -29,10 +29,13 @@ export default function TrafficClient({
 }) {
   const [searchTerm, setSearchTerm] = useState("");
 
-  const filteredVisits = recentVisits.filter(v => 
-    (v.ip && v.ip.includes(searchTerm)) || 
-    (v.path && v.path.toLowerCase().includes(searchTerm.toLowerCase()))
-  );
+  const filteredVisits = recentVisits.filter(v => {
+    if (!searchTerm) return true;
+    const s = searchTerm.toLowerCase();
+    const matchIp = v.ip && v.ip.toLowerCase().includes(s);
+    const matchPath = v.path && v.path.toLowerCase().includes(s);
+    return matchIp || matchPath;
+  });
 
   return (
     <div className="space-y-6">
@@ -60,7 +63,13 @@ export default function TrafficClient({
               <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
               <Tooltip 
                 contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)' }}
-                labelFormatter={(label) => new Intl.DateTimeFormat('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' }).format(new Date(label as string))}
+                labelFormatter={(label) => {
+                  try {
+                    return new Intl.DateTimeFormat('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' }).format(new Date(label as string));
+                  } catch (e) {
+                    return label;
+                  }
+                }}
               />
               <Legend />
               <Area type="monotone" dataKey="Visites" stroke="#3b82f6" fillOpacity={1} fill="url(#colorVisites)" />
@@ -99,7 +108,7 @@ export default function TrafficClient({
               {filteredVisits.length > 0 ? (
                 filteredVisits.map((visit) => (
                   <tr key={visit.id} className="hover:bg-slate-50 transition-colors">
-                    <td className="px-5 py-4 whitespace-nowrap">
+                    <td className="px-5 py-4 whitespace-nowrap" suppressHydrationWarning>
                       {new Intl.DateTimeFormat('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }).format(new Date(visit.visitedAt))}
                     </td>
                     <td className="px-5 py-4 font-mono text-xs">{visit.ip}</td>

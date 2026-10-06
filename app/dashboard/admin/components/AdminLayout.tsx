@@ -7,7 +7,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "../../../context/AuthContext";
 import {
   Menu, Bell, ChevronDown, X, LogOut, Globe,
-  Home, Users, Briefcase, Settings, History, Shield, AlertTriangle
+  Home, Users, Briefcase, Settings, History, Shield, AlertTriangle, Gift
 } from "lucide-react";
 import LogoutButton from "../../../components/LogoutButton";
 import { useTranslations, useLocale } from "next-intl";
@@ -24,6 +24,7 @@ const getSidebarItems = (role: string = "") => {
     { href: "/dashboard/admin/recruteurs", icon: Briefcase, label: "Recruteurs", show: isSuperAdmin || upperRole.includes("RH") || upperRole.includes("SUPPORT") },
     { href: "/dashboard/admin/emplois", icon: Briefcase, label: "Offres d'emploi", show: isSuperAdmin || upperRole.includes("RH") },
     { href: "/dashboard/admin/transactions", icon: History, label: "Transactions", show: isSuperAdmin || upperRole.includes("FINANCIER") },
+    { href: "/dashboard/admin/affiliation", icon: Gift, label: "Gestion de l'affiliation", show: isSuperAdmin || upperRole.includes("FINANCIER") },
     { href: "/dashboard/admin/permissions", icon: Shield, label: "Permissions & Rôles", show: isSuperAdmin },
     { href: "/dashboard/admin/trafic", icon: Globe, label: "Trafic & Visites", show: isSuperAdmin },
     { href: "/dashboard/admin/parametres", icon: Settings, label: "Paramètres", show: isSuperAdmin },
