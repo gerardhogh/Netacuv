@@ -25,6 +25,7 @@ const getSidebarItems = (role: string = "") => {
     { href: "/dashboard/admin/emplois", icon: Briefcase, label: "Offres d'emploi", show: isSuperAdmin || upperRole.includes("RH") },
     { href: "/dashboard/admin/transactions", icon: History, label: "Transactions", show: isSuperAdmin || upperRole.includes("FINANCIER") },
     { href: "/dashboard/admin/permissions", icon: Shield, label: "Permissions & Rôles", show: isSuperAdmin },
+    { href: "/dashboard/admin/trafic", icon: Globe, label: "Trafic & Visites", show: isSuperAdmin },
     { href: "/dashboard/admin/parametres", icon: Settings, label: "Paramètres", show: isSuperAdmin },
     { href: "/dashboard/admin/suppressions", icon: AlertTriangle, label: "Suppression de compte", show: isSuperAdmin || upperRole.includes("RH") || upperRole.includes("SUPPORT") },
   ].filter(item => item.show);
