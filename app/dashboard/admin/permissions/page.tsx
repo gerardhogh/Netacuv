@@ -375,9 +375,11 @@ export default function AdminPermissions() {
                 onChange={setRoleFilter}
                 options={[
                   { label: "Tous les rôles", value: "Tous" },
-                  ...roles.map(r => ({ label: r.name, value: r.name })),
-                  { label: "TALENT", value: "TALENT" },
-                  { label: "RECRUTEUR", value: "RECRUTEUR" },
+                  ...Array.from(new Set([
+                    ...roles.map(r => r.name),
+                    "TALENT",
+                    "RECRUTEUR"
+                  ])).map(name => ({ label: name, value: name })),
                   { label: "Aucun rôle", value: "Aucun" }
                 ]}
               />

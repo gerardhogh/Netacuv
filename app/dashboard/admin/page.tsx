@@ -28,10 +28,40 @@ const globalStatsTemplate = [
 ];
 
 const jobsData: any[] = [];
-const lineData: any[] = [];
-const pieData: any[] = [];
-const barData: any[] = [];
-const popularOffers: any[] = [];
+const lineData = [
+  { name: "Jan", Talents: 40, Recruteurs: 24 },
+  { name: "Fév", Talents: 30, Recruteurs: 13 },
+  { name: "Mar", Talents: 20, Recruteurs: 58 },
+  { name: "Avr", Talents: 27, Recruteurs: 39 },
+  { name: "Mai", Talents: 18, Recruteurs: 48 },
+  { name: "Juin", Talents: 23, Recruteurs: 38 },
+  { name: "Juil", Talents: 34, Recruteurs: 43 },
+];
+
+const pieData = [
+  { name: "CDI", value: 65, color: "#3b82f6" },
+  { name: "CDD", value: 20, color: "#f59e0b" },
+  { name: "Freelance", value: 10, color: "#10b981" },
+  { name: "Stage", value: 5, color: "#8b5cf6" },
+];
+
+const barData = [
+  { name: "Jan", value: 10 },
+  { name: "Fév", value: 20 },
+  { name: "Mar", value: 40 },
+  { name: "Avr", value: 30 },
+  { name: "Mai", value: 50 },
+  { name: "Juin", value: 70 },
+  { name: "Juil", value: 85 },
+];
+
+const popularOffers = [
+  { name: "Développeur Fullstack", value: 120 },
+  { name: "Designer UX/UI", value: 98 },
+  { name: "Chef de Projet", value: 86 },
+  { name: "Data Analyst", value: 75 },
+  { name: "DevOps Engineer", value: 64 },
+];
 
 import useSWR from "swr";
 
