@@ -20,7 +20,7 @@ import { prisma } from "@/lib/prisma";
 import Providers from "./components/Providers";
 import NextTopLoader from 'nextjs-toploader';
 import Image from "next/image";
-import VisitorTracker from "./components/VisitorTracker";
+// import VisitorTracker from "./components/VisitorTracker";
 
 export default async function RootLayout({
   children,
@@ -87,7 +87,7 @@ export default async function RootLayout({
       </head>
       <body>
         <NextTopLoader color="#f97316" showSpinner={false} />
-        <VisitorTracker />
+        {/* <VisitorTracker /> */}
         <NextIntlClientProvider messages={messages}>
           <Providers>{children}</Providers>
         </NextIntlClientProvider>
