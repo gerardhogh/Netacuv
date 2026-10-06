@@ -36,6 +36,7 @@ import {
   QrCode,
   AlertTriangle,
   ChevronRight,
+  Lock,
 } from "lucide-react";
 
 import OffresEmplois from "./components/OffresEmplois";
