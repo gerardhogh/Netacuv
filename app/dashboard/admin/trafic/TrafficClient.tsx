@@ -103,10 +103,10 @@ export default function TrafficClient({
                       {new Intl.DateTimeFormat('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }).format(new Date(visit.visitedAt))}
                     </td>
                     <td className="px-5 py-4 font-mono text-xs">{visit.ip}</td>
-                    <td className="px-5 py-4 truncate max-w-[200px]" title={visit.path}>
+                    <td className="px-5 py-4 truncate max-w-[200px]" title={visit.path || undefined}>
                       {visit.path}
                     </td>
-                    <td className="px-5 py-4 truncate max-w-[300px] text-xs text-slate-500" title={visit.userAgent}>
+                    <td className="px-5 py-4 truncate max-w-[300px] text-xs text-slate-500" title={visit.userAgent || undefined}>
                       {visit.userAgent}
                     </td>
                   </tr>
