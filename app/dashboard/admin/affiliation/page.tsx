@@ -13,7 +13,7 @@ export const metadata = {
 export default async function AffiliationPage() {
   const session = await getServerSession(authOptions);
 
-  if (!session || (session.user.role !== "SUPER ADMIN" && session.user.role !== "ADMIN" && !session.user.role.includes("FINANCIER"))) {
+  if (!session || (session.user.role !== "SUPER ADMIN" && session.user.role !== "ADMIN" && !session.user.role?.includes("FINANCIER"))) {
     redirect("/dashboard");
   }
 
