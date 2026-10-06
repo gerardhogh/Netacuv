@@ -2,8 +2,30 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcrypt";
 
+// Simple in-memory rate limiter
+const rateLimitMap = new Map<string, { count: number; resetTime: number }>();
+const MAX_REQUESTS = 5; // Limite de tentatives
+const WINDOW_MS = 15 * 60 * 1000; // 15 minutes
+
 export async function POST(request: NextRequest) {
   try {
+    // Basic IP Rate Limiting
+    const ip = request.ip || request.headers.get("x-forwarded-for") || "unknown";
+    const now = Date.now();
+    const rateRecord = rateLimitMap.get(ip);
+    
+    if (rateRecord && now < rateRecord.resetTime) {
+      if (rateRecord.count >= MAX_REQUESTS) {
+        return NextResponse.json(
+          { error: "Trop de tentatives. Veuillez réessayer plus tard." },
+          { status: 429 }
+        );
+      }
+      rateRecord.count += 1;
+    } else {
+      rateLimitMap.set(ip, { count: 1, resetTime: now + WINDOW_MS });
+    }
+
     const { token, email, password } = await request.json();
 
     if (!token || !email || !password) {

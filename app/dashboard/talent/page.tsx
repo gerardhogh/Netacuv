@@ -174,7 +174,7 @@ export default function TalentDashboard() {
           } else {
             // Fallback to checking localStorage since videos are saved in IndexedDB currently
             // Tie it to the current user ID to prevent showing old cache for new accounts
-            const isRecorded = typeof window !== "undefined" && user?.id && localStorage.getItem(`interview_recorded_${user.id}`) === "true";
+            const isRecorded = typeof window !== "undefined" && data.id && localStorage.getItem(`interview_recorded_${data.id}`) === "true";
             hasVid = isRecorded || false;
           }
           setHasValidVideo(hasVid);
@@ -764,21 +764,32 @@ export default function TalentDashboard() {
                 {/* CV Card */}
                 <div className="bg-white rounded-3xl p-6 border border-slate-100 shadow-xl shadow-slate-200/50 flex flex-col justify-between">
                   <div>
-                    <h3 className="font-bold text-slate-800 text-sm mb-2">
+                    <h3 className="font-bold text-slate-800 text-sm mb-2 flex items-center gap-2">
                       CV (Curriculum Vitae)
+                      {!isPremium && <Lock size={14} className="text-amber-500" />}
                     </h3>
                     <div className="w-full px-4 py-3 border border-slate-200 rounded-2xl text-xs text-slate-600 bg-slate-50 mb-2 truncate flex items-center justify-between">
                       <span className="truncate font-medium">{cvFileName}</span>
                     </div>
                     <p className="text-[11px] text-slate-400 mb-5">{cvUploadedAt}</p>
                   </div>
-                  <button
-                    onClick={() => setActiveTab("profil")}
-                    className="w-full py-3 rounded-2xl font-bold text-xs text-white bg-blue-600 hover:bg-blue-700 shadow-lg shadow-blue-500/25 transition-all flex items-center justify-center gap-2"
-                    id="btn-upload-cv"
-                  >
-                    <Upload size={15} /> Mettre à jour mon CV
-                  </button>
+                  
+                  {isPremium ? (
+                    <button
+                      onClick={() => setActiveTab("profil")}
+                      className="w-full py-3 rounded-2xl font-bold text-xs text-white bg-blue-600 hover:bg-blue-700 shadow-lg shadow-blue-500/25 transition-all flex items-center justify-center gap-2"
+                      id="btn-upload-cv"
+                    >
+                      <Upload size={15} /> Mettre à jour mon CV
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => setActiveTab("premium")}
+                      className="w-full py-3 rounded-2xl font-bold text-xs text-white bg-gradient-to-r from-amber-400 to-orange-500 hover:from-amber-500 hover:to-orange-600 shadow-lg shadow-orange-500/25 transition-all flex items-center justify-center gap-2"
+                    >
+                      <Lock size={15} /> Débloquer avec Premium
+                    </button>
+                  )}
                 </div>
 
                 {/* Entretien Vidéo Card */}
