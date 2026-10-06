@@ -1,33 +1,80 @@
-import React from "react";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
-import { redirect } from "next/navigation";
-import { Gift } from "lucide-react";
+import React from 'react';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
+import { redirect } from 'next/navigation';
+import { prisma } from '@/lib/prisma';
+import AffiliationClient from './AffiliationClient';
 
-export const dynamic = "force-dynamic";
+export const metadata = {
+  title: "Gestion de l'affiliation | Netacuv",
+  description: "Configuration et gestion des codes d'affiliation",
+};
 
 export default async function AffiliationPage() {
   const session = await getServerSession(authOptions);
 
   if (!session || (session.user.role !== "SUPER ADMIN" && session.user.role !== "ADMIN" && !session.user.role.includes("FINANCIER"))) {
-    redirect("/connexion");
+    redirect("/dashboard");
   }
 
+  // Retrieve global settings
+  const settings = await prisma.systemSetting.findMany({
+    where: {
+      key: { in: ['AFFILIATE_BONUS_FIXED', 'AFFILIATE_BONUS_PERCENT'] }
+    }
+  });
+
+  const fixedBonus = settings.find(s => s.key === 'AFFILIATE_BONUS_FIXED')?.value || '';
+  const percentBonus = settings.find(s => s.key === 'AFFILIATE_BONUS_PERCENT')?.value || '';
+
+  // Retrieve users who have a role or can have affiliation
+  // Exclude SUPER ADMIN to keep the list clean if desired, or just show everyone.
+  const usersRaw = await prisma.user.findMany({
+    where: {
+      role: {
+        name: { in: ["TALENT", "RECRUTEUR"] }
+      }
+    },
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      referralCode: true,
+      affiliateBalance: true,
+      role: {
+        select: { name: true }
+      },
+      _count: {
+        select: { referrals: true }
+      }
+    },
+    orderBy: {
+      createdAt: 'desc'
+    }
+  });
+
+  const users = usersRaw.map(u => ({
+    id: u.id,
+    name: u.name,
+    email: u.email,
+    roleName: u.role?.name || null,
+    referralCode: u.referralCode,
+    affiliateBalance: u.affiliateBalance,
+    referralsCount: u._count.referrals
+  }));
+
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-slate-800 flex items-center gap-2">
-          <Gift className="text-blue-600" size={28} />
-          Gestion de l'affiliation
-        </h1>
+    <div className="p-6 md:p-8 max-w-7xl mx-auto space-y-8 animate-fadeIn">
+      <div>
+        <h1 className="text-3xl font-extrabold text-slate-800 tracking-tight">Gestion de l'affiliation</h1>
+        <p className="text-slate-500 mt-2">Paramétrez les bonus de parrainage et gérez les codes des utilisateurs.</p>
       </div>
 
-      <div className="bg-white rounded-2xl p-8 shadow-sm border border-slate-100 text-center">
-        <h2 className="text-xl font-semibold text-slate-700 mb-2">Module d'affiliation en cours de développement</h2>
-        <p className="text-slate-500 max-w-lg mx-auto">
-          Cette page vous permettra de personnaliser les codes promotionnels et les bonus pour que les talents et recruteurs puissent gagner de l'argent.
-        </p>
-      </div>
+      <AffiliationClient 
+        users={users} 
+        initialFixedBonus={fixedBonus} 
+        initialPercentBonus={percentBonus} 
+      />
     </div>
   );
 }
