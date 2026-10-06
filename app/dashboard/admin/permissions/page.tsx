@@ -43,6 +43,9 @@ type AuditLog = {
 
 const permissionsCategories = [
   { id: "*:*", label: "Accès total (bypass rules)", category: "System" },
+  { id: "roles:read", label: "Voir les rôles", category: "System" },
+  { id: "roles:write", label: "Gérer les rôles", category: "System" },
+  { id: "roles:delete", label: "Supprimer les rôles", category: "System" },
   { id: "jobs:approve", label: "Approuver les offres", category: "Jobs" },
   { id: "jobs:delete", label: "Supprimer les offres", category: "Jobs" },
   { id: "users:read", label: "Voir les utilisateurs", category: "Users" },
@@ -153,12 +156,17 @@ export default function AdminPermissions() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload)
       });
-      if (!res.ok) throw new Error("Erreur");
+      
+      const data = await res.json().catch(() => null);
+      if (!res.ok) {
+        throw new Error(data?.error || "Erreur lors de l'enregistrement");
+      }
+      
       toast.success(`Rôle ${roleModalMode === "create" ? "créé" : "modifié"} avec succès !`, { id: tid });
       setIsRoleModalOpen(false);
       fetchData(); // Reload everything to update logs and roles
-    } catch (err) {
-      toast.error("Une erreur s'est produite", { id: tid });
+    } catch (err: any) {
+      toast.error(err.message || "Une erreur s'est produite", { id: tid });
     }
   };
 

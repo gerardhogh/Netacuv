@@ -21,11 +21,12 @@ export async function hasPermission(requiredPermission: string): Promise<boolean
 
   if (!user || !user.role || !user.role.active) return false;
 
-  // Super Admin has all permissions
-  if (user.role.name === "Super Admin") return true;
+  // Super Admin or Admin has all permissions
+  if (user.role.name === "Super Admin" || user.role.name === "Admin" || user.role.name === "Administrateur") return true;
 
   const hasPerm = user.role.rolePermissions.some(
-    (rp: { permission: { code: string } }) => rp.permission.code === requiredPermission
+    (rp: { permission: { code: string } }) => 
+      rp.permission.code === requiredPermission || rp.permission.code === "*:*"
   );
 
   return hasPerm;

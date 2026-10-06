@@ -61,8 +61,11 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
     });
 
     return NextResponse.json(updatedRole);
-  } catch (error) {
+  } catch (error: any) {
     console.error("Erreur PUT /api/roles/[id]:", error);
+    if (error.code === 'P2002') {
+      return NextResponse.json({ error: "Ce nom de rôle existe déjà" }, { status: 400 });
+    }
     return NextResponse.json({ error: "Erreur lors de la mise à jour du rôle" }, { status: 500 });
   }
 }

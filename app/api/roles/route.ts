@@ -68,8 +68,11 @@ export async function POST(req: Request) {
     });
 
     return NextResponse.json(newRole, { status: 201 });
-  } catch (error) {
+  } catch (error: any) {
     console.error("Erreur POST /api/roles:", error);
+    if (error.code === 'P2002') {
+      return NextResponse.json({ error: "Ce nom de rôle existe déjà" }, { status: 400 });
+    }
     return NextResponse.json({ error: "Erreur lors de la création du rôle" }, { status: 500 });
   }
 }
