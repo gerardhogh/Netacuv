@@ -276,9 +276,30 @@ export default function AdminPermissions() {
     }
   };
 
+  const [roleFilter, setRoleFilter] = useState("Tous");
+  const [statusFilterUsers, setStatusFilterUsers] = useState("Tous");
+
   // Filtered lists
-  const filteredRoles = roles.filter(r => r.name.toLowerCase().includes(searchPR.toLowerCase()));
-  const filteredUsers = users.filter(u => (u.name || "").toLowerCase().includes(searchGU.toLowerCase()) || (u.email || "").toLowerCase().includes(searchGU.toLowerCase()));
+  const filteredRoles = roles.filter(r => 
+    r.name.toLowerCase().includes(searchPR.toLowerCase()) || 
+    (r.description || "").toLowerCase().includes(searchPR.toLowerCase())
+  );
+  
+  const filteredUsers = users.filter(u => {
+    const matchesSearch = (u.name || "").toLowerCase().includes(searchGU.toLowerCase()) || 
+                          (u.email || "").toLowerCase().includes(searchGU.toLowerCase());
+    
+    const roleName = u.role ? u.role.name : (
+      (u as any).talentProfile ? "TALENT" :
+      (u as any).recruiterProfile ? "RECRUTEUR" :
+      "Aucun rôle"
+    );
+    const matchesRole = roleFilter === "Tous" || roleName === roleFilter || (roleFilter === "Aucun" && !u.role);
+    const matchesStatus = statusFilterUsers === "Tous" || (statusFilterUsers === "Actif" ? u.active : !u.active);
+
+    return matchesSearch && matchesRole && matchesStatus;
+  });
+  
   const filteredLogs = logs.filter(l => l.action.toLowerCase().includes(searchHM.toLowerCase()));
   
   // Paginated logs
@@ -347,6 +368,31 @@ export default function AdminPermissions() {
                   className="pl-10 pr-4 py-2 border border-slate-200 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-[#32A8D7] w-48"
                 />
               </div>
+
+              <select 
+                value={roleFilter}
+                onChange={(e) => setRoleFilter(e.target.value)}
+                className="px-4 py-2 border border-slate-200 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-[#32A8D7] bg-white text-slate-700"
+              >
+                <option value="Tous">Tous les rôles</option>
+                {roles.map(r => (
+                  <option key={r.id} value={r.name}>{r.name}</option>
+                ))}
+                <option value="TALENT">TALENT</option>
+                <option value="RECRUTEUR">RECRUTEUR</option>
+                <option value="Aucun">Aucun rôle</option>
+              </select>
+
+              <select 
+                value={statusFilterUsers}
+                onChange={(e) => setStatusFilterUsers(e.target.value)}
+                className="px-4 py-2 border border-slate-200 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-[#32A8D7] bg-white text-slate-700"
+              >
+                <option value="Tous">Tous les statuts</option>
+                <option value="Actif">Actif</option>
+                <option value="Suspendu">Suspendu</option>
+              </select>
+
               <button 
                 onClick={() => setIsAddUserModalOpen(true)}
                 className="px-5 py-2 bg-[#009FE3] text-white font-bold text-sm rounded-lg hover:bg-blue-600 transition-colors flex items-center gap-2"

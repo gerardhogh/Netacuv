@@ -43,6 +43,8 @@ interface TalentData {
 
 export default function AdminTalents() {
   const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState("Tous");
+  const [videoFilter, setVideoFilter] = useState("Tous");
   const [selectedTalent, setSelectedTalent] = useState<TalentData | null>(null);
   const [confirmAction, setConfirmAction] = useState<{ id: string, type: 'activate' | 'suspend' | 'delete' } | null>(null);
 
@@ -50,10 +52,17 @@ export default function AdminTalents() {
 
   const talents: TalentData[] = Array.isArray(talentsRaw) ? talentsRaw : (talentsRaw?.talents || []);
 
-  const filtered = talents.filter(t =>
-    t.name.toLowerCase().includes(search.toLowerCase()) ||
-    t.email.toLowerCase().includes(search.toLowerCase())
-  );
+  const filtered = talents.filter(t => {
+    const matchesSearch = t.name.toLowerCase().includes(search.toLowerCase()) ||
+      t.email.toLowerCase().includes(search.toLowerCase()) ||
+      (t.domaine || "").toLowerCase().includes(search.toLowerCase()) ||
+      (t.location || "").toLowerCase().includes(search.toLowerCase());
+      
+    const matchesStatus = statusFilter === "Tous" || t.status === statusFilter;
+    const matchesVideo = videoFilter === "Tous" || (videoFilter === "Oui" ? t.videoOk : !t.videoOk);
+
+    return matchesSearch && matchesStatus && matchesVideo;
+  });
 
   const stats = {
     total: talents.length,
@@ -110,6 +119,27 @@ export default function AdminTalents() {
               className="pl-10 pr-4 py-2 border border-slate-200 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-[#32A8D7] w-48 sm:w-64"
             />
           </div>
+          
+          <select 
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+            className="px-4 py-2 border border-slate-200 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-[#32A8D7] bg-white text-slate-700"
+          >
+            <option value="Tous">Tous les statuts</option>
+            <option value="Actif">Actif</option>
+            <option value="En attente">En attente</option>
+            <option value="Suspendu">Suspendu</option>
+          </select>
+          
+          <select 
+            value={videoFilter}
+            onChange={(e) => setVideoFilter(e.target.value)}
+            className="px-4 py-2 border border-slate-200 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-[#32A8D7] bg-white text-slate-700"
+          >
+            <option value="Tous">Vidéo : Tous</option>
+            <option value="Oui">Vidéo : Oui</option>
+            <option value="Non">Vidéo : Non</option>
+          </select>
 
           <div className="flex flex-wrap gap-2">
             <span className="px-3 py-1.5 bg-[#eaf6fc] border border-[#d6effa] text-[#32A8D7] text-sm font-semibold rounded-full">

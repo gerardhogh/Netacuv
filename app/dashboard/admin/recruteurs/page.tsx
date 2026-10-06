@@ -9,6 +9,7 @@ const fetcher = (url: string) => fetch(url).then(res => res.json());
 
 export default function AdminRecruteurs() {
   const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState("Tous");
   const [selectedRecruteur, setSelectedRecruteur] = useState<any>(null);
   const [confirmAction, setConfirmAction] = useState<{ id: string, type: 'activate' | 'suspend' | 'delete' } | null>(null);
 
@@ -30,10 +31,14 @@ export default function AdminRecruteurs() {
       isAdmin: ["SUPER ADMIN", "ADMIN RH / MODÉRATEUR", "MANAGER IA & CERTIFICATION", "GESTIONNAIRE FINANCIER", "SUPPORT CLIENT", "ADMIN"].includes(r.role?.name?.toUpperCase() || "")
     })) : [];
 
-  const filtered = recruteurs.filter(r => 
-    r.name.toLowerCase().includes(search.toLowerCase()) || 
-    r.email.toLowerCase().includes(search.toLowerCase())
-  );
+  const filtered = recruteurs.filter(r => {
+    const matchesSearch = r.name.toLowerCase().includes(search.toLowerCase()) || 
+      r.email.toLowerCase().includes(search.toLowerCase());
+      
+    const matchesStatus = statusFilter === "Tous" || r.status === statusFilter;
+    
+    return matchesSearch && matchesStatus;
+  });
 
   const stats = {
     total: recruteurs.length,
@@ -90,6 +95,16 @@ export default function AdminRecruteurs() {
               className="pl-10 pr-4 py-2 border border-slate-200 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-[#32A8D7] w-48 sm:w-64"
             />
           </div>
+
+          <select 
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+            className="px-4 py-2 border border-slate-200 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-[#32A8D7] bg-white text-slate-700"
+          >
+            <option value="Tous">Tous les statuts</option>
+            <option value="Actif">Actif</option>
+            <option value="Suspendu">Suspendu</option>
+          </select>
 
           <div className="flex flex-wrap gap-2">
             <span className="px-3 py-1.5 bg-[#eaf6fc] border border-[#d6effa] text-[#32A8D7] text-sm font-semibold rounded-full">
