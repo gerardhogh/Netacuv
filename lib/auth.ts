@@ -135,7 +135,13 @@ export const authOptions: NextAuthOptions = {
       // Si une mise à jour manuelle de la session est déclenchée (update())
       if (trigger === "update") {
         if (session?.isPremium !== undefined) token.isPremium = session.isPremium;
-        if (session?.user?.image !== undefined) token.picture = session.user.image;
+        if (session?.user?.image !== undefined) {
+           if (typeof session.user.image === 'string' && session.user.image.startsWith('data:image')) {
+             token.picture = undefined;
+           } else {
+             token.picture = session.user.image;
+           }
+        }
         if (session?.user?.name !== undefined) token.name = session.user.name;
       }
 
@@ -194,7 +200,17 @@ export const authOptions: NextAuthOptions = {
         }
 
         token.isPremium = dbUser.isPremium || false;
-        token.picture = dbUser.image || token.picture;
+        
+        // Empêcher l'injection d'une image en Base64 dans le JWT
+        // (Cela crée un cookie gigantesque fragmenté en 45 morceaux et cause l'erreur 494)
+        if (dbUser.image && !dbUser.image.startsWith('data:image')) {
+          token.picture = dbUser.image;
+        } else if (dbUser.image && dbUser.image.startsWith('data:image')) {
+          token.picture = undefined; 
+        } else {
+          token.picture = token.picture; // Conserver l'existant s'il y a lieu
+        }
+        
         token.name = dbUser.name || token.name;
       } else if (user) {
         token.role = (user as any).role || "TALENT";
