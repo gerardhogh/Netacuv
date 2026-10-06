@@ -2,6 +2,7 @@
 import React, { useState } from "react";
 import { Search } from "lucide-react";
 import { TalentDetails } from "../components/TalentDetails";
+import { CustomSelect } from "../components/CustomSelect";
 import { Modal } from "@/app/components/ui/Modal";
 import useSWR from "swr";
 
@@ -120,26 +121,26 @@ export default function AdminTalents() {
             />
           </div>
           
-          <select 
+          <CustomSelect 
             value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-            className="px-4 py-2 border border-slate-200 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-[#32A8D7] bg-white text-slate-700"
-          >
-            <option value="Tous">Tous les statuts</option>
-            <option value="Actif">Actif</option>
-            <option value="En attente">En attente</option>
-            <option value="Suspendu">Suspendu</option>
-          </select>
+            onChange={setStatusFilter}
+            options={[
+              { label: "Tous les statuts", value: "Tous" },
+              { label: "Actif", value: "Actif" },
+              { label: "En attente", value: "En attente" },
+              { label: "Suspendu", value: "Suspendu" }
+            ]}
+          />
           
-          <select 
+          <CustomSelect 
             value={videoFilter}
-            onChange={(e) => setVideoFilter(e.target.value)}
-            className="px-4 py-2 border border-slate-200 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-[#32A8D7] bg-white text-slate-700"
-          >
-            <option value="Tous">Vidéo : Tous</option>
-            <option value="Oui">Vidéo : Oui</option>
-            <option value="Non">Vidéo : Non</option>
-          </select>
+            onChange={setVideoFilter}
+            options={[
+              { label: "Vidéo : Tous", value: "Tous" },
+              { label: "Vidéo : Oui", value: "Oui" },
+              { label: "Vidéo : Non", value: "Non" }
+            ]}
+          />
 
           <div className="flex flex-wrap gap-2">
             <span className="px-3 py-1.5 bg-[#eaf6fc] border border-[#d6effa] text-[#32A8D7] text-sm font-semibold rounded-full">

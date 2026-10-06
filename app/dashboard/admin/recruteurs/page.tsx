@@ -2,6 +2,7 @@
 import React, { useState } from "react";
 import { Search, Mail, Eye, Edit, Trash2 } from "lucide-react";
 import { RecruteurDetails } from "../components/RecruteurDetails";
+import { CustomSelect } from "../components/CustomSelect";
 import { Modal } from "@/app/components/ui/Modal";
 import useSWR from "swr";
 
@@ -96,15 +97,15 @@ export default function AdminRecruteurs() {
             />
           </div>
 
-          <select 
+          <CustomSelect 
             value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-            className="px-4 py-2 border border-slate-200 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-[#32A8D7] bg-white text-slate-700"
-          >
-            <option value="Tous">Tous les statuts</option>
-            <option value="Actif">Actif</option>
-            <option value="Suspendu">Suspendu</option>
-          </select>
+            onChange={setStatusFilter}
+            options={[
+              { label: "Tous les statuts", value: "Tous" },
+              { label: "Actif", value: "Actif" },
+              { label: "Suspendu", value: "Suspendu" }
+            ]}
+          />
 
           <div className="flex flex-wrap gap-2">
             <span className="px-3 py-1.5 bg-[#eaf6fc] border border-[#d6effa] text-[#32A8D7] text-sm font-semibold rounded-full">

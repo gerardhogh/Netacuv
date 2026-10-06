@@ -3,6 +3,7 @@ import React, { useState, useEffect } from "react";
 import { Search, Plus, Trash2, Edit2, Eye, X, ChevronLeft, ChevronRight, Shield, ChevronDown } from "lucide-react";
 import { toast, Toaster } from "react-hot-toast";
 import { createPortal } from "react-dom";
+import { CustomSelect } from "../components/CustomSelect";
 
 const ModalPortal = ({ children }: { children: React.ReactNode }) => {
   const [mounted, setMounted] = useState(false);
@@ -369,29 +370,27 @@ export default function AdminPermissions() {
                 />
               </div>
 
-              <select 
+              <CustomSelect 
                 value={roleFilter}
-                onChange={(e) => setRoleFilter(e.target.value)}
-                className="px-4 py-2 border border-slate-200 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-[#32A8D7] bg-white text-slate-700"
-              >
-                <option value="Tous">Tous les rôles</option>
-                {roles.map(r => (
-                  <option key={r.id} value={r.name}>{r.name}</option>
-                ))}
-                <option value="TALENT">TALENT</option>
-                <option value="RECRUTEUR">RECRUTEUR</option>
-                <option value="Aucun">Aucun rôle</option>
-              </select>
+                onChange={setRoleFilter}
+                options={[
+                  { label: "Tous les rôles", value: "Tous" },
+                  ...roles.map(r => ({ label: r.name, value: r.name })),
+                  { label: "TALENT", value: "TALENT" },
+                  { label: "RECRUTEUR", value: "RECRUTEUR" },
+                  { label: "Aucun rôle", value: "Aucun" }
+                ]}
+              />
 
-              <select 
+              <CustomSelect 
                 value={statusFilterUsers}
-                onChange={(e) => setStatusFilterUsers(e.target.value)}
-                className="px-4 py-2 border border-slate-200 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-[#32A8D7] bg-white text-slate-700"
-              >
-                <option value="Tous">Tous les statuts</option>
-                <option value="Actif">Actif</option>
-                <option value="Suspendu">Suspendu</option>
-              </select>
+                onChange={setStatusFilterUsers}
+                options={[
+                  { label: "Tous les statuts", value: "Tous" },
+                  { label: "Actif", value: "Actif" },
+                  { label: "Suspendu", value: "Suspendu" }
+                ]}
+              />
 
               <button 
                 onClick={() => setIsAddUserModalOpen(true)}
