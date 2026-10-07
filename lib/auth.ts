@@ -137,7 +137,7 @@ export const authOptions: NextAuthOptions = {
         if (session?.isPremium !== undefined) token.isPremium = session.isPremium;
         if (session?.user?.image !== undefined) {
            if (typeof session.user.image === 'string' && session.user.image.startsWith('data:image')) {
-             token.picture = undefined;
+             token.picture = `/api/users/${token.sub}/avatar?v=${Date.now()}`;
            } else {
              token.picture = session.user.image;
            }
@@ -206,7 +206,15 @@ export const authOptions: NextAuthOptions = {
         if (dbUser.image && !dbUser.image.startsWith('data:image')) {
           token.picture = dbUser.image;
         } else if (dbUser.image && dbUser.image.startsWith('data:image')) {
-          token.picture = undefined; 
+          // Si on n'a pas encore de timestamp, on en rajoute un à la volée. 
+          // Mais attention, on ne veut pas invalider le cache à CHAQUE appel de JWT sinon l'image clignote !
+          // On va d'abord vérifier si token.picture contient déjà la bonne route avec un v=
+          if (token.picture && typeof token.picture === 'string' && token.picture.startsWith(`/api/users/${dbUser.id}/avatar`)) {
+            // on conserve le timestamp existant pour le cache
+            token.picture = token.picture;
+          } else {
+            token.picture = `/api/users/${dbUser.id}/avatar?v=${Date.now()}`; 
+          }
         } else {
           token.picture = token.picture; // Conserver l'existant s'il y a lieu
         }
