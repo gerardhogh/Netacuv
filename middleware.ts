@@ -71,7 +71,8 @@ async function handleMiddleware(req: NextRequest) {
                     role === "MANAGER IA & CERTIFICATION" || 
                     role === "GESTIONNAIRE FINANCIER" || 
                     role === "SUPPORT CLIENT" ||
-                    role === "ADMIN";
+                    role === "ADMIN" ||
+                    role === "ADMINISTRATEUR";
 
     if (isAdmin) {
       // Forcer le sous-domaine admin pour les routes du dashboard
