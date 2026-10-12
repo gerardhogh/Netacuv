@@ -263,8 +263,9 @@ export default function RecruteurDashboard() {
             );
           })}
           
-          <div className="mt-2 pt-2 border-t border-slate-100 px-4">
-            <LanguageSwitcher />
+          {/* Mobile drawer uniquement : nom du pays à côté du drapeau */}
+          <div className="mt-2 pt-2 border-t border-slate-100 px-4 md:hidden">
+            <LanguageSwitcher variant="mobile" showLabel={true} onSelect={() => setSidebarOpen(false)} />
           </div>
         </nav>
 
@@ -355,6 +356,11 @@ export default function RecruteurDashboard() {
             )}
 
 
+
+            {/* Desktop Language Switcher (Drapeau + flèche uniquement) */}
+            <div className="hidden md:flex items-center">
+              <LanguageSwitcher variant="desktop" showLabel={false} align="right" />
+            </div>
 
             {/* Bell */}
             <div className="relative">

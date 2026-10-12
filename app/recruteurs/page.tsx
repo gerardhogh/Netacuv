@@ -110,7 +110,7 @@ export default function RecruteursPage() {
                 <li className="flex items-start gap-3 opacity-50"><X className="text-slate-400 mt-0.5 flex-shrink-0" size={20} /> <span className="text-slate-500 line-through decoration-slate-300">Filtres de recherche avancés</span></li>
               </ul>
               <Link
-                href="https://recruteur.netacuv.com/register"
+                href="/inscription?type=recruteur"
                 className="w-full py-4 rounded-full font-bold text-[#0F172A] bg-slate-100 hover:bg-slate-200 transition-colors text-center"
               >
                 Commencer gratuitement
@@ -144,7 +144,7 @@ export default function RecruteursPage() {
                 <li className="flex items-start gap-3"><Check className="text-blue-300 mt-0.5 flex-shrink-0" size={20} /> <span className="text-blue-50">Filtres de recherche avancés</span></li>
               </ul>
               <Link
-                href="https://recruteur.netacuv.com/register"
+                href="/inscription?type=recruteur"
                 className="w-full py-4 rounded-full font-bold text-white bg-[#2BAFE3] hover:bg-[#1E8CB8] transition-colors text-center shadow-lg shadow-[#2BAFE3]/20"
               >
                 Passer en Premium

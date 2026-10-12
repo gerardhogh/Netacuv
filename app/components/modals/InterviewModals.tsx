@@ -11,16 +11,16 @@ export function StartInterviewModal({ isOpen, onClose, onConfirm }: { isOpen: bo
       title="Prêt à commencer votre entretien ?"
       description="Rappel : Vous disposez de 3 essais maximum. Assurez-vous d'être dans un environnement calme."
     >
-      <div className="flex justify-end gap-3 mt-2">
+      <div className="flex flex-col-reverse sm:flex-row justify-end gap-2 sm:gap-3 mt-3 sm:mt-4">
         <button 
           onClick={onClose}
-          className="px-4 py-2 rounded-md text-sm font-medium text-slate-600 hover:bg-slate-100 transition-colors"
+          className="w-full sm:w-auto px-4 py-2 rounded-md text-xs sm:text-sm font-medium text-slate-600 hover:bg-slate-100 transition-colors text-center cursor-pointer"
         >
           Annuler
         </button>
         <button 
           onClick={() => { onClose(); onConfirm(); }}
-          className="px-4 py-2 rounded-md text-sm font-medium bg-[#008de4] text-white hover:bg-blue-600 transition-colors flex items-center gap-2"
+          className="w-full sm:w-auto px-4 py-2 rounded-md text-xs sm:text-sm font-medium bg-[#008de4] text-white hover:bg-blue-600 transition-colors flex items-center justify-center gap-2 cursor-pointer shadow-sm"
         >
           <Video size={16} />
           C'est parti !
@@ -38,16 +38,16 @@ export function CancelInterviewModal({ isOpen, onClose, onConfirm }: { isOpen: b
       title="Quitter l'entretien ?"
       description="Si vous quittez maintenant, votre tentative en cours ne sera pas enregistrée."
     >
-      <div className="flex justify-end gap-3 mt-2">
+      <div className="flex flex-col-reverse sm:flex-row justify-end gap-2 sm:gap-3 mt-3 sm:mt-4">
         <button 
           onClick={() => { onClose(); onConfirm(); }}
-          className="px-4 py-2 rounded-md text-sm font-medium text-red-600 bg-red-50 hover:bg-red-100 transition-colors"
+          className="w-full sm:w-auto px-4 py-2 rounded-md text-xs sm:text-sm font-medium text-red-600 bg-red-50 hover:bg-red-100 transition-colors text-center cursor-pointer"
         >
           Quitter quand même
         </button>
         <button 
           onClick={onClose}
-          className="px-4 py-2 rounded-md text-sm font-medium bg-[#008de4] text-white hover:bg-blue-600 transition-colors"
+          className="w-full sm:w-auto px-4 py-2 rounded-md text-xs sm:text-sm font-medium bg-[#008de4] text-white hover:bg-blue-600 transition-colors text-center cursor-pointer shadow-sm"
         >
           Continuer l'entretien
         </button>
@@ -100,10 +100,10 @@ export function ReplaceVideoModal({
       description="Une vidéo d'entretien a déjà été réalisée pour votre profil. Souhaitez-vous supprimer la vidéo existante pour recommencer un nouvel entretien ?"
       maxWidth="max-w-lg"
     >
-      <div className="flex flex-row justify-end items-center gap-3 mt-4">
+      <div className="flex flex-col-reverse sm:flex-row justify-end items-stretch sm:items-center gap-2.5 sm:gap-3 mt-4">
         <button
           onClick={onClose}
-          className="px-4 py-2.5 rounded-md text-sm font-medium text-slate-600 hover:bg-slate-100 transition-colors whitespace-nowrap"
+          className="w-full sm:w-auto px-4 py-2.5 rounded-md text-xs sm:text-sm font-medium text-slate-600 hover:bg-slate-100 transition-colors whitespace-nowrap text-center cursor-pointer"
         >
           Non, retourner
         </button>
@@ -112,7 +112,7 @@ export function ReplaceVideoModal({
             onClose();
             onConfirm();
           }}
-          className="px-5 py-2.5 rounded-md text-sm font-medium bg-red-600 hover:bg-red-700 text-white transition-colors flex items-center justify-center gap-2 shadow-sm whitespace-nowrap"
+          className="w-full sm:w-auto px-5 py-2.5 rounded-md text-xs sm:text-sm font-medium bg-red-600 hover:bg-red-700 text-white transition-colors flex items-center justify-center gap-2 shadow-sm whitespace-nowrap cursor-pointer"
         >
           <Trash2 size={16} />
           Oui, supprimer et recommencer

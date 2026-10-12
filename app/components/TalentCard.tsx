@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { Bookmark, BadgeCheck, CheckCircle } from "lucide-react";
+import { Bookmark, BadgeCheck, CheckCircle, Crown } from "lucide-react";
 import PremiumRequiredModal from "./PremiumRequiredModal";
 
 export interface TalentCardProps {
@@ -65,6 +65,17 @@ export default function TalentCard({
               title="Profil certifié et vérifié"
             >
               <CheckCircle className="w-5 h-5 text-white fill-emerald-500" />
+            </div>
+          )}
+
+          {/* Premium badge */}
+          {isPremium && (
+            <div
+              className="absolute top-2.5 left-2.5 flex items-center gap-1.5 rounded-full bg-gradient-to-r from-amber-500 to-amber-600 text-white px-2.5 py-1 shadow-md text-[11px] font-bold tracking-wide"
+              title="Profil certifié Premium"
+            >
+              <Crown className="w-3.5 h-3.5 text-yellow-200 fill-yellow-200" />
+              <span>Premium</span>
             </div>
           )}
         </div>

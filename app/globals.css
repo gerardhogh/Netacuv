@@ -336,11 +336,11 @@ html, body {
 .custom-checkbox {
   appearance: none;
   -webkit-appearance: none;
-  width: 20px;
-  height: 20px;
-  border-radius: 6px;
-  background-color: transparent;
-  border: 1px solid #cbd5e1;
+  width: 18px;
+  height: 18px;
+  border-radius: 5px;
+  background-color: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.25);
   position: relative;
   cursor: pointer;
   outline: none;
@@ -348,23 +348,65 @@ html, body {
   flex-shrink: 0;
 }
 
+.custom-checkbox:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+  border-color: #32A8D7;
+}
+
 .custom-checkbox:checked {
-  background-color: #1E8AE9;
-  border-color: #1E8AE9;
+  background-color: #32A8D7;
+  border-color: #32A8D7;
 }
 
 .custom-checkbox:checked::after {
   content: "";
   position: absolute;
-  left: 6px;
+  left: 5px;
   top: 2px;
   width: 5px;
-  height: 10px;
+  height: 9px;
   border: solid white;
   border-width: 0 2px 2px 0;
   transform: rotate(45deg);
 }
 
 .custom-checkbox:focus-visible {
-  box-shadow: 0 0 0 2px rgba(30, 138, 233, 0.4);
+  box-shadow: 0 0 0 2px rgba(50, 168, 215, 0.4);
+}
+
+/* Animated Gradient Stroke (Bleu, Orange, Jaune en boucle infinie) */
+@keyframes rotate-border-gradient {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+.animated-gradient-stroke {
+  position: relative;
+  padding: 2px;
+  border-radius: 1rem;
+  overflow: hidden;
+}
+
+.animated-gradient-stroke::before {
+  content: "";
+  position: absolute;
+  top: -100%;
+  left: -100%;
+  width: 300%;
+  height: 300%;
+  background: conic-gradient(
+    from 0deg,
+    #1e8ae9 0deg,
+    #32a8d7 60deg,
+    #f97316 130deg,
+    #facc15 180deg,
+    #f97316 230deg,
+    #32a8d7 300deg,
+    #1e8ae9 360deg
+  );
+  animation: rotate-border-gradient 4s linear infinite;
 }

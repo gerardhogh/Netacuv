@@ -29,6 +29,20 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
     }
 
+    // Vérifier que l'utilisateur est Premium ou admin
+    const userRecord = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { role: { select: { name: true } }, isPremium: true },
+    });
+
+    const isAdmin = userRecord?.role?.name?.toLowerCase() === 'admin';
+    if (!userRecord || (!userRecord.isPremium && !isAdmin)) {
+      return NextResponse.json(
+        { error: "L'entretien vidéo IA est réservé aux talents disposant d'un abonnement Premium actif." },
+        { status: 403 }
+      );
+    }
+
     if (!file || typeof file === 'string' || typeof file.arrayBuffer !== 'function') {
       return NextResponse.json({ error: "Aucun fichier valide fourni" }, { status: 400 });
     }

@@ -29,9 +29,46 @@ export function RecruteurDetails({ recruteur, onBack }: { recruteur: any, onBack
                 )}
               </div>
             </div>
-            <div className="text-center">
+            <div className="text-center w-full">
               <h2 className="text-lg font-bold text-slate-800">{recruteur.name}</h2>
-              <p className="text-sm text-slate-500 font-medium">Recruteur</p>
+              <div className="flex items-center justify-center gap-2 mt-1 mb-3">
+                <span className="text-xs text-slate-500 font-medium">Recruteur</span>
+                {recruteur.isPremium ? (
+                  <span className="px-2 py-0.5 bg-amber-100 text-amber-700 border border-amber-200 rounded-full text-[11px] font-bold">
+                    ✨ Premium
+                  </span>
+                ) : (
+                  <span className="px-2 py-0.5 bg-slate-100 text-slate-600 rounded-full text-[11px] font-medium">
+                    Standard
+                  </span>
+                )}
+              </div>
+
+              <button
+                onClick={async () => {
+                  try {
+                    const nextVal = !recruteur.isPremium;
+                    const res = await fetch("/api/admin/activation", {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({ userId: recruteur.id, isPremium: nextVal })
+                    });
+                    if (res.ok) {
+                      recruteur.isPremium = nextVal;
+                      window.location.reload();
+                    }
+                  } catch (e) {
+                    console.error(e);
+                  }
+                }}
+                className={`w-full py-2 px-3 rounded-lg text-xs font-bold transition-all shadow-xs flex items-center justify-center gap-1.5 cursor-pointer ${
+                  recruteur.isPremium
+                    ? "bg-red-50 text-red-600 border border-red-200 hover:bg-red-100"
+                    : "bg-gradient-to-r from-amber-500 to-yellow-500 text-white hover:from-amber-600 hover:to-yellow-600 shadow-amber-500/20"
+                }`}
+              >
+                {recruteur.isPremium ? "Désactiver l'offre Premium" : "Activer l'offre Premium"}
+              </button>
             </div>
           </div>
         </div>

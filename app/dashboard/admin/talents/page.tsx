@@ -1,9 +1,10 @@
 "use client";
 import React, { useState } from "react";
-import { Search } from "lucide-react";
+import { Search, LayoutList, LayoutGrid } from "lucide-react";
 import { TalentDetails } from "../components/TalentDetails";
 import { CustomSelect } from "../components/CustomSelect";
 import { Modal } from "@/app/components/ui/Modal";
+import TalentCard from "@/app/components/TalentCard";
 import useSWR from "swr";
 
 const fetcher = (url: string) => fetch(url).then(res => res.json());
@@ -43,6 +44,7 @@ interface TalentData {
 }
 
 export default function AdminTalents() {
+  const [viewMode, setViewMode] = useState<"table" | "cards">("table");
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("Tous");
   const [videoFilter, setVideoFilter] = useState("Tous");
@@ -142,6 +144,36 @@ export default function AdminTalents() {
             ]}
           />
 
+          {/* Toggle Vue Tableau / Cartes */}
+          <div className="flex items-center bg-slate-100 p-1 rounded-xl border border-slate-200 shadow-xs">
+            <button
+              type="button"
+              onClick={() => setViewMode("table")}
+              title="Affichage Tableau"
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                viewMode === "table"
+                  ? "bg-white text-slate-900 shadow-xs font-bold"
+                  : "text-slate-500 hover:text-slate-800"
+              }`}
+            >
+              <LayoutList size={15} />
+              <span>Tableau</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setViewMode("cards")}
+              title="Affichage Cartes"
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                viewMode === "cards"
+                  ? "bg-white text-[#32A8D7] shadow-xs font-bold"
+                  : "text-slate-500 hover:text-slate-800"
+              }`}
+            >
+              <LayoutGrid size={15} />
+              <span>Cartes</span>
+            </button>
+          </div>
+
           <div className="flex flex-wrap gap-2">
             <span className="px-3 py-1.5 bg-[#eaf6fc] border border-[#d6effa] text-[#32A8D7] text-sm font-semibold rounded-full">
               {stats.total} talents au total
@@ -162,11 +194,42 @@ export default function AdminTalents() {
         </div>
       </div>
 
-      {/* Table */}
-      <div className="bg-white rounded-xl border border-slate-100 shadow-sm overflow-hidden">
-        {loading ? (
-          <div className="p-8 text-center text-slate-500">Chargement des talents...</div>
-        ) : filtered.length > 0 ? (
+      {/* Content: Table or Cards */}
+      {loading ? (
+        <div className="bg-white rounded-xl border border-slate-100 shadow-sm p-12 text-center text-slate-500">
+          Chargement des talents...
+        </div>
+      ) : filtered.length === 0 ? (
+        <div className="bg-white rounded-xl border border-slate-100 shadow-sm flex flex-col items-center justify-center py-20 text-slate-400">
+          <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" className="mb-4 text-slate-300">
+            <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+            <circle cx="9" cy="7" r="4" />
+            <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
+            <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+          </svg>
+          <p className="text-lg font-medium text-slate-500 mb-1">Aucun talent trouvé</p>
+          <p className="text-sm">Il n&apos;y a pas de talents correspondant à vos critères.</p>
+        </div>
+      ) : viewMode === "cards" ? (
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5 sm:gap-6 animate-fade-in">
+          {filtered.map(t => (
+            <TalentCard
+              key={t.id}
+              id={t.id}
+              name={t.name}
+              location={t.location || t.country || "Non précisé"}
+              profession={t.domaine || t.skills || "Talent Netacuv"}
+              imageUrl={t.avatar || "/assets/avatar_africain.jpg"}
+              isVerified={t.isVerified ?? true}
+              isPremium={t.isPremium}
+              hasVideo={t.videoOk}
+              onViewProfile={() => setSelectedTalent(t)}
+              onSendEmail={() => window.open(`mailto:${t.email}`)}
+            />
+          ))}
+        </div>
+      ) : (
+        <div className="bg-white rounded-xl border border-slate-100 shadow-sm overflow-hidden animate-fade-in">
           <div className="overflow-x-auto">
             <table className="w-full text-sm text-left">
               <thead className="bg-slate-50/50 border-b border-slate-100">
@@ -204,7 +267,7 @@ export default function AdminTalents() {
                     </td>
                     <td className="px-5 py-4">
                       <div className="flex items-center gap-2">
-                        <span className={`text-xs font-semibold ${t.status === 'Actif' ? 'text-slate-700' : t.status === 'En attente' ? 'text-slate-700' : 'text-slate-700'}`}>
+                        <span className="text-xs font-semibold text-slate-700">
                           {t.status}
                         </span>
                         <span className={`w-2 h-2 rounded-full ${t.status === 'Actif' ? 'bg-green-500' : t.status === 'En attente' ? 'bg-yellow-400' : 'bg-red-500'}`}></span>
@@ -257,19 +320,8 @@ export default function AdminTalents() {
               </tbody>
             </table>
           </div>
-        ) : (
-          <div className="flex flex-col items-center justify-center py-20 text-slate-400">
-            <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" className="mb-4 text-slate-300">
-              <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
-              <circle cx="9" cy="7" r="4" />
-              <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
-              <path d="M16 3.13a4 4 0 0 1 0 7.75" />
-            </svg>
-            <p className="text-lg font-medium text-slate-500 mb-1">Aucun talent trouvé</p>
-            <p className="text-sm">Il n&apos;y a pas de talents correspondant à vos critères.</p>
-          </div>
-        )}
-      </div>
+        </div>
+      )}
 
       {/* Modal de confirmation */}
       <Modal

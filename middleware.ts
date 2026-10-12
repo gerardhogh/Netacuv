@@ -44,7 +44,10 @@ async function handleMiddleware(req: NextRequest) {
   const isLocalhost = currentHost.includes("localhost");
   const protocol = isLocalhost ? "http" : "https";
   const baseDomain = isLocalhost ? currentHost.replace(/^admin\./, "") : "netacuv.com";
-  const adminUrl = `${protocol}://admin.${baseDomain}`;
+  // En local sans sous-domaine admin., on redirige directement vers /dashboard/admin au lieu de forcer admin.localhost
+  const adminUrl = isLocalhost && !isAdminSubdomain
+    ? `${protocol}://${currentHost}/dashboard/admin`
+    : `${protocol}://admin.${baseDomain}`;
 
   const isApiRoute = path.startsWith("/api");
   const isAuthRoute = path === "/connexion" || path === "/inscription";
@@ -75,24 +78,24 @@ async function handleMiddleware(req: NextRequest) {
                     role === "ADMINISTRATEUR";
 
     if (isAdmin) {
-      // Forcer le sous-domaine admin pour les routes du dashboard
-      if (!isAdminSubdomain && path.startsWith("/dashboard")) {
+      // En production uniquement, forcer le sous-domaine admin pour les routes du dashboard
+      if (!isAdminSubdomain && !isLocalhost && path.startsWith("/dashboard")) {
         return NextResponse.redirect(new URL(adminUrl, req.url));
       }
       
       // Empêcher l'accès aux dashboards talent/recruteur
       if (path.startsWith("/dashboard/talent") || path.startsWith("/dashboard/recruteur")) {
-        return NextResponse.redirect(new URL(adminUrl, req.url));
+        return NextResponse.redirect(new URL(isLocalhost && !isAdminSubdomain ? "/dashboard/admin" : adminUrl, req.url));
       }
 
-      // Si l'admin est déjà connecté et visite la page de connexion ou l'accueil principal, le rediriger vers l'accueil admin (qui affiche le dashboard)
-      if (path === "/admin" || (!isAdminSubdomain && path === "/")) {
-        return NextResponse.redirect(new URL(adminUrl, req.url));
+      // Si l'admin est déjà connecté et visite la page de connexion /admin
+      if (path === "/admin") {
+        return NextResponse.redirect(new URL(isLocalhost && !isAdminSubdomain ? "/dashboard/admin" : adminUrl, req.url));
       }
 
-      // Si l'admin visite /dashboard tout court sur le sous-domaine admin
-      if (isAdminSubdomain && path === "/dashboard") {
-        return NextResponse.redirect(new URL(adminUrl, req.url));
+      // Si l'admin visite /dashboard tout court
+      if (path === "/dashboard") {
+        return NextResponse.redirect(new URL(isLocalhost && !isAdminSubdomain ? "/dashboard/admin" : adminUrl, req.url));
       }
     } 
     // Logique pour les Utilisateurs Classiques (Talent / Recruteur)

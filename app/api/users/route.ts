@@ -25,6 +25,7 @@ export async function GET() {
       createdAt: true,
       updatedAt: true,
       active: true,
+      isPremium: true,
       recruiterProfile: {
         include: {
           jobOffers: {

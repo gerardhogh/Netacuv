@@ -3,6 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { ArrowRight } from "lucide-react";
+import NewsletterForm from "@/components/NewsletterForm";
 
 export default function Footer() {
   return (
@@ -11,7 +12,7 @@ export default function Footer() {
         background: "linear-gradient(180deg, #0076a8 0%, #005a82 100%)",
         color: "white",
       }}
-      className="pt-16 pb-8"
+      className="pt-16 pb-8 w-full overflow-hidden"
     >
       <div className="max-w-7xl mx-auto px-6">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-10 pb-12 border-b border-white/15">
@@ -137,40 +138,27 @@ export default function Footer() {
             <p className="text-blue-100/70 text-sm mb-4">
               Restez informé des meilleures opportunités et actualités.
             </p>
-            <form onSubmit={(e) => e.preventDefault()} className="flex gap-2">
-              <input
-                type="email"
-                placeholder="Adresse e-mail"
-                className="flex-1 px-4 py-2.5 rounded-xl text-sm bg-white text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-300"
-              />
-              <button
-                type="submit"
-                className="w-11 h-11 rounded-xl flex items-center justify-center text-white bg-blue-600 hover:bg-blue-700 transition-colors shadow-md flex-shrink-0"
-                aria-label="S'abonner"
-              >
-                <ArrowRight size={18} />
-              </button>
-            </form>
+            <NewsletterForm />
           </div>
         </div>
 
         {/* Bottom bar */}
-        <div className="flex flex-col md:flex-row items-center justify-between gap-4 pt-8 text-xs text-blue-100/70">
-          <div className="flex items-center gap-3">
+        <div className="flex flex-col md:flex-row items-center justify-between gap-4 pt-8 text-xs text-blue-100/70 w-full">
+          <div className="flex flex-wrap items-center justify-center md:justify-start gap-x-3 sm:gap-x-4 gap-y-2 text-center">
             <Link href="/terms" className="hover:text-white transition-colors">
               Conditions d'utilisation
             </Link>
-            <span>-</span>
+            <span className="text-blue-200/40 select-none">•</span>
             <Link href="/privacy" className="hover:text-white transition-colors">
               Politique de Confidentialité
             </Link>
-            <span>-</span>
+            <span className="text-blue-200/40 select-none">•</span>
             <Link href="/cookies" className="hover:text-white transition-colors">
               Cookies
             </Link>
           </div>
-          <p>
-            • © 2025 <span className="text-white font-semibold">Netacuv</span>. Tous droits réservés.
+          <p className="text-center md:text-right">
+            © 2025 <span className="text-white font-semibold">Netacuv</span>. Tous droits réservés.
           </p>
         </div>
       </div>

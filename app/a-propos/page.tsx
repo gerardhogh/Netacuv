@@ -68,22 +68,22 @@ export default function AProposPage() {
       <main className="flex-1">
 
         {/* ═══ HERO SPLIT — image left / content right ═══ */}
-        <section className="relative overflow-hidden bg-white border-b border-slate-100">
-          <div className="flex flex-col md:flex-row min-h-[540px]">
+        <section className="relative overflow-hidden bg-white border-b border-slate-100 min-h-[calc(100vh-80px)] flex flex-col justify-center">
+          <div className="flex flex-col md:flex-row flex-1 self-stretch min-h-[calc(100vh-80px)]">
 
-            {/* LEFT — photo panel : pleine hauteur, touche le bord gauche */}
-            <div className="relative w-full md:w-[340px] lg:w-[420px] flex-shrink-0 overflow-hidden min-h-[320px] md:min-h-0">
+            {/* LEFT — photo panel : pleine hauteur, touche le bord gauche et va jusqu'en bas sans espace blanc */}
+            <div className="relative w-full md:w-[360px] lg:w-[440px] xl:w-[480px] flex-shrink-0 self-stretch overflow-hidden min-h-[340px] md:min-h-full bg-[#1da1e2]">
               <Image
-                src="/Images/a15d48bd-47a1-428a-9544-56640d4dbe14.jpg"
+                src="/Images/join-us-netacuv.jpg"
                 alt="À propos de Netacuv"
                 fill
-                className="object-cover object-left-top"
+                className="object-cover object-center"
                 priority
               />
             </div>
 
             {/* RIGHT — headline + text + CTAs */}
-            <div className="flex-1 flex items-center px-8 md:px-14 lg:px-20 py-16 md:py-24 max-w-3xl">
+            <div className="flex-1 flex items-center px-8 md:px-14 lg:px-20 py-12 md:py-20 max-w-3xl">
               <div className="max-w-2xl">
                 <p className="text-blue-600 font-semibold text-sm uppercase tracking-widest mb-4">
                   Notre Histoire &amp; Engagement

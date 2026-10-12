@@ -8,9 +8,18 @@ import Link from "next/link";
 interface PremiumRequiredModalProps {
   onClose: () => void;
   message?: string;
+  title?: string;
+  upgradeHref?: string;
+  onUpgrade?: () => void;
 }
 
-export default function PremiumRequiredModal({ onClose, message = "Passez au plan Premium pour contacter ce talent." }: PremiumRequiredModalProps) {
+export default function PremiumRequiredModal({ 
+  onClose, 
+  message = "Passez au plan Premium pour accéder à cette fonctionnalité.",
+  title = "Fonctionnalité Premium",
+  upgradeHref = "/dashboard/recruteur?tab=premium",
+  onUpgrade,
+}: PremiumRequiredModalProps) {
   const [mounted, setMounted] = useState(false);
   
   useEffect(() => {
@@ -32,7 +41,7 @@ export default function PremiumRequiredModal({ onClose, message = "Passez au pla
       >
         <button
           onClick={onClose}
-          className="absolute right-4 top-4 text-slate-400 hover:text-slate-600 hover:bg-slate-100 p-1.5 rounded-full transition-colors"
+          className="absolute right-4 top-4 text-slate-400 hover:text-slate-600 hover:bg-slate-100 p-1.5 rounded-full transition-colors cursor-pointer"
         >
           <X className="w-5 h-5" />
         </button>
@@ -42,7 +51,7 @@ export default function PremiumRequiredModal({ onClose, message = "Passez au pla
         </div>
 
         <h3 className="text-xl font-bold text-slate-900 mb-2">
-          Fonctionnalité Premium
+          {title}
         </h3>
         
         <p className="text-sm text-slate-500 leading-relaxed mb-6">
@@ -50,16 +59,30 @@ export default function PremiumRequiredModal({ onClose, message = "Passez au pla
         </p>
 
         <div className="flex flex-col w-full gap-3">
-          <Link
-            href="/dashboard/recruteur?tab=premium"
-            className="w-full py-3 px-4 bg-amber-500 hover:bg-amber-600 text-white rounded-xl text-sm font-bold shadow-md shadow-amber-500/20 transition-all flex items-center justify-center gap-2"
-          >
-            <Crown className="w-4 h-4" />
-            Découvrir le Premium
-          </Link>
+          {onUpgrade ? (
+            <button
+              onClick={() => {
+                onClose();
+                onUpgrade();
+              }}
+              className="w-full py-3 px-4 bg-amber-500 hover:bg-amber-600 text-white rounded-xl text-sm font-bold shadow-md shadow-amber-500/20 transition-all flex items-center justify-center gap-2 cursor-pointer"
+            >
+              <Crown className="w-4 h-4" />
+              Souscrire à l'offre Premium
+            </button>
+          ) : (
+            <Link
+              href={upgradeHref}
+              onClick={onClose}
+              className="w-full py-3 px-4 bg-amber-500 hover:bg-amber-600 text-white rounded-xl text-sm font-bold shadow-md shadow-amber-500/20 transition-all flex items-center justify-center gap-2 cursor-pointer"
+            >
+              <Crown className="w-4 h-4" />
+              Souscrire à l'offre Premium
+            </Link>
+          )}
           <button
             onClick={onClose}
-            className="w-full py-3 px-4 bg-slate-50 hover:bg-slate-100 text-slate-600 rounded-xl text-sm font-semibold border border-slate-200 transition-colors"
+            className="w-full py-3 px-4 bg-slate-50 hover:bg-slate-100 text-slate-600 rounded-xl text-sm font-semibold border border-slate-200 transition-colors cursor-pointer"
           >
             Plus tard
           </button>

@@ -41,11 +41,46 @@ export default function ForgotPasswordPage() {
   };
 
   return (
-    <div className="h-screen flex flex-col items-center justify-center relative overflow-hidden bg-[#0A192F] pt-20 pb-4 px-4">
-      {/* Dynamic Background Elements */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-[#1E3A8A] blur-[120px]"></div>
-        <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-[#32A8D7] blur-[120px]"></div>
+    <div 
+      style={{ backgroundColor: "#061527", color: "#ffffff" }}
+      className="min-h-screen flex flex-col items-center justify-center relative overflow-hidden bg-gradient-to-b from-[#0b223d] via-[#061527] to-[#030b14] font-sans pt-24 pb-8 px-4 text-center selection:bg-sky-400/30 text-white"
+    >
+      {/* Ambient Lighting & Glows bleu nuit teintés Netacuv */}
+      <div className="pointer-events-none absolute -top-40 -left-40 w-96 h-96 bg-[#32A8D7]/20 rounded-full blur-3xl" />
+      <div className="pointer-events-none absolute -bottom-40 -right-40 w-[30rem] h-[30rem] bg-[#1e8ae9]/20 rounded-full blur-3xl" />
+      <div className="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[45rem] h-[45rem] bg-[#0c3e70]/30 rounded-full blur-3xl" />
+      <div className="pointer-events-none absolute top-1/4 right-1/4 w-80 h-80 bg-[#f97316]/10 rounded-full blur-3xl" />
+
+      {/* Netacuv "N" Symbol Watermarks in Background */}
+      <div className="pointer-events-none absolute inset-0 flex items-center justify-center overflow-hidden select-none">
+        <div className="w-[580px] h-[580px] max-w-[90vw] max-h-[90vw] opacity-[0.06] transform -rotate-12 scale-110">
+          <Image
+            src="/Logo/SVG/Asset 14.svg"
+            alt=""
+            width={580}
+            height={580}
+            className="w-full h-full object-contain"
+            priority
+          />
+        </div>
+        <div className="absolute -top-16 -right-16 w-80 h-80 opacity-[0.04] transform rotate-12">
+          <Image
+            src="/Logo/SVG/Asset 14.svg"
+            alt=""
+            width={320}
+            height={320}
+            className="w-full h-full object-contain"
+          />
+        </div>
+        <div className="absolute -bottom-20 -left-20 w-80 h-80 opacity-[0.04] transform -rotate-6">
+          <Image
+            src="/Logo/SVG/Asset 14.svg"
+            alt=""
+            width={320}
+            height={320}
+            className="w-full h-full object-contain"
+          />
+        </div>
       </div>
 
       {/* Navbar overlay */}
@@ -53,82 +88,92 @@ export default function ForgotPasswordPage() {
         <Navbar variant="auth" />
       </div>
 
-      <div className="z-10 w-full max-w-md animate-fade-in-up mt-6 md:mt-12">
-        <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl shadow-2xl p-6 md:p-8 max-h-[calc(100vh-120px)] overflow-y-auto custom-scrollbar">
-          <h1 className="text-3xl font-extrabold text-center mb-2 text-white">
-            Mot de passe oublié ?
-          </h1>
+      {/* Content Container */}
+      <div className="relative z-10 flex flex-col items-center max-w-md w-full mt-4 md:mt-8">
+        {/* Card Modal (Cadre en bleu nuit dégradé avec bordure animée) */}
+        <div className="animated-gradient-stroke shadow-[0_25px_60px_-15px_rgba(0,0,0,0.8),0_0_35px_rgba(50,168,215,0.2)] w-full transition-all duration-300">
+          <div className="relative z-10 bg-gradient-to-b from-[#0e2747] via-[#091b32] to-[#051323] p-7 sm:p-9 rounded-[14px] w-full border border-sky-400/20 backdrop-blur-xl text-left">
+            <h1 className="text-2xl sm:text-3xl font-extrabold text-white mb-2 text-center tracking-tight">
+              Mot de passe oublié ?
+            </h1>
 
-          {isSuccess ? (
-            <div className="text-center mt-6">
-              <div className="w-16 h-16 bg-white/10 rounded-full flex items-center justify-center mx-auto mb-4 border border-white/20">
-                <CheckCircle2 size={32} className="text-[#32A8D7]" />
-              </div>
-              <h3 className="text-xl font-bold text-white mb-2">E-mail envoyé !</h3>
-              <p className="text-slate-300 mb-6 text-sm">
-                Un lien pour réinitialiser votre mot de passe a été envoyé à <strong className="text-white">{email}</strong>. 
-                Veuillez vérifier votre boîte de réception. Si vous ne le voyez pas, pensez à consulter vos <strong className="text-white">dossiers de spams (courriers indésirables)</strong>.
-              </p>
-            </div>
-          ) : (
-            <>
-              <p className="text-center text-sm mb-8 text-slate-300 px-4">
-                Entrer votre adresse e-mail pour recevoir le lien de réinitialisation
-              </p>
-
-              {error && (
-                <div className="mb-6 p-3 rounded-xl bg-red-50 border border-red-200 flex items-center gap-2 text-xs text-red-600">
-                  <AlertCircle size={16} className="flex-shrink-0" />
-                  <span>{error}</span>
+            {isSuccess ? (
+              <div className="text-center mt-5">
+                <div className="w-16 h-16 bg-[#32A8D7]/15 rounded-full flex items-center justify-center mx-auto mb-4 border border-[#32A8D7]/30 shadow-[0_0_20px_rgba(50,168,215,0.25)]">
+                  <CheckCircle2 size={32} className="text-[#32A8D7]" />
                 </div>
-              )}
-
-              <form onSubmit={handleSubmit} className="space-y-6">
-                <div>
-                  <label className="block text-sm font-semibold text-slate-200 mb-1.5">
-                    Email professionnel ou personnel
-                  </label>
-                  <div className="relative">
-                    <Mail
-                      size={16}
-                      className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"
-                    />
-                    <input
-                      type="email"
-                      required
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      placeholder="Entrer l'e-mail"
-                      className="w-full pl-10 pr-4 py-3 bg-white/5 border border-white/10 rounded-xl text-sm text-white placeholder-slate-400 focus:outline-none focus:border-[#32A8D7] transition-all [&:-webkit-autofill]:shadow-[0_0_0_1000px_#0A192F_inset] [&:-webkit-autofill]:[-webkit-text-fill-color:white]"
-                    />
-                  </div>
-                </div>
-
-                <button
-                  type="submit"
-                  disabled={isLoading || !email}
-                  className="w-full py-3.5 px-6 rounded-xl font-bold text-white bg-[#32A8D7] hover:bg-[#2a95c2] disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.99] transition-all shadow-md flex items-center justify-center gap-2 text-sm mt-4"
+                <h3 className="text-xl font-bold text-white mb-2">E-mail envoyé !</h3>
+                <p className="text-slate-300 mb-6 text-sm leading-relaxed">
+                  Un lien pour réinitialiser votre mot de passe a été envoyé à{" "}
+                  <strong className="text-white">{email}</strong>. Veuillez vérifier votre boîte de réception ou vos dossiers de courriers indésirables.
+                </p>
+                <Link
+                  href="/connexion"
+                  className="inline-flex items-center justify-center gap-2 w-full py-3 px-6 rounded-xl font-bold text-white bg-[#32A8D7] hover:bg-[#2891bb] transition-all shadow-md text-sm"
                 >
-                  {isLoading ? (
-                    <>
-                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                      Envoi...
-                    </>
-                  ) : (
-                    "Envoyer le lien"
-                  )}
-                </button>
-              </form>
-            </>
-          )}
+                  <ArrowLeft size={16} /> Retour à la connexion
+                </Link>
+              </div>
+            ) : (
+              <>
+                <p className="text-center text-sm mb-6 text-slate-300 leading-relaxed">
+                  Entrez votre adresse e-mail pour recevoir les instructions de réinitialisation.
+                </p>
 
-          <div className="mt-6 flex justify-center">
-            <Link
-              href="/connexion"
-              className="flex items-center gap-1.5 text-sm font-semibold text-slate-400 hover:text-white transition-colors"
-            >
-              <ArrowLeft size={16} /> Retour à la connexion
-            </Link>
+                {error && (
+                  <div className="mb-5 p-3 rounded-xl bg-red-500/15 border border-red-500/40 flex items-center gap-2.5 text-xs text-red-200">
+                    <AlertCircle size={16} className="flex-shrink-0 text-red-400" />
+                    <span>{error}</span>
+                  </div>
+                )}
+
+                <form onSubmit={handleSubmit} className="space-y-4">
+                  <div>
+                    <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">
+                      Adresse e-mail
+                    </label>
+                    <div className="relative">
+                      <Mail
+                        size={17}
+                        className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"
+                      />
+                      <input
+                        type="email"
+                        required
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        placeholder="nom@exemple.com"
+                        className="w-full pl-10 pr-4 py-3 bg-white/5 border border-white/10 rounded-xl text-sm text-white placeholder-slate-400 focus:outline-none focus:border-[#32A8D7] focus:ring-1 focus:ring-[#32A8D7] transition-all [&:-webkit-autofill]:shadow-[0_0_0_1000px_#091b32_inset] [&:-webkit-autofill]:[-webkit-text-fill-color:white]"
+                      />
+                    </div>
+                  </div>
+
+                  <button
+                    type="submit"
+                    disabled={isLoading || !email}
+                    className="w-full py-3.5 px-6 rounded-xl font-bold text-white bg-[#32A8D7] hover:bg-[#2891bb] disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.99] transition-all shadow-lg flex items-center justify-center gap-2 text-sm mt-3"
+                  >
+                    {isLoading ? (
+                      <>
+                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                        Envoi en cours...
+                      </>
+                    ) : (
+                      "Envoyer le lien"
+                    )}
+                  </button>
+                </form>
+
+                <div className="mt-6 flex justify-center pt-2 border-t border-white/10">
+                  <Link
+                    href="/connexion"
+                    className="flex items-center gap-1.5 text-xs font-semibold text-slate-400 hover:text-white transition-colors"
+                  >
+                    <ArrowLeft size={14} /> Retour à la connexion
+                  </Link>
+                </div>
+              </>
+            )}
           </div>
         </div>
       </div>

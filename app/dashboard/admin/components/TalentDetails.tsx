@@ -28,24 +28,62 @@ export function TalentDetails({ talent, onBack }: { talent: any, onBack: () => v
             </div>
             <h2 className="text-xl font-black text-slate-900">{talent.name}</h2>
             <p className="text-slate-500 text-sm mb-4">{talent.domaine}</p>
-            <div className="flex items-center gap-2 mb-6">
+            <div className="flex flex-wrap items-center justify-center gap-2 mb-4">
               {talent.status === "Actif" ? (
                 <span className="px-3 py-1 bg-green-500 text-white rounded-full text-xs font-bold shadow-sm">Actif</span>
               ) : (
                 <span className="px-3 py-1 bg-orange-500 text-white rounded-full text-xs font-bold shadow-sm">{talent.status}</span>
               )}
+              {talent.isPremium ? (
+                <span className="px-3 py-1 bg-amber-100 text-amber-700 border border-amber-200 rounded-full text-xs font-bold shadow-sm flex items-center gap-1">
+                  ✨ Premium
+                </span>
+              ) : (
+                <span className="px-3 py-1 bg-slate-100 text-slate-600 rounded-full text-xs font-medium shadow-sm">
+                  Standard
+                </span>
+              )}
               {talent.certifie && (
                 <span className="px-3 py-1 bg-blue-100 text-[#32A8D7] rounded-full text-xs font-bold shadow-sm">Certifié</span>
               )}
             </div>
-            <a 
-              href={`https://mail.google.com/mail/?view=cm&fs=1&to=${talent.email}&su=Contact%20Check%20CV&body=Bonjour%20${talent.name},`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="w-full block py-2.5 px-4 bg-white border border-[#32A8D7] text-[#32A8D7] rounded-lg font-bold hover:bg-[#32A8D7] hover:text-white transition-colors"
-            >
-              Envoyer un mail
-            </a>
+
+            <div className="w-full flex flex-col gap-2 mb-2">
+              <button
+                onClick={async () => {
+                  try {
+                    const nextVal = !talent.isPremium;
+                    const res = await fetch("/api/admin/activation", {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({ userId: talent.id, isPremium: nextVal })
+                    });
+                    if (res.ok) {
+                      talent.isPremium = nextVal;
+                      window.location.reload();
+                    }
+                  } catch (e) {
+                    console.error(e);
+                  }
+                }}
+                className={`w-full py-2 px-3 rounded-lg text-xs font-bold transition-all shadow-xs flex items-center justify-center gap-1.5 cursor-pointer ${
+                  talent.isPremium
+                    ? "bg-red-50 text-red-600 border border-red-200 hover:bg-red-100"
+                    : "bg-gradient-to-r from-amber-500 to-yellow-500 text-white hover:from-amber-600 hover:to-yellow-600 shadow-amber-500/20"
+                }`}
+              >
+                {talent.isPremium ? "Désactiver l'offre Premium" : "Activer l'offre Premium"}
+              </button>
+
+              <a 
+                href={`https://mail.google.com/mail/?view=cm&fs=1&to=${talent.email}&su=Contact%20Check%20CV&body=Bonjour%20${talent.name},`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-full block py-2.5 px-4 bg-white border border-[#32A8D7] text-[#32A8D7] rounded-lg font-bold hover:bg-[#32A8D7] hover:text-white transition-colors text-center text-sm"
+              >
+                Envoyer un mail
+              </a>
+            </div>
           </div>
 
           <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">

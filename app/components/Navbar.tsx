@@ -99,7 +99,7 @@ export default function Navbar({
 
         {/* CTA / Auth Actions */}
         <div className="hidden md:flex items-center gap-3">
-          <LanguageSwitcher />
+          <LanguageSwitcher variant="desktop" showLabel={false} align="right" isDark={variant === "auth"} />
           {user ? (
             <div className="flex items-center gap-3">
               <Link
@@ -208,6 +208,16 @@ export default function Navbar({
               {label}
             </Link>
           ))}
+
+          {/* Sélecteur de langue mobile positionné juste en dessous de Recruteurs */}
+          <div className="pt-2 px-1">
+            <LanguageSwitcher
+              variant="mobile"
+              showLabel={true}
+              isDark={variant === "auth"}
+              onSelect={() => setMobileOpen(false)}
+            />
+          </div>
 
           <div className={`flex gap-3 mt-3 pt-3 border-t ${variant === "auth" ? "border-white/10" : "border-slate-100"}`}>
             {user ? (

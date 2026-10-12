@@ -7,7 +7,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "../../../context/AuthContext";
 import {
   Menu, Bell, ChevronDown, X, LogOut, Globe,
-  Home, Users, Briefcase, Settings, History, Shield, AlertTriangle, Gift
+  Home, Users, Briefcase, Settings, History, Shield, AlertTriangle, Gift, Zap, Mail
 } from "lucide-react";
 import LogoutButton from "../../../components/LogoutButton";
 import { useTranslations, useLocale } from "next-intl";
@@ -25,8 +25,10 @@ const getSidebarItems = (role: string = "") => {
     { href: "/dashboard/admin/emplois", icon: Briefcase, label: "Offres d'emploi", show: isSuperAdmin || upperRole.includes("RH") },
     { href: "/dashboard/admin/transactions", icon: History, label: "Transactions", show: isSuperAdmin || upperRole.includes("FINANCIER") },
     { href: "/dashboard/admin/affiliation", icon: Gift, label: "Gestion de l'affiliation", show: isSuperAdmin || upperRole.includes("FINANCIER") },
+    { href: "/dashboard/admin/newsletter", icon: Mail, label: "Newsletter", show: isSuperAdmin },
     { href: "/dashboard/admin/permissions", icon: Shield, label: "Permissions & Rôles", show: isSuperAdmin },
     { href: "/dashboard/admin/trafic", icon: Globe, label: "Trafic & Visites", show: isSuperAdmin },
+    { href: "/dashboard/admin/activation", icon: Zap, label: "Activation des offres", show: isSuperAdmin },
     { href: "/dashboard/admin/parametres", icon: Settings, label: "Paramètres", show: isSuperAdmin },
     { href: "/dashboard/admin/suppressions", icon: AlertTriangle, label: "Suppression de compte", show: isSuperAdmin || upperRole.includes("RH") || upperRole.includes("SUPPORT") },
   ].filter(item => item.show);
@@ -84,8 +86,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               );
             })}
             
-            <div className="mt-4 pt-4 border-t border-slate-100 px-2">
-              <LanguageSwitcher />
+            {/* Mobile drawer uniquement : nom du pays à côté du drapeau */}
+            <div className="mt-4 pt-4 border-t border-slate-100 px-2 md:hidden">
+              <LanguageSwitcher variant="mobile" showLabel={true} onSelect={() => setSidebarOpen(false)} />
             </div>
 
             <div className="mt-4 pt-4 border-t border-slate-100 px-2">
@@ -108,6 +111,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             </h1>
           </div>
           <div className="flex items-center gap-4">
+            {/* Desktop Language Switcher (Drapeau + flèche uniquement) */}
+            <div className="hidden md:flex items-center">
+              <LanguageSwitcher variant="desktop" showLabel={false} align="right" />
+            </div>
+
             <div className="relative">
               <button onClick={() => { setNotifMenuOpen(!notifMenuOpen); setProfileMenuOpen(false); }} className="relative text-slate-500 hover:text-slate-700 p-2 rounded-full hover:bg-slate-100 transition-colors" aria-label="Notifications">
                 <Bell size={20} />

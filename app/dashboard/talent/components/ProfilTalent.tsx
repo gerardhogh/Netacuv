@@ -24,6 +24,7 @@ import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
 import { getVideoFromDB, deleteVideoFromDB, saveCvToDB, getCvFromDB } from "../../../../lib/indexedDB";
 import { QRCodeSVG } from "qrcode.react";
+import PremiumRequiredModal from "../../../components/PremiumRequiredModal";
 
 type SubTab = "informations" | "reseaux" | "video";
 
@@ -44,6 +45,7 @@ function ProfilTalentContent({ initialTab = "informations" }: { initialTab?: Sub
   const [cvDate, setCvDate] = useState<string>("");
   const [cvBlobUrl, setCvBlobUrl] = useState<string>("");
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+  const [showCvPremiumModal, setShowCvPremiumModal] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [completionPercent, setCompletionPercent] = useState(0);
   const [stars, setStars] = useState(0);
@@ -429,64 +431,121 @@ function ProfilTalentContent({ initialTab = "informations" }: { initialTab?: Sub
           </div>
 
           {/* CV Preview Card */}
-          <div className="bg-white rounded-lg p-5 border border-slate-100 shadow-sm">
-            <h4 className="text-[13px] text-slate-800 font-bold mb-4">
-              CV actualisé le {cvDate}
-            </h4>
-            
-            {/* Visual Real CV Preview */}
-            <div 
-              onClick={() => setIsPreviewOpen(true)}
-              className="border border-slate-200 rounded-lg mb-4 shadow-sm bg-white p-1 h-[350px] overflow-hidden flex items-center justify-center relative cursor-pointer group hover:border-[#008de4] transition-all"
-              title="Cliquer pour prévisualiser le document complet"
-            >
-              {cvBlobUrl ? (
-                <iframe
-                  src={`${cvBlobUrl}#toolbar=0&navpanes=0&scrollbar=0&view=FitH`}
-                  className="w-full h-full rounded border-0 bg-white pointer-events-none"
-                  title="Aperçu du CV"
-                />
-              ) : (
-                <div className="w-full h-full flex flex-col items-center justify-center bg-slate-50 border border-dashed border-slate-300 rounded p-4">
-                  <div className="w-16 h-20 bg-white shadow-sm border border-slate-200 rounded-sm mb-3 flex flex-col p-2 gap-1.5 opacity-60">
-                    <div className="w-1/2 h-1.5 bg-slate-200 rounded-full"></div>
-                    <div className="w-full h-1 bg-slate-100 rounded-full mt-1"></div>
-                    <div className="w-5/6 h-1 bg-slate-100 rounded-full"></div>
-                    <div className="w-full h-1 bg-slate-100 rounded-full"></div>
-                    <div className="w-2/3 h-1 bg-slate-100 rounded-full"></div>
-                  </div>
-                  <p className="text-xs font-semibold text-slate-500">Aucun CV disponible</p>
-                  <p className="text-[10px] text-slate-400 mt-1 text-center px-4">Uploadez votre CV pour qu'il s'affiche ici</p>
-                </div>
-              )}
-
-              {/* Overlay hover */}
-              <div className="absolute inset-0 bg-blue-900/15 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center backdrop-blur-[0.5px]">
-                <span className="bg-white text-[#008de4] px-4 py-2 rounded-full text-xs font-bold shadow-lg flex items-center gap-2 transform group-hover:scale-105 transition-transform">
-                  <Eye size={14} /> Prévisualiser le CV
+          <div className="bg-white rounded-lg p-5 border border-slate-100 shadow-sm relative">
+            <div className="flex items-center justify-between mb-4">
+              <h4 className="text-[13px] text-slate-800 font-bold flex items-center gap-2">
+                CV actualisé le {cvDate}
+                {!user?.isPremium && user?.role !== "admin" && <Lock size={13} className="text-amber-500" />}
+              </h4>
+              {!user?.isPremium && user?.role !== "admin" && (
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-50 text-amber-600 border border-amber-200">
+                  Premium
                 </span>
-              </div>
+              )}
             </div>
+            
+            {/* Visual Real CV Preview or Premium Locked Box */}
+            {user?.isPremium || user?.role === "admin" ? (
+              <div 
+                onClick={() => setIsPreviewOpen(true)}
+                className="border border-slate-200 rounded-lg mb-4 shadow-sm bg-white p-1 h-[350px] overflow-hidden flex items-center justify-center relative cursor-pointer group hover:border-[#008de4] transition-all"
+                title="Cliquer pour prévisualiser le document complet"
+              >
+                {cvBlobUrl ? (
+                  <iframe
+                    src={`${cvBlobUrl}#toolbar=0&navpanes=0&scrollbar=0&view=FitH`}
+                    className="w-full h-full rounded border-0 bg-white pointer-events-none"
+                    title="Aperçu du CV"
+                  />
+                ) : (
+                  <div className="w-full h-full flex flex-col items-center justify-center bg-slate-50 border border-dashed border-slate-300 rounded p-4">
+                    <div className="w-16 h-20 bg-white shadow-sm border border-slate-200 rounded-sm mb-3 flex flex-col p-2 gap-1.5 opacity-60">
+                      <div className="w-1/2 h-1.5 bg-slate-200 rounded-full"></div>
+                      <div className="w-full h-1 bg-slate-100 rounded-full mt-1"></div>
+                      <div className="w-5/6 h-1 bg-slate-100 rounded-full"></div>
+                      <div className="w-full h-1 bg-slate-100 rounded-full"></div>
+                      <div className="w-2/3 h-1 bg-slate-100 rounded-full"></div>
+                    </div>
+                    <p className="text-xs font-semibold text-slate-500">Aucun CV disponible</p>
+                    <p className="text-[10px] text-slate-400 mt-1 text-center px-4">Uploadez votre CV pour qu'il s'affiche ici</p>
+                  </div>
+                )}
+
+                {/* Overlay hover */}
+                <div className="absolute inset-0 bg-blue-900/15 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center backdrop-blur-[0.5px]">
+                  <span className="bg-white text-[#008de4] px-4 py-2 rounded-full text-xs font-bold shadow-lg flex items-center gap-2 transform group-hover:scale-105 transition-transform">
+                    <Eye size={14} /> Prévisualiser le CV
+                  </span>
+                </div>
+              </div>
+            ) : (
+              <div 
+                onClick={() => setShowCvPremiumModal(true)}
+                className="border border-amber-200/80 rounded-lg mb-4 bg-gradient-to-b from-amber-50/40 via-white to-slate-50/60 p-4 h-[350px] overflow-hidden flex flex-col items-center justify-center text-center relative cursor-pointer group hover:border-amber-400 transition-all shadow-xs"
+              >
+                <div className="w-16 h-16 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform shadow-inner">
+                  <Lock size={28} />
+                </div>
+                <h5 className="text-sm font-bold text-slate-800 mb-1">
+                  Aperçu du CV masqué
+                </h5>
+                <p className="text-xs text-slate-500 max-w-[220px] mb-4 leading-relaxed">
+                  L'aperçu, la prévisualisation et le téléchargement de votre CV sont réservés aux membres Premium.
+                </p>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setShowCvPremiumModal(true);
+                  }}
+                  className="px-4 py-2 bg-gradient-to-r from-amber-400 to-orange-500 hover:from-amber-500 hover:to-orange-600 text-white font-bold text-xs rounded-xl shadow-md shadow-orange-500/20 transition-all flex items-center gap-1.5 cursor-pointer"
+                >
+                  <Lock size={13} />
+                  Débloquer avec Premium
+                </button>
+              </div>
+            )}
 
             {/* Action Buttons */}
-            <div className="grid grid-cols-2 gap-3">
-              <button 
-                onClick={handleDownloadPdf}
-                className="flex items-center justify-center gap-1.5 border border-slate-300 hover:bg-slate-50 text-slate-700 font-bold py-2 rounded-md text-[11px] transition-colors"
-                title="Télécharger le fichier PDF"
-              >
-                <FileDown size={14} className="text-red-500" />
-                Télécharger le pdf
-              </button>
-              <button 
-                onClick={() => setIsPreviewOpen(true)}
-                className="flex items-center justify-center gap-1.5 bg-[#008de4] hover:bg-blue-600 text-white font-bold py-2 rounded-md text-[11px] transition-colors shadow-sm"
-                title="Prévisualiser le document"
-              >
-                <Eye size={14} />
-                Prévisualiser
-              </button>
-            </div>
+            {user?.isPremium || user?.role === "admin" ? (
+              <div className="grid grid-cols-2 gap-3">
+                <button 
+                  onClick={handleDownloadPdf}
+                  className="flex items-center justify-center gap-1.5 border border-slate-300 hover:bg-slate-50 text-slate-700 font-bold py-2 rounded-md text-[11px] transition-colors cursor-pointer"
+                  title="Télécharger le fichier PDF"
+                >
+                  <FileDown size={14} className="text-red-500" />
+                  Télécharger le pdf
+                </button>
+                <button 
+                  onClick={() => setIsPreviewOpen(true)}
+                  className="flex items-center justify-center gap-1.5 bg-[#008de4] hover:bg-blue-600 text-white font-bold py-2 rounded-md text-[11px] transition-colors shadow-sm cursor-pointer"
+                  title="Prévisualiser le document"
+                >
+                  <Eye size={14} />
+                  Prévisualiser
+                </button>
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 gap-3">
+                <button 
+                  onClick={() => setShowCvPremiumModal(true)}
+                  className="flex items-center justify-center gap-1.5 border border-slate-200 bg-slate-50 text-slate-400 font-medium py-2 rounded-md text-[11px] cursor-not-allowed hover:bg-amber-50 hover:text-amber-700 hover:border-amber-200 transition-colors"
+                  title="Fonctionnalité Premium"
+                >
+                  <Lock size={12} className="text-amber-500" />
+                  Télécharger le pdf
+                </button>
+                <button 
+                  onClick={() => setShowCvPremiumModal(true)}
+                  className="flex items-center justify-center gap-1.5 border border-slate-200 bg-slate-50 text-slate-400 font-medium py-2 rounded-md text-[11px] cursor-not-allowed hover:bg-amber-50 hover:text-amber-700 hover:border-amber-200 transition-colors"
+                  title="Fonctionnalité Premium"
+                >
+                  <Lock size={12} className="text-amber-500" />
+                  Prévisualiser
+                </button>
+              </div>
+            )}
           </div>
         </div>
 
@@ -615,6 +674,15 @@ function ProfilTalentContent({ initialTab = "informations" }: { initialTab?: Sub
           </div>
         </div>
       </div>
+
+      {showCvPremiumModal && (
+        <PremiumRequiredModal
+          onClose={() => setShowCvPremiumModal(false)}
+          title="CV Complet réservé au Premium"
+          message="L'aperçu, la prévisualisation et le téléchargement de votre CV en PDF sont réservés aux talents membres Premium. Souscrivez pour seulement 700 FCFA/mois sans engagement."
+          upgradeHref="/dashboard/talent?tab=premium"
+        />
+      )}
     </div>
   );
 }
@@ -1127,6 +1195,7 @@ function VideoTab() {
   const [isLoading, setIsLoading] = useState(true);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isReplaceModalOpen, setIsReplaceModalOpen] = useState(false);
+  const [showPremiumModal, setShowPremiumModal] = useState(false);
 
   useEffect(() => {
     let isMounted = true;
@@ -1229,6 +1298,10 @@ function VideoTab() {
   };
 
   const handleStartOrRestartClick = () => {
+    if (!user?.isPremium && user?.role !== "admin") {
+      setShowPremiumModal(true);
+      return;
+    }
     if (hasVideo) {
       setIsReplaceModalOpen(true);
     } else {
@@ -1238,24 +1311,28 @@ function VideoTab() {
 
   const handleConfirmReplace = () => {
     setIsReplaceModalOpen(false);
+    if (!user?.isPremium && user?.role !== "admin") {
+      setShowPremiumModal(true);
+      return;
+    }
     handleDelete();
     router.push("/interview");
   };
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-2 mb-4">
-        <Video className="text-[#008de4]" size={22} />
-        <h3 className="text-[18px] font-bold text-[#008de4]">
+      <div className="flex items-center gap-2 mb-3 sm:mb-4">
+        <Video className="text-[#008de4] w-5 h-5 sm:w-6 sm:h-6" />
+        <h3 className="text-base sm:text-[18px] font-bold text-[#008de4]">
           Lancer l'entretien vidéo
         </h3>
       </div>
 
-      <p className="text-[14px] text-slate-700 font-medium">
+      <p className="text-xs sm:text-[14px] text-slate-700 font-medium">
         Passe chaque étape d'entretien pour certifier ton profil :
       </p>
 
-      <ol className="list-decimal pl-5 space-y-1 text-[14px] text-slate-700">
+      <ol className="list-decimal pl-4 sm:pl-5 space-y-1 text-xs sm:text-[14px] text-slate-700">
         <li>Lire la question affichée à l'écran.</li>
         <li>Se préparer en 20 secondes maximum.</li>
         <li>Enregistrer une réponse vidéo de 1 min ou plus maximum.</li>
@@ -1264,11 +1341,11 @@ function VideoTab() {
         <li>Une fois validée, la vidéo apparaîtra ici sous forme de vignette.</li>
       </ol>
 
-      <h3 className="text-[18px] font-bold text-[#008de4] pt-2">
+      <h3 className="text-base sm:text-[18px] font-bold text-[#008de4] pt-1 sm:pt-2">
         Conseils pour réussir votre entretien vidéo
       </h3>
 
-      <ul className="list-disc pl-5 space-y-2 text-[14px] text-slate-700 marker:text-[#008de4]">
+      <ul className="list-disc pl-4 sm:pl-5 space-y-1.5 sm:space-y-2 text-xs sm:text-[14px] text-slate-700 marker:text-[#008de4]">
         <li>
           <span className="font-bold text-[#008de4]">Préparation : </span>
           Assurez-vous d'avoir un environnement calme et bien éclairé.
@@ -1287,28 +1364,28 @@ function VideoTab() {
         </li>
       </ul>
 
-      <div className="bg-[#f0f9ff] rounded-lg p-5 my-6 text-[14px] text-slate-700 leading-relaxed border border-blue-50">
-        <p className="mb-4">
+      <div className="bg-[#f0f9ff] rounded-lg p-3.5 sm:p-5 my-4 sm:my-6 text-xs sm:text-[14px] text-slate-700 leading-relaxed border border-blue-50">
+        <p className="mb-2 sm:mb-4">
           Ce test est constitué de 20 questions. Vous aurez une variation de temps pour
           répondre. Vous disposez de 3 tentatives. En cas d'annulation, l'entretien recommence
           depuis le début.
         </p>
-        <p className="mb-4">
+        <p className="mb-2 sm:mb-4">
           Si vous utilisez vos 3 tentatives sans succès, vous devrez attendre 3 jours avant de
           pouvoir réessayer.
         </p>
-        <p className="font-bold italic text-[15px]">Êtes-vous prêt à commencer ?</p>
+        <p className="font-bold italic text-xs sm:text-[15px]">Êtes-vous prêt à commencer ?</p>
       </div>
 
       <button
         onClick={handleStartOrRestartClick}
-        className="flex items-center justify-center w-full bg-[#008de4] hover:bg-blue-600 text-white font-bold py-3.5 rounded-md text-[14px] transition-colors cursor-pointer"
+        className="flex items-center justify-center w-full bg-[#008de4] hover:bg-blue-600 text-white font-bold py-2.5 sm:py-3.5 rounded-md text-xs sm:text-[14px] transition-colors cursor-pointer shadow-sm"
       >
         Commencer mon entretien vidéo maintenant
       </button>
 
-      <div className="pt-6">
-        <p className="text-[14px] text-slate-700 font-medium mb-4">
+      <div className="pt-4 sm:pt-6">
+        <p className="text-xs sm:text-[14px] text-slate-700 font-medium mb-3 sm:mb-4">
           Votre vidéo enregistrée :
         </p>
         {isLoading ? (
@@ -1386,6 +1463,15 @@ function VideoTab() {
         onClose={() => setIsReplaceModalOpen(false)} 
         onConfirm={handleConfirmReplace} 
       />
+
+      {showPremiumModal && (
+        <PremiumRequiredModal
+          onClose={() => setShowPremiumModal(false)}
+          title="Entretien Vidéo IA réservé au Premium"
+          message="L'entretien vidéo certifié par l'IA et l'obtention des badges de compétences sont réservés aux talents membres Premium. Souscrivez pour seulement 700 FCFA/mois sans engagement."
+          upgradeHref="/dashboard/talent?tab=premium"
+        />
+      )}
     </div>
   );
 }

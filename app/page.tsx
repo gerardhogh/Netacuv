@@ -92,7 +92,7 @@ export default function HomePage() {
       {/* ── HERO SECTION ── */}
       <section
         id="accueil"
-        className="relative pt-12 pb-20 md:pt-20 md:pb-28 overflow-hidden bg-[#f4f9ff]"
+        className="relative min-h-[calc(100vh-80px)] flex flex-col justify-center pt-8 pb-16 md:py-20 overflow-hidden bg-[#f4f9ff]"
       >
         {/* Background Decorative Gradients */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
@@ -105,27 +105,30 @@ export default function HomePage() {
         </div>
 
         <div className="max-w-7xl mx-auto px-6 relative z-10">
-          <div className="flex flex-col lg:flex-row items-center justify-between gap-12 lg:gap-8">
+          <div className="flex flex-col lg:flex-row items-center justify-between gap-5 sm:gap-6 lg:gap-8">
             {/* Left Content */}
-            <div className="flex-1 max-w-2xl animate-fade-in-up">
-              <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black text-slate-900 leading-[1.15] mb-6">
+            <div className="flex-1 max-w-2xl animate-fade-in-up w-full">
+              <h1 className="text-[50px] sm:text-6xl lg:text-7xl font-black text-slate-900 leading-[1.03] sm:leading-[1.08] tracking-tight mb-4 sm:mb-6">
                 Le recrutement,<br />
-                <span className="text-blue-600">au-delà du CV</span><br />
-                classique.
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-[#32A8D7]">
+                  au-delà du CV
+                </span><br />
+                <span className="text-[#F59E0B] opacity-80">classique.</span>
               </h1>
-              <p className="text-slate-600 text-lg sm:text-xl leading-relaxed mb-8 max-w-xl">
+              <p className="text-slate-600 text-base sm:text-lg lg:text-xl leading-relaxed mb-3 sm:mb-4 lg:mb-8 max-w-xl">
                 Découvrez une plateforme conçue pour mettre en lumière vos véritables 
                 compétences grâce à des entretiens vidéo certifiés et une mise en relation directe.
               </p>
-              <div className="flex items-center gap-4 flex-wrap">
+              {/* Desktop CTA Buttons (visibles uniquement sur grand écran) */}
+              <div className="hidden lg:flex items-center gap-4 flex-wrap">
                 <Link
-                  href="https://talent.netacuv.com/register"
+                  href="/talents"
                   className="px-8 py-4 rounded-full font-bold text-base text-white bg-blue-600 hover:bg-blue-700 hover:scale-[1.02] hover:shadow-lg hover:shadow-blue-500/25 shadow-xl shadow-blue-500/25 active:scale-95 transition-all duration-300 ease-in-out inline-flex items-center gap-2"
                 >
                   Je suis un Talent
                 </Link>
                 <Link
-                  href="https://recruteur.netacuv.com/register"
+                  href="/recruteurs"
                   className="px-8 py-4 rounded-full font-bold text-base text-blue-600 bg-white/80 hover:bg-white border border-blue-200 shadow-sm hover:scale-[1.02] hover:shadow-lg hover:shadow-blue-500/25 transition-all duration-300 ease-in-out"
                 >
                   Je suis un Recruteur
@@ -144,9 +147,9 @@ export default function HomePage() {
               />
             </div>
 
-            {/* Right Card Mockup (image 1.png from Figma) */}
-            <div className="flex-1 flex justify-center lg:justify-end">
-              <div className="relative w-full max-w-md animate-fade-in">
+            {/* Right Card Mockup (image 1.png from Figma) & Mobile CTA Buttons */}
+            <div className="flex-1 flex flex-col items-center justify-center lg:justify-end w-full">
+              <div className="relative w-full max-w-md animate-fade-in mb-4 sm:mb-5 lg:mb-0">
                 {/* Floating graphic from Figma */}
                 <div className="relative rounded-3xl overflow-hidden shadow-2xl transition-transform hover:scale-[1.01]">
                   <Image
@@ -158,6 +161,22 @@ export default function HomePage() {
                     className="w-full h-auto object-contain rounded-3xl bg-white/60 backdrop-blur-md"
                   />
                 </div>
+              </div>
+
+              {/* Boutons CTA sur Mobile : ramenés après l'image de dépôt de dossier, sur la même ligne avec le même format que la tab bar mobile */}
+              <div className="flex lg:hidden items-center gap-3 w-full max-w-md">
+                <Link
+                  href="/talents"
+                  className="flex-1 flex justify-center items-center text-center text-xs sm:text-sm font-semibold h-[42px] px-2 sm:px-4 !rounded-full btn-primary shadow-sm transition-all whitespace-nowrap"
+                >
+                  Je suis un Talent
+                </Link>
+                <Link
+                  href="/recruteurs"
+                  className="flex-1 flex justify-center items-center text-center text-xs sm:text-sm font-semibold h-[42px] px-2 sm:px-4 !rounded-full btn-outline bg-white/90 shadow-xs transition-all whitespace-nowrap"
+                >
+                  Je suis un Recruteur
+                </Link>
               </div>
             </div>
           </div>
@@ -442,27 +461,32 @@ export default function HomePage() {
       {/* ── LES FONCTIONNALITÉS CLÉS (IA) ── */}
       <section id="pourquoi" className="py-24 bg-[#F8FAFC]">
         <div className="max-w-7xl mx-auto px-6">
-          <div className="text-center max-w-3xl mx-auto mb-16">
-            <h2 className="text-3xl md:text-4xl font-black text-[#0F172A] mb-4">
-              La puissance de l'IA à votre service
-            </h2>
-            <p className="text-slate-600 text-lg">
-              Des algorithmes de pointe pour sécuriser vos recrutements et valoriser les compétences réelles.
-            </p>
-          </div>
-
-          {/* Full width premium image with blue overlay */}
-          <div className="max-w-7xl mx-auto mb-16 rounded-[2rem] overflow-hidden shadow-2xl border border-slate-200 relative group">
-            {/* Blue Tint Overlay from the bottom card */}
-            <div className="absolute inset-0 bg-[#2BAFE3]/40 mix-blend-color z-10 pointer-events-none transition-opacity duration-700 group-hover:opacity-20" />
-            <div className="absolute inset-0 bg-[#2BAFE3]/20 z-10 pointer-events-none" />
+          {/* Full width premium image with darkened overlay & centered text */}
+          <div className="max-w-7xl mx-auto mb-16 rounded-[2rem] overflow-hidden shadow-2xl border border-slate-200/80 relative group">
+            {/* Darkening & Brand Overlay */}
+            <div className="absolute inset-0 bg-slate-950/60 z-10 pointer-events-none transition-colors duration-500 group-hover:bg-slate-950/50" />
+            <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-slate-950/50 z-10 pointer-events-none" />
+            <div className="absolute inset-0 bg-[#1699d2]/20 mix-blend-overlay z-10 pointer-events-none" />
+            
             <Image
               src="/Images/african-american-woman-experiencing-vr-simulation.jpg"
               alt="Femme utilisant la technologie IA"
               width={1400}
               height={700}
-              className="w-full h-auto object-cover aspect-video md:aspect-[21/9] group-hover:scale-105 transition-transform duration-700 brightness-[1.1]"
+              className="w-full h-auto object-cover aspect-video md:aspect-[21/9] group-hover:scale-105 transition-transform duration-700"
             />
+
+            {/* Centered White Texts Over Image */}
+            <div className="absolute inset-0 z-20 flex flex-col items-center justify-center text-center p-6 md:p-12">
+              <div className="max-w-3xl mx-auto">
+                <h2 className="text-3xl md:text-5xl font-black text-white mb-4 tracking-tight drop-shadow-md">
+                  La puissance de l'IA à votre service
+                </h2>
+                <p className="text-white/90 text-base md:text-xl font-medium max-w-2xl mx-auto leading-relaxed drop-shadow-sm">
+                  Des algorithmes de pointe pour sécuriser vos recrutements et valoriser les compétences réelles.
+                </p>
+              </div>
+            </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -594,7 +618,7 @@ export default function HomePage() {
                 )}
               </ul>
               <Link
-                href={activePricingTab === "talents" ? "https://talent.netacuv.com/register" : "https://recruteur.netacuv.com/register"}
+                href={activePricingTab === "talents" ? "/inscription?type=talent" : "/inscription?type=recruteur"}
                 className="w-full py-4 rounded-full font-bold text-[#0F172A] bg-slate-100 hover:bg-slate-200 transition-colors text-center"
               >
                 Commencer gratuitement
@@ -645,7 +669,7 @@ export default function HomePage() {
                 )}
               </ul>
               <Link
-                href={activePricingTab === "talents" ? "https://talent.netacuv.com/register" : "https://recruteur.netacuv.com/register"}
+                href={activePricingTab === "talents" ? "/inscription?type=talent" : "/inscription?type=recruteur"}
                 className="w-full py-4 rounded-full font-bold text-white bg-[#2BAFE3] hover:bg-[#1E8CB8] transition-colors text-center shadow-lg shadow-[#2BAFE3]/20"
               >
                 Passer en Premium
@@ -703,16 +727,22 @@ export default function HomePage() {
       </section>
 
       {/* ── CTA FINAL ── */}
-      <section className="py-32 bg-[#0F172A] relative overflow-hidden">
-        {/* Background Image with opacity */}
+      <section className="py-32 bg-[#0A1222] relative overflow-hidden">
+        {/* Ambient Orange & Netacuv Blue Highlights */}
+        <div className="pointer-events-none absolute -top-20 -left-20 w-[32rem] h-[32rem] bg-[#F59E0B]/20 rounded-full blur-[120px] z-0" />
+        <div className="pointer-events-none absolute bottom-0 left-1/4 w-[28rem] h-[28rem] bg-orange-600/15 rounded-full blur-[130px] z-0" />
+        <div className="pointer-events-none absolute -bottom-20 -right-20 w-[30rem] h-[30rem] bg-[#2BAFE3]/15 rounded-full blur-[120px] z-0" />
+
+        {/* Background Image with opacity & warm gradient overlay */}
         <div className="absolute inset-0 z-0">
           <Image 
             src="/assets/african_talent_banner.jpg" 
             alt="Rejoindre Netacuv" 
             fill 
-            className="object-cover opacity-20"
+            className="object-cover opacity-20 mix-blend-luminosity"
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-[#0F172A] via-[#0F172A]/80 to-[#0F172A]/40"></div>
+          <div className="absolute inset-0 bg-gradient-to-t from-[#0A1222] via-[#0A1222]/85 to-transparent"></div>
+          <div className="absolute inset-0 bg-gradient-to-r from-amber-950/25 via-transparent to-sky-950/20"></div>
         </div>
         
         <div className="max-w-4xl mx-auto px-6 text-center relative z-10">
@@ -724,13 +754,13 @@ export default function HomePage() {
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link
-              href="https://talent.netacuv.com/register"
+              href="/talents"
               className="px-8 py-4 rounded-full font-bold text-[#0F172A] bg-[#F59E0B] hover:bg-amber-400 shadow-xl hover:-translate-y-1 transition-all duration-300"
             >
               Je suis un Talent
             </Link>
             <Link
-              href="https://recruteur.netacuv.com/register"
+              href="/recruteurs"
               className="px-8 py-4 rounded-full font-bold text-white bg-[#2BAFE3] hover:bg-[#1E8CB8] shadow-xl shadow-[#2BAFE3]/20 hover:-translate-y-1 transition-all duration-300"
             >
               Je suis un Recruteur
@@ -759,7 +789,7 @@ export default function HomePage() {
             
             <div className="flex flex-col gap-3">
               <Link
-                href="https://talent.netacuv.com/register"
+                href="/inscription"
                 onClick={() => setShowDeletedModal(false)}
                 className="w-full py-3.5 bg-[#2BAFE3] hover:bg-[#1E8CB8] text-white font-bold rounded-xl shadow-md transition-all active:scale-[0.98]"
               >

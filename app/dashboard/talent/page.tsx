@@ -45,6 +45,7 @@ import ProfilTalent from "./components/ProfilTalent";
 import TransactionsTab from "./components/TransactionsTab";
 import ParametresTab from "./components/ParametresTab";
 import PremiumBanner from "../../components/PremiumBanner";
+import PremiumRequiredModal from "../../components/PremiumRequiredModal";
 
 type TalentTab =
   | "dashboard"
@@ -94,6 +95,7 @@ export default function TalentDashboard() {
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [profileGuideOpen, setProfileGuideOpen] = useState(false);
   const [upgradeModalOpen, setUpgradeModalOpen] = useState(false);
+  const [showVideoPremiumModal, setShowVideoPremiumModal] = useState(false);
 
   // Profile editable state
   const [userName, setUserName] = useState(user?.name || "Candidat");
@@ -453,8 +455,9 @@ export default function TalentDashboard() {
               );
             })}
 
-            <div className="mt-2 pt-2 border-t border-slate-100 px-4">
-              <LanguageSwitcher />
+            {/* Mobile drawer uniquement : nom du pays à côté du drapeau */}
+            <div className="mt-2 pt-2 border-t border-slate-100 px-4 md:hidden">
+              <LanguageSwitcher variant="mobile" showLabel={true} onSelect={() => setSidebarOpen(false)} />
             </div>
           </nav>
         </div>
@@ -506,6 +509,11 @@ export default function TalentDashboard() {
             )}
 
 
+
+            {/* Desktop Language Switcher (Drapeau + flèche uniquement) */}
+            <div className="hidden md:flex items-center">
+              <LanguageSwitcher variant="desktop" showLabel={false} align="right" />
+            </div>
 
             {/* Notification Bell with interactive dropdown */}
             <div className="relative">
@@ -797,8 +805,9 @@ export default function TalentDashboard() {
                 <div className="bg-white rounded-3xl p-6 border border-slate-100 shadow-xl shadow-slate-200/50 flex flex-col justify-between">
                   <div>
                     <div className="flex items-center justify-between mb-2">
-                      <h3 className="font-bold text-slate-800 text-sm">
+                      <h3 className="font-bold text-slate-800 text-sm flex items-center gap-2">
                         Entretien vidéo
+                        {!isPremium && <Lock size={14} className="text-amber-500" />}
                       </h3>
                       <span
                         className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full text-white ${hasValidVideo ? "bg-green-500" : "bg-red-500"
@@ -813,14 +822,23 @@ export default function TalentDashboard() {
                         : "Tu n'as pas encore passé l'entretien vidéo"}
                     </p>
                   </div>
-                  <button
-                    onClick={() => setActiveTab("video")}
-                    className="w-full py-3 rounded-2xl font-bold text-xs text-white bg-blue-600 hover:bg-blue-700 shadow-lg shadow-blue-500/25 transition-all flex items-center justify-center gap-2"
-                    id="btn-launch-video"
-                  >
-                    <Video size={15} />{" "}
-                    {hasValidVideo ? "Voir l'entretien vidéo" : "Lancer l'entretien vidéo"}
-                  </button>
+                  {isPremium ? (
+                    <button
+                      onClick={() => setActiveTab("video")}
+                      className="w-full py-3 rounded-2xl font-bold text-xs text-white bg-blue-600 hover:bg-blue-700 shadow-lg shadow-blue-500/25 transition-all flex items-center justify-center gap-2"
+                      id="btn-launch-video"
+                    >
+                      <Video size={15} />{" "}
+                      {hasValidVideo ? "Voir l'entretien vidéo" : "Lancer l'entretien vidéo"}
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => setShowVideoPremiumModal(true)}
+                      className="w-full py-3 rounded-2xl font-bold text-xs text-white bg-gradient-to-r from-amber-400 to-orange-500 hover:from-amber-500 hover:to-orange-600 shadow-lg shadow-orange-500/25 transition-all flex items-center justify-center gap-2"
+                    >
+                      <Lock size={15} /> Débloquer l'Entretien IA
+                    </button>
+                  )}
                 </div>
 
                 {/* Affiliation Card */}
@@ -1313,6 +1331,15 @@ export default function TalentDashboard() {
             </form>
           </div>
         </div>
+      )}
+
+      {showVideoPremiumModal && (
+        <PremiumRequiredModal
+          onClose={() => setShowVideoPremiumModal(false)}
+          title="Entretien Vidéo IA réservé au Premium"
+          message="L'entretien vidéo certifié par l'IA et l'obtention des badges de compétences sont réservés aux talents membres Premium. Souscrivez pour seulement 700 FCFA/mois sans engagement."
+          onUpgrade={() => setActiveTab("premium")}
+        />
       )}
 
     </div>

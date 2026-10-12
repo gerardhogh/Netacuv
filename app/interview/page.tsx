@@ -660,43 +660,43 @@ export default function InterviewPage() {
     <div className="min-h-screen bg-[#061017] flex flex-col font-sans">
 
       {/* ── HEADER ── */}
-      <header className="flex items-center justify-between px-8 py-5 border-b border-white/10 bg-[#061017]">
-        <div className="flex items-center gap-6">
+      <header className="flex items-center justify-between px-4 sm:px-8 py-3.5 sm:py-5 border-b border-white/10 bg-[#061017]">
+        <div className="flex items-center gap-3 sm:gap-6">
           <button
             onClick={() => setMenuDrawerOpen(true)}
-            className="p-1.5 -ml-2 rounded-xl text-[#008de4] hover:bg-white/10 transition-colors focus:outline-none focus:ring-2 focus:ring-[#008de4]/50 cursor-pointer"
+            className="p-1.5 -ml-1.5 sm:-ml-2 rounded-xl text-[#008de4] hover:bg-white/10 transition-colors focus:outline-none focus:ring-2 focus:ring-[#008de4]/50 cursor-pointer"
             title="Menu de navigation"
             aria-label="Ouvrir le menu"
           >
-            <Menu size={36} strokeWidth={2.5} />
+            <Menu className="w-7 h-7 sm:w-9 sm:h-9" strokeWidth={2.5} />
           </button>
           <div
             onClick={() => handleNavigate("profil")}
-            className="text-white text-2xl flex items-center gap-2 cursor-pointer select-none"
+            className="text-white text-lg sm:text-2xl flex items-center gap-1.5 sm:gap-2 cursor-pointer select-none"
           >
             <span className="font-light">Profil</span>
             <span className="font-bold">talent</span>
           </div>
         </div>
-        <div className="flex items-center gap-8">
-          <Bell className="text-white cursor-pointer hover:text-[#008de4] transition-colors" size={24} />
+        <div className="flex items-center gap-4 sm:gap-8">
+          <Bell className="text-white cursor-pointer hover:text-[#008de4] transition-colors w-5 h-5 sm:w-6 sm:h-6" />
           <div
             onClick={() => handleNavigate("profil")}
-            className="flex items-center gap-2 cursor-pointer group"
+            className="flex items-center gap-1.5 sm:gap-2 cursor-pointer group"
           >
-            <div className="w-10 h-10 rounded-full overflow-hidden bg-blue-100 relative border-2 border-transparent group-hover:border-[#008de4] transition-colors">
+            <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full overflow-hidden bg-blue-100 relative border-2 border-transparent group-hover:border-[#008de4] transition-colors">
               <Image src={user?.avatar || "/assets/avatar_africain.jpg"} alt="Avatar" fill className="object-cover object-center w-full h-full" />
             </div>
-            <ChevronDown className="text-white opacity-80 group-hover:opacity-100" size={16} />
+            <ChevronDown className="text-white opacity-80 group-hover:opacity-100 w-3.5 h-3.5 sm:w-4 sm:h-4" />
           </div>
         </div>
       </header>
 
       {/* ── MAIN ── */}
-      <main className="flex-1 w-full max-w-[1300px] mx-auto p-8 grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-12 mt-6">
+      <main className="flex-1 w-full max-w-[1300px] mx-auto p-3.5 sm:p-6 lg:p-8 grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-6 sm:gap-8 lg:gap-12 mt-2 sm:mt-4 lg:mt-6">
 
         {/* LEFT */}
-        <div className="flex flex-col gap-5">
+        <div className="flex flex-col gap-3.5 sm:gap-5">
 
           {/* Video container */}
           <div className="relative w-full aspect-[16/10] rounded-xl overflow-hidden bg-black shadow-2xl">
@@ -734,22 +734,22 @@ export default function InterviewPage() {
 
             {/* Camera off placeholder */}
             {!cameraOn && (
-              <div className="absolute inset-0 flex flex-col items-center justify-center bg-[#0a1629]">
-                <CameraOff size={56} className="text-white/30 mb-3" />
-                <p className="text-white/40 text-sm">Caméra désactivée</p>
+              <div className="absolute inset-0 flex flex-col items-center justify-center bg-[#0a1629] p-4 text-center">
+                <CameraOff className="w-10 h-10 sm:w-14 sm:h-14 text-white/30 mb-2 sm:mb-3" />
+                <p className="text-white/40 text-xs sm:text-sm">Caméra désactivée</p>
               </div>
             )}
 
             {/* Countdown overlay */}
             {phase === "countdown" && (
-              <div className="absolute inset-0 bg-[#061017]/65 flex flex-col items-center justify-center z-10">
-                <h2 className="text-white text-[52px] font-black mb-1 drop-shadow-lg">
+              <div className="absolute inset-0 bg-[#061017]/75 flex flex-col items-center justify-center z-10 px-4 text-center">
+                <h2 className="text-white text-2xl sm:text-4xl lg:text-[46px] font-black mb-1 sm:mb-2 drop-shadow-lg tracking-tight">
                   {countdownTitle}
                 </h2>
-                <p className="text-white/90 text-[24px] mb-2 font-medium drop-shadow-md">
+                <p className="text-white/90 text-xs sm:text-lg lg:text-[22px] mb-2 sm:mb-3 font-medium drop-shadow-md">
                   {countdownSub}
                 </p>
-                <div className="text-[#32A8D7] text-[160px] font-black leading-none drop-shadow-2xl">
+                <div className="text-[#32A8D7] text-6xl sm:text-8xl lg:text-[130px] font-black leading-none drop-shadow-2xl">
                   {countdown}
                 </div>
               </div>
@@ -757,7 +757,7 @@ export default function InterviewPage() {
 
             {/* ── Camera / Mic buttons (bottom-left) ── */}
             {(phase === "recording" || phase === "countdown") && (
-              <div className="absolute bottom-4 left-4 flex gap-3 z-20">
+              <div className="absolute bottom-2.5 sm:bottom-4 left-2.5 sm:left-4 flex gap-2 sm:gap-3 z-20">
                 {/* Mic button with voice animation */}
                 <div className="relative">
                   {/* Animated ring */}
@@ -771,16 +771,16 @@ export default function InterviewPage() {
                   <button
                     onClick={toggleMic}
                     title={micOn ? "Désactiver le micro" : "Activer le micro"}
-                    className={`relative w-11 h-11 rounded-full flex items-center justify-center border-2 backdrop-blur-sm transition-all duration-200 shadow-lg ${
+                    className={`relative w-8 h-8 sm:w-11 sm:h-11 rounded-full flex items-center justify-center border sm:border-2 backdrop-blur-sm transition-all duration-200 shadow-lg ${
                       micOn
-                        ? "bg-white/10 border-white/30 hover:bg-white/20"
+                        ? "bg-white/15 border-white/30 hover:bg-white/25"
                         : "bg-red-600/80 border-red-500 hover:bg-red-700"
                     }`}
                   >
                     {micOn ? (
-                      <Mic size={18} className="text-white" />
+                      <Mic className="w-3.5 h-3.5 sm:w-4.5 sm:h-4.5 text-white" />
                     ) : (
-                      <MicOff size={18} className="text-white" />
+                      <MicOff className="w-3.5 h-3.5 sm:w-4.5 sm:h-4.5 text-white" />
                     )}
                   </button>
                 </div>
@@ -789,16 +789,16 @@ export default function InterviewPage() {
                 <button
                   onClick={toggleCamera}
                   title={cameraOn ? "Désactiver la caméra" : "Activer la caméra"}
-                  className={`w-11 h-11 rounded-full flex items-center justify-center border-2 backdrop-blur-sm transition-all duration-200 shadow-lg ${
+                  className={`w-8 h-8 sm:w-11 sm:h-11 rounded-full flex items-center justify-center border sm:border-2 backdrop-blur-sm transition-all duration-200 shadow-lg ${
                     cameraOn
-                      ? "bg-white/10 border-white/30 hover:bg-white/20"
+                      ? "bg-white/15 border-white/30 hover:bg-white/25"
                       : "bg-red-600/80 border-red-500 hover:bg-red-700"
                   }`}
                 >
                   {cameraOn ? (
-                    <Camera size={18} className="text-white" />
+                    <Camera className="w-3.5 h-3.5 sm:w-4.5 sm:h-4.5 text-white" />
                   ) : (
-                    <CameraOff size={18} className="text-white" />
+                    <CameraOff className="w-3.5 h-3.5 sm:w-4.5 sm:h-4.5 text-white" />
                   )}
                 </button>
               </div>
@@ -806,12 +806,12 @@ export default function InterviewPage() {
 
             {/* ── Passer & Terminer buttons (bottom-right) ── */}
             {(phase === "recording" || phase === "countdown") && (
-              <div className="absolute bottom-4 right-4 z-20 flex gap-3">
+              <div className="absolute bottom-2.5 sm:bottom-4 right-2.5 sm:right-4 z-20 flex gap-1.5 sm:gap-3">
                 <button
                   onClick={handleSkip}
-                  className="flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 border border-white/25 backdrop-blur-sm hover:bg-white/20 active:scale-95 transition-all duration-200 text-white text-[13px] font-medium shadow-lg"
+                  className="flex items-center gap-1 sm:gap-2 px-2.5 sm:px-4 py-1.5 sm:py-2 rounded-full bg-white/15 border border-white/25 backdrop-blur-sm hover:bg-white/25 active:scale-95 transition-all duration-200 text-white text-[11px] sm:text-[13px] font-medium shadow-lg"
                 >
-                  <SkipForward size={15} />
+                  <SkipForward className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
                   Passer
                 </button>
                 <button
@@ -819,36 +819,36 @@ export default function InterviewPage() {
                     window.speechSynthesis?.cancel();
                     setPhase("finished");
                   }}
-                  className="flex items-center gap-2 px-4 py-2 rounded-full bg-[#008de4] hover:bg-blue-600 active:scale-95 transition-all duration-200 text-white text-[13px] font-medium shadow-lg"
+                  className="flex items-center gap-1 sm:gap-2 px-2.5 sm:px-4 py-1.5 sm:py-2 rounded-full bg-[#008de4] hover:bg-blue-600 active:scale-95 transition-all duration-200 text-white text-[11px] sm:text-[13px] font-medium shadow-lg"
                 >
-                  Terminer et enregistrer
+                  Terminer
                 </button>
               </div>
             )}
           </div>
 
           {/* Progress Bar */}
-          <div className="bg-[#03090e] rounded-full px-6 py-4 flex items-center gap-5 border border-white/5 shadow-inner">
+          <div className="bg-[#03090e] rounded-full px-3.5 sm:px-6 py-2.5 sm:py-3.5 flex items-center gap-2.5 sm:gap-5 border border-white/5 shadow-inner">
             {/* Icon */}
-            <div className="w-8 h-8 rounded-full bg-[#008de4] flex items-center justify-center flex-shrink-0">
+            <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-[#008de4] flex items-center justify-center flex-shrink-0">
               {phase === "recording" ? (
-                <div className="flex gap-1 items-center justify-center">
-                  <div className="w-[5px] h-[5px] bg-white rounded-full transition-transform duration-75" style={{ transform: `scale(${1 + voiceLevel * 1.5})` }}></div>
-                  <div className="w-[5px] h-[5px] bg-white rounded-full transition-transform duration-75 delay-[50ms]" style={{ transform: `scale(${1 + voiceLevel * 2.5})` }}></div>
-                  <div className="w-[5px] h-[5px] bg-white rounded-full transition-transform duration-75 delay-100" style={{ transform: `scale(${1 + voiceLevel * 1.5})` }}></div>
+                <div className="flex gap-0.5 sm:gap-1 items-center justify-center">
+                  <div className="w-[4px] sm:w-[5px] h-[4px] sm:h-[5px] bg-white rounded-full transition-transform duration-75" style={{ transform: `scale(${1 + voiceLevel * 1.5})` }}></div>
+                  <div className="w-[4px] sm:w-[5px] h-[4px] sm:h-[5px] bg-white rounded-full transition-transform duration-75 delay-[50ms]" style={{ transform: `scale(${1 + voiceLevel * 2.5})` }}></div>
+                  <div className="w-[4px] sm:w-[5px] h-[4px] sm:h-[5px] bg-white rounded-full transition-transform duration-75 delay-100" style={{ transform: `scale(${1 + voiceLevel * 1.5})` }}></div>
                 </div>
               ) : (
-                <MoreHorizontal size={20} className="text-white" />
+                <MoreHorizontal size={18} className="text-white" />
               )}
             </div>
 
             {/* Elapsed */}
-            <span className="font-bold text-white text-[15px] tracking-wide w-[52px] flex-shrink-0 tabular-nums">
+            <span className="font-bold text-white text-xs sm:text-[15px] tracking-wide w-[42px] sm:w-[52px] flex-shrink-0 tabular-nums">
               {phase === "recording" ? fmt(recordingTime) : "00:00"}
             </span>
 
             {/* Track */}
-            <div className="flex-1 h-2.5 bg-slate-800 rounded-full relative overflow-hidden">
+            <div className="flex-1 h-2 sm:h-2.5 bg-slate-800 rounded-full relative overflow-hidden">
               <div
                 className="absolute left-0 top-0 bottom-0 bg-[#008de4] rounded-full transition-all duration-1000 ease-linear"
                 style={{ width: `${Math.max(progressPercent, 1)}%` }}
@@ -857,12 +857,12 @@ export default function InterviewPage() {
 
             {/* Thumb indicator */}
             <div
-              className="w-4 h-4 bg-[#008de4] rounded-sm shadow-[0_0_8px_rgba(0,141,228,0.6)] flex-shrink-0 transition-opacity duration-300"
+              className="w-3 h-3 sm:w-4 sm:h-4 bg-[#008de4] rounded-sm shadow-[0_0_8px_rgba(0,141,228,0.6)] flex-shrink-0 transition-opacity duration-300 hidden sm:block"
               style={{ opacity: phase === "recording" ? 1 : 0.3 }}
             />
 
             {/* Max duration */}
-            <span className="font-bold text-[#008de4] text-[15px] tracking-wide flex-shrink-0 w-[52px] text-right tabular-nums">
+            <span className="font-bold text-[#008de4] text-xs sm:text-[15px] tracking-wide flex-shrink-0 w-[42px] sm:w-[52px] text-right tabular-nums">
               {phase === "recording" || phase === "countdown"
                 ? fmt(currentQuestion?.duration ?? 0)
                 : "00:00"}
@@ -871,12 +871,11 @@ export default function InterviewPage() {
         </div>
 
         {/* RIGHT */}
-        <div className="flex flex-col pt-2">
+        <div className="flex flex-col pt-1 sm:pt-2">
           {/* Title */}
-          <div className="flex items-center gap-3 mb-8">
+          <div className="flex items-center gap-2.5 sm:gap-3 mb-4 sm:mb-8">
             <svg
-              width="32"
-              height="32"
+              className="w-6 h-6 sm:w-8 sm:h-8"
               viewBox="0 0 24 24"
               fill="none"
               stroke="#008de4"
@@ -886,19 +885,19 @@ export default function InterviewPage() {
             >
               <path d="M15 10l4.553-2.069A1 1 0 0121 8.87V15.13a1 1 0 01-1.447.9L15 14M3 8a2 2 0 012-2h10a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V8z" />
             </svg>
-            <h1 className="text-[26px] font-bold text-[#008de4]">Entretien Vidéo</h1>
+            <h1 className="text-xl sm:text-2xl lg:text-[26px] font-bold text-[#008de4]">Entretien Vidéo</h1>
           </div>
 
           {/* Question label */}
-          <h3 className="text-[#008de4] text-[20px] font-medium mb-3 min-h-[28px]">
+          <h3 className="text-[#008de4] text-sm sm:text-lg lg:text-[20px] font-medium mb-1.5 sm:mb-3 min-h-[22px] sm:min-h-[28px]">
             {rightLabel}
           </h3>
 
           {/* Question text */}
-          <div className="text-white text-[22px] font-bold mb-3 leading-snug min-h-[80px]">
+          <div className="text-white text-base sm:text-xl lg:text-[22px] font-bold mb-3 sm:mb-4 leading-snug min-h-[50px] sm:min-h-[80px]">
             {rightText}
             {rightSubtitle && (
-              <span className="block text-[13px] font-normal italic text-white/60 mt-2 leading-relaxed">
+              <span className="block text-xs sm:text-[13px] font-normal italic text-white/60 mt-1.5 sm:mt-2 leading-relaxed">
                 {rightSubtitle}
               </span>
             )}
@@ -909,8 +908,8 @@ export default function InterviewPage() {
           {/* NB Box & Tries (Hidden when finished) */}
           {phase !== "finished" && (
             <>
-              <div className="bg-[#0a1e2d] rounded-lg p-5 border border-white/5 mb-6 text-[13.5px] text-[#94a3b8] leading-[1.6] shadow-lg">
-                <p className="mb-4">
+              <div className="bg-[#0a1e2d] rounded-lg p-3.5 sm:p-5 border border-white/5 mb-3 sm:mb-6 text-xs sm:text-[13.5px] text-[#94a3b8] leading-[1.6] shadow-lg">
+                <p className="mb-2 sm:mb-4">
                   <span className="font-bold text-white">NB : </span>
                   Vous disposez de 3 tentatives. En cas d&apos;annulation, l&apos;entretien recommence depuis le début.
                 </p>
@@ -919,9 +918,9 @@ export default function InterviewPage() {
                 </p>
               </div>
 
-              <div className="bg-[#121919] rounded-lg p-5 border border-white/5 mb-8 shadow-lg">
-                <p className="text-white font-bold text-[15px]">
-                  Essais restants : {triesLeft}
+              <div className="bg-[#121919] rounded-lg p-3 sm:p-5 border border-white/5 mb-4 sm:mb-8 shadow-lg flex items-center justify-between">
+                <p className="text-white font-bold text-xs sm:text-[15px]">
+                  Essais restants : <span className="text-[#008de4] font-extrabold">{triesLeft}</span>
                 </p>
               </div>
             </>
@@ -929,21 +928,21 @@ export default function InterviewPage() {
 
           {/* Success Checkmark Modal in Right Panel */}
           {phase === "finished" && (
-            <div className="flex flex-col items-center justify-center p-8 bg-green-500/10 border border-green-500/20 rounded-2xl mb-8 animate-in fade-in zoom-in duration-500 shadow-xl">
-              <div className="w-16 h-16 rounded-full bg-green-500 flex items-center justify-center mb-4 text-white shadow-[0_0_15px_rgba(34,197,94,0.5)]">
-                <Check size={32} strokeWidth={3} />
+            <div className="flex flex-col items-center justify-center p-5 sm:p-8 bg-green-500/10 border border-green-500/20 rounded-2xl mb-5 sm:mb-8 animate-in fade-in zoom-in duration-500 shadow-xl">
+              <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-full bg-green-500 flex items-center justify-center mb-3 sm:mb-4 text-white shadow-[0_0_15px_rgba(34,197,94,0.5)]">
+                <Check className="w-6 h-6 sm:w-8 sm:h-8" strokeWidth={3} />
               </div>
-              <h3 className="text-white text-xl font-bold text-center">Félicitations !</h3>
-              <p className="text-green-400 text-[14px] text-center mt-2 font-medium">Votre entretien a été validé et enregistré.</p>
+              <h3 className="text-white text-lg sm:text-xl font-bold text-center">Félicitations !</h3>
+              <p className="text-green-400 text-xs sm:text-[14px] text-center mt-1.5 sm:mt-2 font-medium">Votre entretien a été validé et enregistré.</p>
             </div>
           )}
 
           {/* Buttons */}
-          <div className="flex gap-3 items-center">
+          <div className="flex flex-col sm:flex-row gap-2.5 sm:gap-3 items-stretch sm:items-center">
             {/* Cancel always visible */}
             <button 
               onClick={() => setIsCancelModalOpen(true)}
-              className="px-5 py-2.5 rounded-full border border-red-500/80 text-red-500 hover:bg-red-500/10 transition-colors text-[14px] font-medium whitespace-nowrap"
+              className="px-4 sm:px-5 py-2.5 rounded-full border border-red-500/80 text-red-500 hover:bg-red-500/10 transition-colors text-xs sm:text-[14px] font-medium whitespace-nowrap text-center cursor-pointer"
             >
               Annuler le test
             </button>
@@ -951,7 +950,7 @@ export default function InterviewPage() {
             {phase === "pre_start" && (
               <button
                 onClick={() => setIsStartModalOpen(true)}
-                className="flex-1 px-5 py-2.5 rounded-full bg-[#008de4] text-white hover:bg-blue-600 active:scale-95 transition-all text-[14px] font-medium"
+                className="flex-1 px-4 sm:px-5 py-2.5 rounded-full bg-[#008de4] text-white hover:bg-blue-600 active:scale-95 transition-all text-xs sm:text-[14px] font-medium text-center cursor-pointer shadow-md"
               >
                 Commencer le test
               </button>
@@ -961,7 +960,7 @@ export default function InterviewPage() {
               <button
                 onClick={handleRestart}
                 disabled={triesLeft <= 0}
-                className="flex-1 px-5 py-2.5 rounded-full bg-[#008de4] text-white hover:bg-blue-600 active:scale-95 transition-all text-[14px] font-medium disabled:opacity-40 disabled:cursor-not-allowed"
+                className="flex-1 px-4 sm:px-5 py-2.5 rounded-full bg-[#008de4] text-white hover:bg-blue-600 active:scale-95 transition-all text-xs sm:text-[14px] font-medium disabled:opacity-40 disabled:cursor-not-allowed text-center cursor-pointer shadow-md"
               >
                 Recommencer le test
               </button>
@@ -970,7 +969,7 @@ export default function InterviewPage() {
             {phase === "finished" && (
               <button
                 onClick={() => handleNavigate("video")}
-                className="flex-1 w-full px-5 py-2.5 rounded-full bg-green-600 text-white hover:bg-green-700 active:scale-95 transition-all text-[14px] font-medium"
+                className="flex-1 w-full px-4 sm:px-5 py-2.5 rounded-full bg-green-600 text-white hover:bg-green-700 active:scale-95 transition-all text-xs sm:text-[14px] font-medium text-center cursor-pointer shadow-md"
               >
                 Retour au profil
               </button>

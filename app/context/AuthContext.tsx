@@ -21,12 +21,20 @@ export interface User {
 export function useAuth() {
   const { data: session, status, update } = useSession();
 
+  const rawRole = (session?.user as any)?.role?.toString()?.toUpperCase() || "";
+  const normalizedRole: UserRole = 
+    ["SUPER ADMIN", "ADMIN", "ADMINISTRATEUR", "ADMIN RH / MODÉRATEUR", "MANAGER IA & CERTIFICATION", "GESTIONNAIRE FINANCIER", "SUPPORT CLIENT"].includes(rawRole)
+      ? "admin"
+      : ["RECRUTEUR", "RECRUITER"].includes(rawRole)
+      ? "recruteur"
+      : "talent";
+
   const user = session?.user
     ? {
         id: (session.user as any).id || "",
         name: session.user.name || "",
         email: session.user.email || "",
-        role: ((session.user as any).role as UserRole) || "talent",
+        role: normalizedRole,
         avatar: session.user.image || "/assets/avatar_africain.jpg",
         isPremium: (session.user as any).isPremium || false,
       }
