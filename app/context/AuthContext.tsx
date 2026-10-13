@@ -19,6 +19,7 @@ export interface User {
 
 // Fonction utilitaire pour migrer en douceur toutes les utilisations de useAuth
 export function useAuth() {
+  const router = useRouter();
   const { data: session, status, update } = useSession();
 
   const rawRole = (session?.user as any)?.role?.toString()?.toUpperCase() || "";
@@ -51,7 +52,11 @@ export function useAuth() {
         localStorage.removeItem(`interview_recorded_${user.id}`);
       }
       
-      const isAdmin = window.location.hostname.startsWith("admin.");
+      const isAdminHost = window.location.hostname.startsWith("admin.");
+      const isAdminPath = window.location.pathname.startsWith("/dashboard/admin") || window.location.pathname.startsWith("/admin");
+      const isAdminUser = user?.role === "admin";
+      const isAdmin = isAdminHost || isAdminPath || isAdminUser;
+
       const callbackUrl = isAdmin
         ? `${window.location.protocol}//${window.location.host}/admin`
         : `${window.location.protocol}//${window.location.host}/connexion`;
@@ -61,18 +66,28 @@ export function useAuth() {
     }
   };
 
-  // Si le compte a été supprimé en base, la callback session retourne {}
+  // Si le compte a été supprimé en base, la callback session retourne {} ou error: "DeletedAccount"
   // Donc session.user sera undefined, même si le token JWT (cookie) est techniquement encore valide.
-  // Dans ce cas, on force la déconnexion côté client pour nettoyer le cookie stale.
+  // Dans ce cas précis, on force la déconnexion côté client pour nettoyer le cookie stale.
   useEffect(() => {
-    if (status === "unauthenticated" || (status === "authenticated" && !session?.user)) {
-      const pathname = window.location.pathname;
-      if (pathname.startsWith("/dashboard") || pathname.startsWith("/admin")) {
-        logout();
-      }
+    const isDeletedAccount = status === "authenticated" && (!session?.user || (session as any)?.error === "DeletedAccount");
+    if (isDeletedAccount) {
+      logout();
+      return;
     }
 
-  }, [status, session]);
+    // Si l'utilisateur n'est pas connecté et se trouve sur une page protégée du dashboard (/dashboard/*)
+    // Note: on n'intervient JAMAIS sur les pages publiques d'authentification (/admin, /connexion, etc.)
+    if (status === "unauthenticated") {
+      const pathname = typeof window !== "undefined" ? window.location.pathname : "";
+      if (pathname.startsWith("/dashboard")) {
+        const isAdminHost = typeof window !== "undefined" && window.location.hostname.startsWith("admin.");
+        const isAdminDashboard = pathname.startsWith("/dashboard/admin");
+        const targetLogin = (isAdminHost || isAdminDashboard) ? "/admin" : "/connexion";
+        router.push(targetLogin);
+      }
+    }
+  }, [status, session, router]);
 
   return {
     user,

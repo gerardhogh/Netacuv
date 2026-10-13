@@ -1,6 +1,6 @@
 export default function AdminDashboardLoading() {
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-[#fafbfc]">
       {/* Sidebar skeleton */}
       <div className="flex">
         <div className="w-64 bg-white border-r border-slate-100 min-h-screen p-5 hidden lg:block">

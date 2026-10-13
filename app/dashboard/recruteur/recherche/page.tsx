@@ -16,6 +16,7 @@ import {
 import TalentCard from "@/app/components/TalentCard";
 import { useAuth } from "@/app/context/AuthContext";
 import { ConfirmModal } from "../components/Modals";
+import NotificationBell from "@/app/components/NotificationBell";
 
 // No MOCK_TALENTS anymore
 
@@ -94,7 +95,7 @@ export default function RechercheProfil() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col font-sans">
+    <div className="min-h-screen bg-[#fafbfc] flex flex-col font-sans">
       {/* Toast feedback */}
       {toastMessage && (
         <div className="fixed top-6 right-6 z-50 bg-slate-900 text-white px-5 py-3 rounded-xl shadow-xl text-sm animate-fade-in border border-slate-700">
@@ -152,14 +153,7 @@ export default function RechercheProfil() {
         </div>
         
         <div className="flex items-center gap-4">
-          <button 
-            type="button"
-            className="p-2 text-slate-500 hover:bg-slate-100 rounded-full transition-colors relative"
-            aria-label="Notifications"
-          >
-            <Bell className="w-5 h-5" />
-            <span className="absolute top-2 right-2 w-1.5 h-1.5 bg-red-500 rounded-full"></span>
-          </button>
+          <NotificationBell align="right" />
           <div className="flex items-center gap-2 cursor-pointer hover:bg-slate-50 p-1 pr-2 rounded-full transition-colors border border-transparent hover:border-slate-200">
             <div className="w-8 h-8 rounded-full overflow-hidden bg-slate-200 relative">
                 <Image

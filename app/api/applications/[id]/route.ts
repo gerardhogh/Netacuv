@@ -39,8 +39,31 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
       where: { id },
       data: {
         status: body.status // "ACCEPTED", "REJECTED", "PENDING"
-      }
+      },
+      include: {
+        talent: true,
+        jobOffer: {
+          include: {
+            recruiter: true,
+          },
+        },
+      },
     });
+
+    // Notifier le talent du changement de statut en temps réel
+    try {
+      if (updated.talent?.userId && body.status) {
+        const { notifyApplicationStatus } = await import("@/lib/notifications");
+        await notifyApplicationStatus({
+          talentUserId: updated.talent.userId,
+          jobTitle: updated.jobOffer.title,
+          status: body.status,
+          companyName: updated.jobOffer.recruiter?.companyName || undefined,
+        });
+      }
+    } catch (notifErr) {
+      console.error("[Applications] Erreur notification talent:", notifErr);
+    }
 
     return NextResponse.json(updated);
   } catch (error) {

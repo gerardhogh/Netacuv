@@ -7,12 +7,13 @@ import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "../../../context/AuthContext";
 import {
   Menu, Bell, ChevronDown, X, LogOut, Globe,
-  Home, Users, Briefcase, Settings, History, Shield, AlertTriangle, Gift, Zap, Mail
+  Home, Users, Briefcase, Settings, History, Shield, AlertTriangle, Gift, Zap, Mail, Flag
 } from "lucide-react";
 import LogoutButton from "../../../components/LogoutButton";
 import { useTranslations, useLocale } from "next-intl";
 import LanguageSwitcher, { LOCALES, Locale } from "@/app/components/LanguageSwitcher";
 import MaintenanceToggle from "./MaintenanceToggle";
+import NotificationBell from "@/app/components/NotificationBell";
 
 const getSidebarItems = (role: string = "") => {
   const upperRole = role.toUpperCase();
@@ -23,6 +24,7 @@ const getSidebarItems = (role: string = "") => {
     { href: "/dashboard/admin/talents", icon: Users, label: "Talents", show: isSuperAdmin || upperRole.includes("RH") || upperRole.includes("SUPPORT") },
     { href: "/dashboard/admin/recruteurs", icon: Briefcase, label: "Recruteurs", show: isSuperAdmin || upperRole.includes("RH") || upperRole.includes("SUPPORT") },
     { href: "/dashboard/admin/emplois", icon: Briefcase, label: "Offres d'emploi", show: isSuperAdmin || upperRole.includes("RH") },
+    { href: "/dashboard/admin/signalements", icon: Flag, label: "Signalements", show: isSuperAdmin || upperRole.includes("RH") || upperRole.includes("SUPPORT") },
     { href: "/dashboard/admin/transactions", icon: History, label: "Transactions", show: isSuperAdmin || upperRole.includes("FINANCIER") },
     { href: "/dashboard/admin/affiliation", icon: Gift, label: "Gestion de l'affiliation", show: isSuperAdmin || upperRole.includes("FINANCIER") },
     { href: "/dashboard/admin/newsletter", icon: Mail, label: "Newsletter", show: isSuperAdmin },
@@ -45,7 +47,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const router = useRouter();
 
   return (
-    <div className="flex min-h-screen" style={{ background: "#edeeef" }}>
+    <div className="flex min-h-screen bg-[#fafbfc] text-slate-800">
       {/* Sidebar Overlay */}
       {sidebarOpen && (
         <div className="fixed inset-0 bg-black/40 z-[50] md:hidden" onClick={() => setSidebarOpen(false)} />
@@ -116,27 +118,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               <LanguageSwitcher variant="desktop" showLabel={false} align="right" />
             </div>
 
-            <div className="relative">
-              <button onClick={() => { setNotifMenuOpen(!notifMenuOpen); setProfileMenuOpen(false); }} className="relative text-slate-500 hover:text-slate-700 p-2 rounded-full hover:bg-slate-100 transition-colors" aria-label="Notifications">
-                <Bell size={20} />
-                <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full"></span>
-              </button>
-              {notifMenuOpen && (
-                <div className="absolute right-0 mt-2 w-72 bg-white rounded-2xl shadow-xl border border-slate-100 py-3 z-30 animate-fade-in">
-                  <div className="px-4 pb-2 border-b border-slate-100 mb-2">
-                    <h3 className="font-bold text-slate-800">Notifications</h3>
-                  </div>
-                  <div className="px-4 py-2 hover:bg-slate-50 cursor-pointer">
-                    <p className="text-sm font-semibold text-slate-800">Nouveau Talent inscrit</p>
-                    <p className="text-xs text-slate-500">Un nouveau talent vient de s'inscrire sur la plateforme.</p>
-                  </div>
-                  <div className="px-4 py-2 hover:bg-slate-50 cursor-pointer">
-                    <p className="text-sm font-semibold text-slate-800">Nouvelle Offre d'emploi</p>
-                    <p className="text-xs text-slate-500">Grand-G Corp a publié une nouvelle offre.</p>
-                  </div>
-                </div>
-              )}
-            </div>
+            {/* Notification Bell temps réel */}
+            <NotificationBell align="right" />
             <div className="relative">
               <button
                 onClick={() => { setProfileMenuOpen(!profileMenuOpen); setNotifMenuOpen(false); }}

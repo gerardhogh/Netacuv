@@ -188,6 +188,24 @@ export async function POST(req: Request) {
     });
 
     logger.info("Job offer created", { userId, jobId: newJob.id });
+
+    // Diffuser des alertes d'offres aux talents récents
+    try {
+      const activeTalents = await prisma.talentProfile.findMany({
+        take: 20,
+        select: { userId: true },
+        orderBy: { updatedAt: "desc" },
+      });
+      const { notifyJobAlert } = await import("@/lib/notifications");
+      for (const t of activeTalents) {
+        if (t.userId && t.userId !== userId) {
+          notifyJobAlert(t.userId, newJob.title, recruiterProfile.companyName || undefined, newJob.id).catch(() => {});
+        }
+      }
+    } catch (notifErr) {
+      console.error("[Jobs] Erreur notification alerte emploi:", notifErr);
+    }
+
     return NextResponse.json(newJob, { status: 201 });
   } catch (error) {
     logger.error("Failed to create job offer", { error: error instanceof Error ? error.message : "Unknown", context: "api/jobs/POST" });

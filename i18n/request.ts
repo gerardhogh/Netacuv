@@ -1,20 +1,27 @@
 import { getRequestConfig } from 'next-intl/server';
-import { cookies } from 'next/headers';
+import { cookies, headers } from 'next/headers';
 
-export const locales = ['fr', 'en', 'es', 'zh'];
-export const defaultLocale = 'fr';
+export const locales = ['fr', 'en'] as const;
+export type Locale = (typeof locales)[number];
+export const defaultLocale: Locale = 'fr';
 
 export default getRequestConfig(async () => {
-  // Use the NEXT_LOCALE cookie if it exists
-  const cookieStore = await cookies();
+  const [cookieStore, headersList] = await Promise.all([
+    cookies(),
+    headers(),
+  ]);
+
+  const localeFromHeader = headersList.get('x-locale');
   const localeFromCookie = cookieStore.get('NEXT_LOCALE')?.value;
-  
-  const locale: string = locales.includes(localeFromCookie as string) 
-    ? (localeFromCookie as string) 
+
+  const candidateLocale = (localeFromHeader || localeFromCookie) as string;
+
+  const locale: Locale = locales.includes(candidateLocale as Locale)
+    ? (candidateLocale as Locale)
     : defaultLocale;
 
   return {
     locale,
-    messages: (await import(`../messages/${locale}.json`)).default
+    messages: (await import(`../messages/${locale}.json`)).default,
   };
 });

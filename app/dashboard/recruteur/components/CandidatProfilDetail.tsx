@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/app/context/AuthContext";
 import PremiumRequiredModal from "@/app/components/PremiumRequiredModal";
+import NetacuvVideoPlayer from "@/components/NetacuvVideoPlayer";
 
 export interface CandidatData {
   id: string | number;
@@ -518,13 +519,10 @@ export default function CandidatProfilDetail({
 
               {/* Lecteur Vidéo interactif avec la vidéo enregistrée par le talent */}
               {finalVideoUrl ? (
-                <div className="relative w-full aspect-video rounded-2xl overflow-hidden bg-slate-900 shadow-xl border border-slate-200 flex flex-col">
-                  <video
-                    src={finalVideoUrl}
-                    controls
-                    className="w-full h-full object-contain"
-                  />
-                </div>
+                <NetacuvVideoPlayer
+                  src={finalVideoUrl}
+                  aspectRatio="aspect-video"
+                />
               ) : (
                 <div className="relative w-full aspect-video rounded-2xl bg-slate-100 border border-slate-200 flex flex-col items-center justify-center text-slate-400">
                   <Video size={48} className="mb-4 opacity-50" />

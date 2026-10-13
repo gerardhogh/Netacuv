@@ -1,6 +1,6 @@
 export default function RecruteurDashboardLoading() {
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-[#fafbfc]">
       {/* Top bar skeleton */}
       <div className="bg-white border-b border-slate-100 px-6 py-4">
         <div className="flex items-center justify-between max-w-7xl mx-auto">

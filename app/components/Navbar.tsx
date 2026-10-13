@@ -6,6 +6,7 @@ import { useState } from "react";
 import { useAuth } from "../context/AuthContext";
 import LogoutButton from "./LogoutButton";
 import LanguageSwitcher from "./LanguageSwitcher";
+import NotificationBell from "./NotificationBell";
 import {
   Menu,
   X,
@@ -102,6 +103,7 @@ export default function Navbar({
           <LanguageSwitcher variant="desktop" showLabel={false} align="right" isDark={variant === "auth"} />
           {user ? (
             <div className="flex items-center gap-3">
+              <NotificationBell align="right" variant={variant === "auth" ? "dark" : "default"} />
               <Link
                 href={getDashboardHref()}
                 className="flex items-center gap-2.5 px-3 py-1.5 rounded-full border border-slate-200 bg-white hover:border-blue-500 hover:bg-blue-50/30 transition-all shadow-sm group"

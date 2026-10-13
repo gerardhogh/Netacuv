@@ -186,7 +186,32 @@ export async function POST(req: Request) {
         jobOfferId,
         talentId: talentProfile.id,
       },
+      include: {
+        jobOffer: {
+          include: {
+            recruiter: true,
+          },
+        },
+      },
     });
+
+    // Notification temps réel au recruteur
+    try {
+      if (newApplication.jobOffer?.recruiter?.userId) {
+        const talentUser = await prisma.user.findUnique({
+          where: { id: session.user.id },
+          select: { name: true },
+        });
+        const { notifyNewApplication } = await import("@/lib/notifications");
+        await notifyNewApplication({
+          recruiterUserId: newApplication.jobOffer.recruiter.userId,
+          candidateName: talentUser?.name || session.user.name || "Un candidat",
+          jobTitle: newApplication.jobOffer.title,
+        });
+      }
+    } catch (notifErr) {
+      console.error("[Applications] Erreur notification recruteur:", notifErr);
+    }
 
     logger.info("Application submitted", { talentId: talentProfile.id, jobOfferId });
     return NextResponse.json(newApplication, { status: 201 });

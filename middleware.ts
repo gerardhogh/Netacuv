@@ -5,20 +5,32 @@ import { getToken } from "next-auth/jwt";
 // Basic in-memory rate limiting (Note: resets on serverless cold starts)
 const rateLimitMap = new Map<string, { count: number; lastReset: number }>();
 const RATE_LIMIT_WINDOW_MS = 60 * 1000; // 1 minute
-const MAX_REQUESTS_PER_WINDOW = 30; // 30 reqs / min
+const MAX_REQUESTS_PER_WINDOW = 300; // 300 reqs / min
+
+export const SUPPORTED_LOCALES = ["fr", "en"] as const;
+export type SupportedLocale = (typeof SUPPORTED_LOCALES)[number];
 
 async function handleMiddleware(req: NextRequest) {
-  // Use getToken directly. It automatically handles secure cookies on production/HTTPS.
-  const token = await getToken({
-    req,
-    secret: process.env.NEXTAUTH_SECRET,
-  });
+  const currentHost = req.headers.get("host") || "";
+  const isAdminSubdomain = currentHost.startsWith("admin.");
+  const isLocalhost = currentHost.includes("localhost") || currentHost.includes("127.0.0.1");
+  const protocol = isLocalhost ? "http" : "https";
+  const fullPath = req.nextUrl.pathname;
 
-  const path = req.nextUrl.pathname;
-  const ip = req.headers.get("x-forwarded-for") || req.headers.get("x-real-ip") || "unknown";
+  // Détection du préfixe de langue dans l'URL (/fr/... ou /en/...)
+  const localeMatch = fullPath.match(/^\/(fr|en)(\/.*)?$/);
+  const urlLocale: SupportedLocale | null = localeMatch ? (localeMatch[1] as SupportedLocale) : null;
+  const path = localeMatch ? (localeMatch[2] || "/") : fullPath;
 
-  // -- 1. RATE LIMITING --
-  if (path.startsWith("/api/")) {
+  // -- 1. RATE LIMITING (Désactivé en local, exclu pour /api/auth et les avatars) --
+  if (
+    !isLocalhost &&
+    process.env.NODE_ENV === "production" &&
+    path.startsWith("/api/") &&
+    !path.startsWith("/api/auth") &&
+    !path.includes("/avatar")
+  ) {
+    const ip = req.headers.get("x-forwarded-for") || req.headers.get("x-real-ip") || "unknown";
     const now = Date.now();
     const rateLimitData = rateLimitMap.get(ip) || { count: 0, lastReset: now };
 
@@ -39,10 +51,11 @@ async function handleMiddleware(req: NextRequest) {
     }
   }
 
-  const currentHost = req.headers.get("host") || "";
-  const isAdminSubdomain = currentHost.startsWith("admin.");
-  const isLocalhost = currentHost.includes("localhost");
-  const protocol = isLocalhost ? "http" : "https";
+  // Use getToken directly. It automatically handles secure cookies on production/HTTPS.
+  const token = await getToken({
+    req,
+    secret: process.env.NEXTAUTH_SECRET,
+  });
   const baseDomain = isLocalhost ? currentHost.replace(/^admin\./, "") : "netacuv.com";
   // En local sans sous-domaine admin., on redirige directement vers /dashboard/admin au lieu de forcer admin.localhost
   const adminUrl = isLocalhost && !isAdminSubdomain
@@ -58,7 +71,8 @@ async function handleMiddleware(req: NextRequest) {
   // Si on est sur une route protégée sans token
   const isProtectedRoute = isDashboardRoute || (isAdminSubdomain && !isPublicRoute);
   if (isProtectedRoute && !token) {
-    const loginPath = isAdminSubdomain ? "/admin" : "/connexion";
+    const loginBase = isAdminSubdomain ? "/admin" : "/connexion";
+    const loginPath = urlLocale ? `/${urlLocale}${loginBase}` : loginBase;
     const url = new URL(loginPath, req.url);
     url.searchParams.set("callbackUrl", encodeURI(req.url));
     return NextResponse.redirect(url);
@@ -88,8 +102,8 @@ async function handleMiddleware(req: NextRequest) {
         return NextResponse.redirect(new URL(isLocalhost && !isAdminSubdomain ? "/dashboard/admin" : adminUrl, req.url));
       }
 
-      // Si l'admin est déjà connecté et visite la page de connexion /admin
-      if (path === "/admin") {
+      // Si l'admin est déjà connecté et visite la page de connexion /admin ou les pages de connexion classiques
+      if (path === "/admin" || isAuthRoute) {
         return NextResponse.redirect(new URL(isLocalhost && !isAdminSubdomain ? "/dashboard/admin" : adminUrl, req.url));
       }
 
@@ -113,43 +127,81 @@ async function handleMiddleware(req: NextRequest) {
       // Rediriger l'accueil ou les pages de connexion vers le dashboard par défaut
       const isAccountDeleted = (token as any).error === "DeletedAccount";
       if (!isAccountDeleted && (path === "/" || path === "/dashboard" || isAuthRoute)) {
-        return NextResponse.redirect(new URL(defaultDashboardPath, req.url));
+        const dest = urlLocale ? `/${urlLocale}${defaultDashboardPath}` : defaultDashboardPath;
+        return NextResponse.redirect(new URL(dest, req.url));
       }
 
       // RBAC : Empêcher l'accès aux dashboards des autres rôles
       if (path.startsWith("/dashboard/talent") && role !== "TALENT") {
-        return NextResponse.redirect(new URL(defaultDashboardPath, req.url));
+        const dest = urlLocale ? `/${urlLocale}${defaultDashboardPath}` : defaultDashboardPath;
+        return NextResponse.redirect(new URL(dest, req.url));
       }
       if (path.startsWith("/dashboard/recruteur") && role !== "RECRUTEUR" && role !== "RECRUITER") {
-        return NextResponse.redirect(new URL(defaultDashboardPath, req.url));
+        const dest = urlLocale ? `/${urlLocale}${defaultDashboardPath}` : defaultDashboardPath;
+        return NextResponse.redirect(new URL(dest, req.url));
       }
     }
   }
 
-  // REWRITE : Masquer /dashboard/admin dans l'URL pour le sous-domaine admin
-  if (isAdminSubdomain && !isPublicRoute && !path.startsWith("/dashboard")) {
-    return NextResponse.rewrite(new URL(`/dashboard/admin${path === "/" ? "" : path}`, req.url));
+  const requestHeaders = new Headers(req.headers);
+  requestHeaders.set("x-pathname", path);
+  requestHeaders.set("x-url", req.url);
+  if (urlLocale) {
+    requestHeaders.set("x-locale", urlLocale);
   }
 
-  return NextResponse.next();
+  // REWRITE 1 : Masquer /dashboard/admin dans l'URL pour le sous-domaine admin
+  if (isAdminSubdomain && !isPublicRoute && !path.startsWith("/dashboard")) {
+    return NextResponse.rewrite(new URL(`/dashboard/admin${path === "/" ? "" : path}`, req.url), {
+      request: {
+        headers: requestHeaders,
+      },
+    });
+  }
+
+  // REWRITE 2 : Si l'URL comporte un préfixe de langue (/fr/... ou /en/...), réécrire vers la route interne sans le préfixe
+  if (urlLocale) {
+    const rewriteUrl = new URL(path, req.url);
+    rewriteUrl.search = req.nextUrl.search;
+    return NextResponse.rewrite(rewriteUrl, {
+      request: {
+        headers: requestHeaders,
+      },
+    });
+  }
+
+  return NextResponse.next({
+    request: {
+      headers: requestHeaders,
+    },
+  });
 }
 
 export async function middleware(req: NextRequest) {
+  const fullPath = req.nextUrl.pathname;
+  const localeMatch = fullPath.match(/^\/(fr|en)(\/.*)?$/);
+  const urlLocale: SupportedLocale | null = localeMatch ? (localeMatch[1] as SupportedLocale) : null;
+
   const res = await handleMiddleware(req);
 
-  // Set NEXT_LOCALE cookie if not present or invalid
-  const locales = ['fr', 'en', 'es', 'zh'];
-  let locale = req.cookies.get('NEXT_LOCALE')?.value;
-  
-  if (!locale || !locales.includes(locale)) {
-    locale = 'fr';
-    const isLocalhost = req.headers.get("host")?.includes("localhost");
-    const domain = isLocalhost ? undefined : '.netacuv.com';
-    res.cookies.set('NEXT_LOCALE', locale, {
+  // Synchronisation du cookie NEXT_LOCALE (uniquement 'fr' ou 'en')
+  const locales = ["fr", "en"];
+  const currentCookie = req.cookies.get("NEXT_LOCALE")?.value;
+  const targetLocale: string =
+    urlLocale || (currentCookie && locales.includes(currentCookie) ? currentCookie : "fr");
+
+  const isLocalhost =
+    req.headers.get("host")?.includes("localhost") ||
+    req.headers.get("host")?.includes("127.0.0.1");
+  const domain = isLocalhost ? undefined : ".netacuv.com";
+
+  if (targetLocale !== currentCookie) {
+    res.cookies.set("NEXT_LOCALE", targetLocale, {
       domain,
-      path: '/',
-      sameSite: 'lax',
+      path: "/",
+      sameSite: "lax",
       secure: !isLocalhost,
+      maxAge: 31536000,
     });
   }
 
@@ -163,10 +215,8 @@ export const config = {
      * - _next/static (static files)
      * - _next/image (image optimization files)
      * - favicon.ico (favicon file)
-     * - images, assets, Logo
-     * 
-     * API routes ARE included so rate-limiting runs.
+     * - images, assets, Logo, uploads
      */
-    "/((?!_next/static|_next/image|favicon.ico|assets|Logo|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+    "/((?!_next/static|_next/image|favicon.ico|assets|Logo|uploads|.*\\.(?:svg|png|jpg|jpeg|gif|webp|mp4|webm|pdf)$).*)",
   ],
 };

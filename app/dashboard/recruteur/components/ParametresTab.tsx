@@ -15,10 +15,11 @@ import {
 import { DeleteAccountModal } from "./Modals";
 import { useTranslations, useLocale } from "next-intl";
 import LanguageSwitcher, { LOCALES, Locale } from "@/app/components/LanguageSwitcher";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
 
 export default function ParametresTab() {
+  const pathname = usePathname() || "/";
   // i18n
   const locale = useLocale();
   const t = useTranslations();
@@ -271,17 +272,28 @@ export default function ParametresTab() {
             onChange={(e) => {
               const newLocale = e.target.value as Locale;
               const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-              const domainPart = isLocalhost ? '' : ' domain=.netacuv.com;';
-              document.cookie = `NEXT_LOCALE=${newLocale}; path=/;${domainPart} SameSite=Lax`;
+              const domainPart = isLocalhost ? '' : '; domain=.netacuv.com';
+              document.cookie = `NEXT_LOCALE=${newLocale}; path=/; max-age=31536000${domainPart}; SameSite=Lax`;
+
+              let newPath = pathname;
+              if (pathname.startsWith('/fr/') || pathname === '/fr') {
+                newPath = pathname.replace(/^\/fr(\/|$)/, `/${newLocale}$1`);
+              } else if (pathname.startsWith('/en/') || pathname === '/en') {
+                newPath = pathname.replace(/^\/en(\/|$)/, `/${newLocale}$1`);
+              } else {
+                newPath = `/${newLocale}${pathname === '/' ? '' : pathname}`;
+              }
+
               const label = LOCALES.find((l) => l.code === newLocale)?.label ?? newLocale;
               showToast(`${t("settings.languageUpdated")} : ${label}`);
+              router.push(newPath);
               router.refresh();
             }}
             className="w-full appearance-none px-4 py-3 rounded-xl border border-slate-200 bg-slate-50 text-sm text-slate-800 font-medium outline-none focus:border-[#32A8D7] focus:bg-white transition-colors cursor-pointer"
           >
-            {LOCALES.map(({ code, label, flag }) => (
+            {LOCALES.map(({ code, label, flag, countryCode }) => (
               <option key={code} value={code}>
-                {flag} {label}
+                {flag} {label} ({countryCode})
               </option>
             ))}
           </select>

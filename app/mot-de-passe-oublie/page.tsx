@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 import { Mail, ArrowLeft, CheckCircle2, AlertCircle } from "lucide-react";
 import Navbar from "../components/Navbar";
 import { supabase } from "@/lib/supabase";

@@ -7,6 +7,7 @@ import Link from "next/link";
 import { useAuth } from "@/app/context/AuthContext";
 import LogoutButton from "@/app/components/LogoutButton";
 import { ConfirmModal } from "../../components/Modals";
+import NetacuvVideoPlayer from "@/components/NetacuvVideoPlayer";
 import {
   Menu,
   Bell,
@@ -34,8 +35,11 @@ import {
   Maximize2,
   ExternalLink,
   ArrowLeft,
+  Flag,
 } from "lucide-react";
 import PremiumRequiredModal from "@/app/components/PremiumRequiredModal";
+import NotificationBell from "@/app/components/NotificationBell";
+import ReportModal from "@/app/components/ReportModal";
 
 
 // ─── API Data Fetching ────────────────────────────────────────────────────────
@@ -314,18 +318,11 @@ function TabVideoEntretien({ talent, blurSensitive }: { talent: TalentProfile, b
 
       {/* Video player */}
       {finalVideoUrl ? (
-        <div className={`relative w-full aspect-video rounded-2xl overflow-hidden shadow-xl border border-slate-200 flex flex-col ${blurSensitive ? 'bg-slate-300 pointer-events-none' : 'bg-slate-900'}`}>
-          <video
-            src={finalVideoUrl}
-            controls={!blurSensitive}
-            className={`w-full h-full object-contain ${blurSensitive ? 'blur-xl select-none' : ''}`}
-          />
-          {blurSensitive && (
-            <div className="absolute inset-0 flex flex-col items-center justify-center bg-white/40 text-slate-800 font-bold">
-              <span className="text-lg">Vidéo masquée (Premium)</span>
-            </div>
-          )}
-        </div>
+        <NetacuvVideoPlayer
+          src={finalVideoUrl}
+          aspectRatio="aspect-video"
+          blurSensitive={blurSensitive}
+        />
       ) : (
         <div className="relative w-full aspect-video rounded-2xl bg-slate-100 border border-slate-200 flex flex-col items-center justify-center text-slate-400">
           <Video size={48} className="mb-4 opacity-50" />
@@ -479,6 +476,7 @@ export default function TalentDetailPage() {
   };
 
   const [showPremiumModal, setShowPremiumModal] = useState(false);
+  const [reportModalOpen, setReportModalOpen] = useState(false);
 
   const companyName = (user as any)?.company || "Grand-G Corp";
   const companyEmail = user?.email || "recruteur@grand-g.com";
@@ -501,7 +499,7 @@ export default function TalentDetailPage() {
   ];
 
   return (
-    <div className="flex min-h-screen bg-slate-50 text-slate-800 font-sans">
+    <div className="flex min-h-screen bg-[#fafbfc] text-slate-800 font-sans">
       {/* Toast */}
       {toastMsg && (
         <div className="fixed top-6 right-6 z-50 bg-slate-900 text-white px-5 py-3.5 rounded-2xl shadow-2xl flex items-center gap-3 text-sm animate-fade-in border border-slate-700">
@@ -592,36 +590,8 @@ export default function TalentDetailPage() {
 
           {/* Right: notifications + avatar */}
           <div className="flex items-center gap-3">
-            {/* Bell */}
-            <div className="relative">
-              <button
-                onClick={() => { setNotifMenuOpen(!notifMenuOpen); setProfileMenuOpen(false); }}
-                className="p-2 text-slate-500 hover:bg-slate-100 rounded-full transition-colors relative"
-                aria-label="Notifications"
-              >
-                <Bell size={20} />
-                {unreadCount > 0 && (
-                  <span className="absolute top-1.5 right-1.5 w-4 h-4 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center">
-                    {unreadCount}
-                  </span>
-                )}
-              </button>
-              {notifMenuOpen && (
-                <div className="absolute right-0 mt-3 w-80 bg-white rounded-2xl shadow-2xl border border-slate-100 py-3 z-30 animate-fade-in">
-                  <div className="px-4 py-2 border-b border-slate-100">
-                    <p className="text-xs font-bold text-slate-800">Notifications ({unreadCount})</p>
-                  </div>
-                  <div className="max-h-64 overflow-y-auto divide-y divide-slate-50">
-                    {notifications.map((n) => (
-                      <div key={n.id} className={`p-3 text-xs hover:bg-slate-50 ${!n.read ? "bg-sky-50/40" : ""}`}>
-                        <p className="text-slate-800 font-medium leading-snug">{n.text}</p>
-                        <span className="text-[10px] text-slate-400 mt-1 block">{n.time}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
+            {/* Notification Bell temps réel */}
+            <NotificationBell align="right" />
 
             {/* Avatar */}
             <div className="relative">
@@ -770,6 +740,15 @@ export default function TalentDetailPage() {
                     <Mail size={15} />
                     Envoyer un mail
                   </button>
+
+                  <button
+                    onClick={() => setReportModalOpen(true)}
+                    className="w-full py-2 rounded-xl text-xs font-semibold text-rose-500 hover:text-rose-600 hover:bg-rose-50 transition-colors flex items-center justify-center gap-1.5 border border-slate-100 hover:border-rose-100"
+                    title="Signaler ce profil"
+                  >
+                    <Flag size={13} />
+                    Signaler ce profil
+                  </button>
                 </div>
               </div>
 
@@ -880,6 +859,16 @@ export default function TalentDetailPage() {
         <PremiumRequiredModal 
           onClose={() => setShowPremiumModal(false)} 
           message="Passez au plan Premium pour contacter ce talent et consulter son profil complet."
+        />
+      )}
+
+      {talent && (
+        <ReportModal
+          isOpen={reportModalOpen}
+          onClose={() => setReportModalOpen(false)}
+          targetType="TALENT"
+          targetId={talent.id}
+          targetTitle={talent.name}
         />
       )}
     </div>

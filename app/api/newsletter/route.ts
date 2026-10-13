@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Resend } from "resend";
 import { z } from "zod";
+import { prisma } from "@/lib/prisma";
 
 // Validation schema avec Zod
 const newsletterSchema = z.object({
@@ -10,6 +11,7 @@ const newsletterSchema = z.object({
     .min(1, "L'adresse e-mail est obligatoire")
     .email("Format d'e-mail invalide")
     .max(100, "L'adresse e-mail ne doit pas dépasser 100 caractères"),
+  source: z.string().optional().default("FOOTER"),
 });
 
 // Simple in-memory rate limiter par IP (5 requêtes max par tranche de 10 minutes)
@@ -45,6 +47,74 @@ function isRateLimited(ip: string): boolean {
   return false;
 }
 
+// Template email de bienvenue Netacuv
+function getWelcomeEmailHtml(email: string) {
+  const siteUrl = process.env.NEXTAUTH_URL || "https://netacuv.com";
+  const unsubscribeUrl = `${siteUrl}/api/newsletter/unsubscribe?email=${encodeURIComponent(email)}`;
+
+  return `
+    <!DOCTYPE html>
+    <html lang="fr">
+      <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Bienvenue chez Netacuv</title>
+        <style>
+          body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f8fafc; margin: 0; padding: 24px; color: #1e293b; }
+          .container { max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 16px; overflow: hidden; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
+          .header { background: linear-gradient(135deg, #1e8ae9 0%, #32A8D7 100%); padding: 36px 24px; text-align: center; }
+          .header h1 { color: #ffffff; margin: 0; font-size: 26px; font-weight: 800; letter-spacing: -0.5px; }
+          .badge { display: inline-block; background: rgba(255,255,255,0.2); color: #ffffff; padding: 4px 12px; border-radius: 9999px; font-size: 12px; font-weight: 600; margin-top: 8px; }
+          .content { padding: 32px 28px; line-height: 1.6; font-size: 15px; color: #334155; }
+          .content h2 { font-size: 18px; color: #0f172a; margin-top: 0; margin-bottom: 12px; }
+          .feature-list { margin: 20px 0; padding-left: 0; list-style: none; }
+          .feature-item { display: flex; align-items: flex-start; margin-bottom: 12px; }
+          .feature-icon { color: #1e8ae9; font-weight: bold; margin-right: 10px; font-size: 16px; }
+          .btn-container { text-align: center; margin: 28px 0 16px; }
+          .btn { display: inline-block; background: #1e8ae9; color: #ffffff !important; text-decoration: none; padding: 12px 28px; border-radius: 10px; font-weight: 700; font-size: 14px; box-shadow: 0 4px 10px rgba(30,138,233,0.3); }
+          .footer { background: #f8fafc; padding: 20px 24px; text-align: center; font-size: 12px; color: #64748b; border-top: 1px solid #e2e8f0; }
+          .footer a { color: #1e8ae9; text-decoration: none; }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <div class="header">
+            <h1>Netacuv</h1>
+            <div class="badge">🚀 Recrutement & Évaluation par IA</div>
+          </div>
+          <div class="content">
+            <h2>Bienvenue dans notre communauté !</h2>
+            <p>Bonjour et merci d'avoir rejoint la newsletter Netacuv.</p>
+            <p>Vous êtes désormais aux premières loges pour recevoir :</p>
+            <ul class="feature-list">
+              <li class="feature-item">
+                <span class="feature-icon">✨</span>
+                <span><strong>Nos dernières opportunités d'emploi</strong> certifiées et vérifiées.</span>
+              </li>
+              <li class="feature-item">
+                <span class="feature-icon">🤖</span>
+                <span><strong>Les innovations RH & IA</strong> pour réussir vos entretiens vidéo intelligents.</span>
+              </li>
+              <li class="feature-item">
+                <span class="feature-icon">💡</span>
+                <span><strong>Conseils pratiques</strong> pour maximiser votre attractivité en tant que talent ou recruteur.</span>
+              </li>
+            </ul>
+            <div class="btn-container">
+              <a href="${siteUrl}" class="btn">Découvrir la plateforme Netacuv</a>
+            </div>
+          </div>
+          <div class="footer">
+            <p>© ${new Date().getFullYear()} Netacuv. Tous droits réservés.</p>
+            <p>Vous recevez cet e-mail car vous vous êtes inscrit(e) sur Netacuv.</p>
+            <p><a href="${unsubscribeUrl}">Se désabonner en 1 clic</a></p>
+          </div>
+        </div>
+      </body>
+    </html>
+  `;
+}
+
 export async function POST(req: NextRequest) {
   try {
     // 1. Protection par Rate Limiting via IP client
@@ -78,57 +148,100 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: errorMessage }, { status: 400 });
     }
 
-    const { email } = validationResult.data;
+    const { email, source } = validationResult.data;
+    const normalizedEmail = email.toLowerCase().trim();
 
-    // 3. Vérification des variables d'environnement Resend
-    const apiKey = process.env.RESEND_API_KEY;
-    const audienceId = process.env.RESEND_AUDIENCE_ID;
-
-    if (!apiKey || !audienceId) {
-      console.error(
-        "[Newsletter API] Erreur : RESEND_API_KEY ou RESEND_AUDIENCE_ID non défini dans l'environnement."
-      );
-      return NextResponse.json(
-        { error: "Configuration du service de newsletter manquante sur le serveur." },
-        { status: 500 }
-      );
-    }
-
-    // 4. Appel de l'API Resend pour ajouter le contact à l'audience
-    const resend = new Resend(apiKey);
-    const { data, error } = await resend.contacts.create({
-      email,
-      audienceId,
-      unsubscribed: false,
+    // 3. Sauvegarde dans la base de données PostgreSQL via Prisma
+    const existingSubscriber = await prisma.newsletterSubscriber.findUnique({
+      where: { email: normalizedEmail },
     });
 
-    if (error) {
-      console.error("[Newsletter API] Erreur Resend :", error);
-      // Cas particulier : contact déjà existant
-      const errMessage = typeof error === "object" && error !== null && "message" in error 
-        ? String(error.message) 
-        : "";
-      if (errMessage.toLowerCase().includes("already exists")) {
+    let isNewSubscriber = false;
+
+    if (existingSubscriber) {
+      if (existingSubscriber.status === "ACTIVE") {
         return NextResponse.json(
           { message: "Vous êtes déjà inscrit(e) à notre newsletter !" },
           { status: 200 }
         );
+      } else {
+        // Réactivation d'un abonné qui s'était précédemment désabonné
+        await prisma.newsletterSubscriber.update({
+          where: { email: normalizedEmail },
+          data: {
+            status: "ACTIVE",
+            unsubscribedAt: null,
+            source: source || existingSubscriber.source,
+          },
+        });
+        isNewSubscriber = true;
+      }
+    } else {
+      // Nouvel abonné
+      await prisma.newsletterSubscriber.create({
+        data: {
+          email: normalizedEmail,
+          source: source || "FOOTER",
+          status: "ACTIVE",
+        },
+      });
+      isNewSubscriber = true;
+    }
+
+    // 4. Synchronisation avec l'audience Resend & Envoi du mail de bienvenue (Asynchrone et résilient)
+    const apiKey = process.env.RESEND_API_KEY;
+    const audienceId = process.env.RESEND_AUDIENCE_ID;
+
+    if (apiKey) {
+      const resend = new Resend(apiKey);
+
+      // A. Synchronisation avec l'audience Resend
+      if (audienceId) {
+        resend.contacts
+          .create({
+            email: normalizedEmail,
+            audienceId,
+            unsubscribed: false,
+          })
+          .catch((err) => {
+            console.warn("[Newsletter API] Sync contact Resend avertissement:", err?.message || err);
+          });
       }
 
-      return NextResponse.json(
-        { error: "Une erreur est survenue lors de l'inscription. Veuillez réessayer." },
-        { status: 500 }
-      );
+      // B. Envoi du mail de bienvenue si c'est une nouvelle inscription ou réactivation
+      if (isNewSubscriber) {
+        const fromSender = process.env.RESEND_FROM_EMAIL || "Netacuv <onboarding@resend.dev>";
+        resend.emails
+          .send({
+            from: fromSender,
+            to: normalizedEmail,
+            subject: "Bienvenue dans la communauté Netacuv ! 🚀",
+            html: getWelcomeEmailHtml(normalizedEmail),
+          })
+          .then((res) => {
+            if (res.error) {
+              console.warn("[Newsletter API] Envoi email bienvenue avertissement Resend:", res.error);
+            }
+          })
+          .catch((err) => {
+            console.warn("[Newsletter API] Erreur envoi email bienvenue:", err?.message || err);
+          });
+      }
+    } else {
+      console.warn("[Newsletter API] RESEND_API_KEY non configurée. L'abonné est tout de même enregistré en base de données.");
     }
 
     return NextResponse.json(
-      { success: true, message: "Inscription réussie à la newsletter !" },
+      {
+        success: true,
+        message: "Merci pour votre inscription à la newsletter Netacuv !",
+      },
       { status: 200 }
     );
   } catch (error: any) {
     console.error("[Newsletter API] Erreur serveur imprévue :", error);
     return NextResponse.json(
-      { error: "Erreur interne du serveur." },
+      { error: "Une erreur est survenue lors de l'inscription. Veuillez réessayer." },
       { status: 500 }
     );
   }

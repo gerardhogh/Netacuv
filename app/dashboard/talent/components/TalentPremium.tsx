@@ -29,7 +29,7 @@ export default function TalentPremium({ isPremium: propIsPremium }: { isPremium?
   const selectedMethod = PAYMENT_METHODS.find(m => m.id === method);
   const prefix = selectedMethod?.prefix || "";
 
-  const bgClass = "min-h-screen bg-slate-50 pt-12 pb-24 px-4 sm:px-6 lg:px-8";
+  const bgClass = "min-h-screen bg-[#fafbfc] pt-12 pb-24 px-4 sm:px-6 lg:px-8";
 
   const handleCheckout = async () => {
     setStep("processing");

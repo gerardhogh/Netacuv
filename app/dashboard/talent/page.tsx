@@ -46,6 +46,7 @@ import TransactionsTab from "./components/TransactionsTab";
 import ParametresTab from "./components/ParametresTab";
 import PremiumBanner from "../../components/PremiumBanner";
 import PremiumRequiredModal from "../../components/PremiumRequiredModal";
+import NotificationBell from "@/app/components/NotificationBell";
 
 type TalentTab =
   | "dashboard"
@@ -107,11 +108,15 @@ export default function TalentDashboard() {
 
   const isFirstRender = useRef(true);
 
-  // Sync activeTab with URL Hash for persistence on reload
+  // Sync activeTab with URL Query / Hash for persistence on reload or redirect
   useEffect(() => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    const tabParam = params.get("tab");
     const hash = window.location.hash.replace("#", "");
-    if (hash && ["dashboard", "profil", "transactions", "video", "emplois", "premium", "affiliation", "parametres"].includes(hash)) {
-      setActiveTab(hash as TalentTab);
+    const targetTab = (tabParam || hash) as TalentTab;
+    if (targetTab && ["dashboard", "profil", "transactions", "video", "emplois", "premium", "affiliation", "parametres"].includes(targetTab)) {
+      setActiveTab(targetTab);
     }
   }, []);
 
@@ -171,15 +176,12 @@ export default function TalentDashboard() {
             }
           }
           
-          let hasVid = false;
-          if (data.talentProfile?.videoUrl) {
-            hasVid = true;
-          } else {
-            // Fallback to checking localStorage since videos are saved in IndexedDB currently
-            // Tie it to the current user ID to prevent showing old cache for new accounts
-            const isRecorded = typeof window !== "undefined" && data.id && localStorage.getItem(`interview_recorded_${data.id}`) === "true";
-            hasVid = isRecorded || false;
-          }
+          const hasDbVid = !!data.talentProfile?.videoUrl;
+          const hasLocalRecorded = typeof window !== "undefined" && (
+            localStorage.getItem("interview_recorded") === "true" ||
+            (data.id && localStorage.getItem(`interview_recorded_${data.id}`) === "true")
+          );
+          const hasVid = hasDbVid || hasLocalRecorded;
           setHasValidVideo(hasVid);
 
           // Social links: ALL 5 networks must be filled
@@ -372,7 +374,7 @@ export default function TalentDashboard() {
   const unreadCount = notifications.filter((n) => !n.read).length;
 
   return (
-    <div className="flex min-h-screen bg-[#f1f5f9] text-slate-800">
+    <div className="flex min-h-screen bg-[#fafbfc] text-slate-800">
       {/* Toast Notification */}
       {toastMessage && (
         <div className="fixed top-6 right-6 z-50 bg-slate-900 text-white px-5 py-3.5 rounded-2xl shadow-2xl flex items-center gap-3 text-sm animate-fade-in border border-slate-700">
@@ -515,65 +517,8 @@ export default function TalentDashboard() {
               <LanguageSwitcher variant="desktop" showLabel={false} align="right" />
             </div>
 
-            {/* Notification Bell with interactive dropdown */}
-            <div className="relative">
-              <button
-                onClick={() => {
-                  setNotifMenuOpen(!notifMenuOpen);
-                  setProfileMenuOpen(false);
-                }}
-                className="relative text-slate-500 hover:text-slate-800 p-2.5 rounded-full hover:bg-slate-100 transition-colors"
-                aria-label="Notifications"
-              >
-                <Bell size={20} />
-                {unreadCount > 0 && (
-                  <span className="absolute top-1.5 right-1.5 w-4 h-4 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center">
-                    {unreadCount}
-                  </span>
-                )}
-              </button>
-
-              {notifMenuOpen && (
-                <div className="absolute right-0 mt-3 w-80 bg-white rounded-3xl shadow-2xl border border-slate-100 py-3 z-30 animate-fade-in">
-                  <div className="px-4 py-2 border-b border-slate-100 flex items-center justify-between">
-                    <p className="text-xs font-bold text-slate-800">
-                      Notifications ({unreadCount})
-                    </p>
-                    <button
-                      onClick={() =>
-                        setNotifications(notifications.map((n) => ({ ...n, read: true })))
-                      }
-                      className="text-[10px] text-blue-600 hover:underline font-semibold"
-                    >
-                      Tout marquer comme lu
-                    </button>
-                  </div>
-                  <div className="max-h-64 overflow-y-auto divide-y divide-slate-50">
-                    {notifications.length === 0 ? (
-                      <div className="p-5 text-center text-slate-400 text-xs">
-                        <Bell size={24} className="mx-auto text-slate-300 mb-2" />
-                        Aucune notification pour le moment
-                      </div>
-                    ) : (
-                      notifications.map((notif) => (
-                        <div
-                          key={notif.id}
-                          className={`p-3 text-xs hover:bg-slate-50 transition-colors ${!notif.read ? "bg-blue-50/40" : ""
-                            }`}
-                        >
-                          <p className="text-slate-800 font-medium leading-snug">
-                            {notif.text}
-                          </p>
-                          <span className="text-[10px] text-slate-400 mt-1 block">
-                            {notif.time}
-                          </span>
-                        </div>
-                      ))
-                    )}
-                  </div>
-                </div>
-              )}
-            </div>
+            {/* Notification Bell temps réel */}
+            <NotificationBell align="right" />
 
             {/* Profile Menu Dropdown */}
             <div className="relative">

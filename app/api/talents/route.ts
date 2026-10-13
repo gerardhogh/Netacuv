@@ -63,7 +63,14 @@ export async function GET(request: Request) {
       prisma.user.findMany({
         where: whereClause,
         include: {
-          talentProfile: true,
+          talentProfile: {
+            include: {
+              interviewSessions: {
+                take: 1,
+                orderBy: { createdAt: 'desc' },
+              },
+            },
+          },
           role: true,
         },
         orderBy: {
@@ -80,6 +87,7 @@ export async function GET(request: Request) {
 
     const formattedTalents = talents.map((t: any, index: number) => {
       const profile = t.talentProfile;
+      const resolvedVideo = profile?.videoUrl || profile?.interviewSessions?.[0]?.videoRecordings || null;
       let skillsArray = [];
       if (profile?.skills) {
         try {
@@ -100,8 +108,8 @@ export async function GET(request: Request) {
         contact: shouldHideSensitive ? "Premium requis" : (profile?.phone || "Non spécifié"),
         date: new Date(t.createdAt).toLocaleDateString('fr-FR'),
         status: t.active ? "Actif" : "Suspendu",
-        videoOk: !!profile?.videoUrl,
-        videoUrl: profile?.videoUrl || null,
+        videoOk: !!resolvedVideo,
+        videoUrl: resolvedVideo,
         domaine: profile?.degree || "Général",
         location: profile?.city ? `${profile.city}, ${profile.country || ''}` : (profile?.country || "Non spécifié"),
         country: profile?.country || "Non spécifié",

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { 
   Search, 
   Briefcase, 
@@ -17,12 +17,16 @@ import {
   Globe,
   Link2,
   MoreHorizontal,
-  AlertTriangle
+  AlertTriangle,
+  Flag,
+  Bookmark,
+  Eye
 } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
-
 import useSWR from "swr";
+import toast from "react-hot-toast";
+import ReportModal from "@/app/components/ReportModal";
 
 const fetcher = (url: string) => fetch(url).then(res => res.json());
 
@@ -66,6 +70,21 @@ export default function OffresEmplois({
   const [search, setSearch] = useState("");
   const [applying, setApplying] = useState(false);
   const [applySuccess, setApplySuccess] = useState(false);
+  const [openMenuJobId, setOpenMenuJobId] = useState<string | null>(null);
+  const [reportModalOpen, setReportModalOpen] = useState(false);
+  const [reportTarget, setReportTarget] = useState<{ type: "JOB_OFFER" | "RECRUITER" | "TALENT"; id: string; title: string } | null>(null);
+
+  useEffect(() => {
+    function handleClickOutside() {
+      setOpenMenuJobId(null);
+    }
+    if (openMenuJobId) {
+      document.addEventListener("click", handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener("click", handleClickOutside);
+    };
+  }, [openMenuJobId]);
 
   const { data, error, isLoading } = useSWR("/api/jobs", fetcher);
   const jobs = data?.jobs || [];
@@ -143,13 +162,97 @@ export default function OffresEmplois({
                         {job.location}
                       </div>
                     </div>
-                    <div className="mt-5 flex items-center gap-2">
-                      <button className="flex-1 py-2 text-[13px] font-semibold text-[#32A8D7] border border-[#32A8D7] rounded-lg hover:bg-blue-50 transition-colors bg-white">
+                    <div className="mt-5 flex items-center gap-2 relative">
+                      <button 
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleViewDetail(job);
+                        }}
+                        className="flex-1 py-2 text-[13px] font-semibold text-[#32A8D7] border border-[#32A8D7] rounded-lg hover:bg-blue-50 transition-colors bg-white shadow-xs"
+                      >
                         Voir détail
                       </button>
-                      <button className="w-9 h-9 flex items-center justify-center bg-slate-50 border border-slate-100 hover:bg-slate-100 rounded-lg text-slate-500 transition-colors flex-shrink-0" onClick={(e) => { e.stopPropagation(); }}>
-                        <MoreHorizontal size={16} />
-                      </button>
+
+                      {/* Bouton 3 points avec menu d'actions interactif */}
+                      <div className="relative">
+                        <button 
+                          className={`w-9 h-9 flex items-center justify-center rounded-lg border transition-all flex-shrink-0 ${
+                            openMenuJobId === job.id 
+                              ? "bg-sky-50 border-[#32A8D7] text-[#32A8D7]" 
+                              : "bg-slate-50 border-slate-100 hover:bg-slate-100 text-slate-500"
+                          }`} 
+                          onClick={(e) => { 
+                            e.stopPropagation();
+                            setOpenMenuJobId(openMenuJobId === job.id ? null : job.id);
+                          }}
+                          aria-label="Options de l'offre"
+                          title="Plus d'options"
+                        >
+                          <MoreHorizontal size={16} />
+                        </button>
+
+                        {openMenuJobId === job.id && (
+                          <div 
+                            onClick={(e) => e.stopPropagation()}
+                            className="absolute right-0 bottom-full mb-2 w-52 bg-white rounded-2xl shadow-2xl border border-slate-100 py-2 z-30 animate-fade-in backdrop-blur-xl"
+                          >
+                            <button
+                              onClick={() => {
+                                setOpenMenuJobId(null);
+                                handleViewDetail(job);
+                              }}
+                              className="w-full px-3.5 py-2 text-left text-xs font-semibold text-slate-700 hover:bg-slate-50 flex items-center gap-2.5 transition-colors"
+                            >
+                              <Eye size={14} className="text-slate-400" />
+                              <span>Voir le détail</span>
+                            </button>
+
+                            <button
+                              onClick={() => {
+                                setOpenMenuJobId(null);
+                                if (typeof window !== "undefined") {
+                                  const url = `${window.location.origin}/talents#emplois`;
+                                  navigator.clipboard.writeText(url);
+                                  toast.success("Lien de l'offre copié dans le presse-papier !");
+                                }
+                              }}
+                              className="w-full px-3.5 py-2 text-left text-xs font-semibold text-slate-700 hover:bg-slate-50 flex items-center gap-2.5 transition-colors"
+                            >
+                              <Share2 size={14} className="text-slate-400" />
+                              <span>Partager l'offre</span>
+                            </button>
+
+                            <button
+                              onClick={() => {
+                                setOpenMenuJobId(null);
+                                toast.success("Offre sauvegardée dans vos favoris !");
+                              }}
+                              className="w-full px-3.5 py-2 text-left text-xs font-semibold text-slate-700 hover:bg-slate-50 flex items-center gap-2.5 transition-colors"
+                            >
+                              <Bookmark size={14} className="text-slate-400" />
+                              <span>Sauvegarder l'offre</span>
+                            </button>
+
+                            <div className="my-1 border-t border-slate-100" />
+
+                            <button
+                              onClick={() => {
+                                setOpenMenuJobId(null);
+                                setReportTarget({
+                                  type: "JOB_OFFER",
+                                  id: job.id,
+                                  title: job.title
+                                });
+                                setReportModalOpen(true);
+                              }}
+                              className="w-full px-3.5 py-2 text-left text-xs font-bold text-rose-600 hover:bg-rose-50 flex items-center gap-2.5 transition-colors"
+                            >
+                              <Flag size={14} className="text-rose-500" />
+                              <span>Signaler cette offre</span>
+                            </button>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
                 ))
@@ -323,8 +426,27 @@ export default function OffresEmplois({
               Retour à la liste
             </button>
             <div className="flex items-center gap-3">
-              <button className="w-12 h-12 flex items-center justify-center rounded-xl bg-slate-50 hover:bg-slate-100 text-slate-400 hover:text-blue-600 transition-colors border border-slate-200">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z"/></svg>
+              <button 
+                onClick={() => {
+                  setReportTarget({
+                    type: "JOB_OFFER",
+                    id: selectedJob.id,
+                    title: selectedJob.title
+                  });
+                  setReportModalOpen(true);
+                }}
+                className="px-4 py-3 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-600 transition-colors border border-rose-200 text-xs font-bold flex items-center gap-1.5"
+                title="Signaler cette offre"
+              >
+                <Flag size={15} />
+                <span className="hidden sm:inline">Signaler</span>
+              </button>
+              <button 
+                onClick={() => toast.success("Offre enregistrée dans vos favoris !")}
+                className="w-12 h-12 flex items-center justify-center rounded-xl bg-slate-50 hover:bg-slate-100 text-slate-400 hover:text-blue-600 transition-colors border border-slate-200"
+                title="Sauvegarder"
+              >
+                <Bookmark size={18} />
               </button>
               <button 
                 disabled={selectedJob.status === "CLOSED" || applying}
@@ -405,12 +527,26 @@ export default function OffresEmplois({
                       <Globe size={14} /> {selectedJob.recruiter?.companyName || "unknown"}.com
                     </p>
                   </div>
-                  <div className="flex gap-2">
+                  <div className="flex flex-wrap gap-2">
                     <button className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-lg transition-colors flex items-center gap-1.5 border border-slate-200">
                       <Mail size={14} /> Contacter
                     </button>
                     <button className="px-4 py-2 bg-blue-50 text-blue-600 hover:bg-blue-100 text-xs font-bold rounded-lg transition-colors flex items-center gap-1.5 border border-blue-100">
                       <Link2 size={14} /> Site web
+                    </button>
+                    <button 
+                      onClick={() => {
+                        setReportTarget({
+                          type: "RECRUITER",
+                          id: selectedJob.recruiterId || selectedJob.recruiter?.id || selectedJob.id,
+                          title: selectedJob.recruiter?.companyName || selectedJob.company || "Compte Entreprise"
+                        });
+                        setReportModalOpen(true);
+                      }}
+                      className="px-3.5 py-2 bg-rose-50 hover:bg-rose-100 text-rose-600 text-xs font-bold rounded-lg transition-colors flex items-center gap-1.5 border border-rose-200"
+                      title="Signaler ce compte entreprise"
+                    >
+                      <Flag size={14} /> Signaler ce compte
                     </button>
                   </div>
                 </div>
@@ -516,6 +652,20 @@ export default function OffresEmplois({
             </div>
           </div>
         </div>
+      )}
+
+      {/* Modal de Signalement d'offre ou de compte */}
+      {reportTarget && (
+        <ReportModal
+          isOpen={reportModalOpen}
+          onClose={() => {
+            setReportModalOpen(false);
+            setReportTarget(null);
+          }}
+          targetType={reportTarget.type}
+          targetId={reportTarget.id}
+          targetTitle={reportTarget.title}
+        />
       )}
     </div>
   );

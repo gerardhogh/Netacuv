@@ -1,6 +1,6 @@
 "use client";
 
-import { saveVideoToDB } from "../../lib/indexedDB";
+import { saveVideoToDB, getVideoFromDB } from "../../lib/indexedDB";
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import Image from "next/image";
@@ -9,6 +9,7 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "../context/AuthContext";
 import { useTranslations, useLocale } from "next-intl";
 import LanguageSwitcher from "@/app/components/LanguageSwitcher";
+import NetacuvVideoPlayer from "@/components/NetacuvVideoPlayer";
 import {
   Bell,
   ChevronDown,
@@ -30,6 +31,12 @@ import {
   Settings,
   X,
   LogOut,
+  Volume2,
+  VolumeX,
+  Play,
+  Pause,
+  ArrowLeft,
+  Loader2,
 } from "lucide-react";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -46,8 +53,8 @@ const QUESTION_BANK: Question[] = [
   { text: "Présentez-vous en 2 minutes maximum.", duration: 120 },
   { text: "Pourquoi devrions-nous vous recruter ?", duration: 120 },
   { text: "Parlez-nous d'un défi professionnel que vous avez surmonté.", duration: 120 },
-  { text: "Quels sont vos points forts et vos points faibles ?", duration: 80 },
-  { text: "Où vous voyez-vous dans 5 ans ?", duration: 80 },
+  { text: "Quels sont vos points forts et vos points faibles ?", duration: 90 },
+  { text: "Où vous voyez-vous dans 5 ans ?", duration: 90 },
   { text: "Décrivez une situation où vous avez travaillé en équipe.", duration: 120 },
   { text: "Comment gérez-vous les conflits au travail ?", duration: 90 },
   { text: "Qu'est-ce qui vous motive dans votre travail ?", duration: 90 },
@@ -58,20 +65,20 @@ const QUESTION_BANK: Question[] = [
       "(Comment vous aimez être encadré(e) ou dirigé(e) au travail. En d'autres termes, quel style de gestion vous motive, vous rend productif(ve) et à l'aise dans votre environnement professionnel.)",
     duration: 90,
   },
-  { text: "Quelle est votre plus grande qualité ?", duration: 30 },
+  { text: "Quelle est votre plus grande qualité ?", duration: 60 },
   { text: "Quels outils utilisez-vous au quotidien dans votre métier ?", duration: 90 },
   {
     text: "Qu'est-ce qui selon vous va vous poser des difficultés dans ce poste ?",
-    duration: 80,
+    duration: 90,
   },
   {
     text: "Que faites-vous si vous êtes en désaccord avec votre manager ?",
-    duration: 80,
+    duration: 90,
   },
   {
     text: "Comment utilisez-vous l'intelligence artificielle",
     subtitle: "(ex : ChatGPT, Notion AI, etc.) dans votre métier ?",
-    duration: 80,
+    duration: 90,
   },
 ];
 
@@ -94,57 +101,36 @@ const fmt = (seconds: number) => {
 
 // ─── Beep ─────────────────────────────────────────────────────────────────────
 function playBeep(ctx: AudioContext, freq = 440, duration = 0.3, vol = 0.1) {
-  const osc = ctx.createOscillator();
-  const gain = ctx.createGain();
-  osc.type = "sine";
-  osc.connect(gain);
-  gain.connect(ctx.destination);
-  osc.frequency.value = freq;
-  
-  // 50ms fade in / fade out for smooth sound
-  gain.gain.setValueAtTime(0, ctx.currentTime);
-  gain.gain.linearRampToValueAtTime(vol, ctx.currentTime + 0.05);
-  gain.gain.setValueAtTime(vol, ctx.currentTime + duration - 0.05);
-  gain.gain.linearRampToValueAtTime(0, ctx.currentTime + duration);
-  
-  osc.start(ctx.currentTime);
-  osc.stop(ctx.currentTime + duration);
+  try {
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = "sine";
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.frequency.value = freq;
+    gain.gain.setValueAtTime(0, ctx.currentTime);
+    gain.gain.linearRampToValueAtTime(vol, ctx.currentTime + 0.05);
+    gain.gain.setValueAtTime(vol, ctx.currentTime + duration - 0.05);
+    gain.gain.linearRampToValueAtTime(0, ctx.currentTime + duration);
+    osc.start(ctx.currentTime);
+    osc.stop(ctx.currentTime + duration);
+  } catch (e) {
+    console.warn("AudioContext playBeep error:", e);
+  }
 }
 
-// ─── Speak question ───────────────────────────────────────────────────────────
-async function speakText(text: string, subtitle?: string, langCode: string = "fr") {
-  const fullText = subtitle ? `${text}. ${subtitle}` : text;
-  
-  if (typeof window === "undefined" || !window.speechSynthesis) return;
-  window.speechSynthesis.cancel();
-  
-  const utter = new SpeechSynthesisUtterance(fullText);
-  
-  // Mapping language code to SpeechSynthesis locale
-  const langMap: Record<string, string> = {
-    fr: "fr-FR",
-    en: "en-US",
-    es: "es-ES",
-    pt: "pt-PT",
-    zh: "zh-CN"
-  };
-  utter.lang = langMap[langCode] || "fr-FR";
-  utter.rate = 0.95;
-  utter.pitch = 1.0;
+// ─── Current TTS audio element (for cancellation) ────────────────────────────
+let currentTtsAudio: HTMLAudioElement | null = null;
 
-  const voices = window.speechSynthesis.getVoices();
-  const validVoices = voices.filter((v) => v.lang.startsWith(utter.lang.split('-')[0]));
-  
-  // Prioritize Neural / Natural voices
-  let selectedVoice = validVoices.find(v => v.name.includes("Neural2") && v.name.includes("Female"));
-  if (!selectedVoice) selectedVoice = validVoices.find(v => v.name.includes("Neural2"));
-  if (!selectedVoice) selectedVoice = validVoices.find(v => v.name.toLowerCase().includes("natural") && v.name.toLowerCase().includes("female"));
-  if (!selectedVoice) selectedVoice = validVoices.find(v => v.name.includes("Google") && !v.name.includes("Thomas"));
-  if (!selectedVoice) selectedVoice = validVoices[0]; // fallback
-  
-  if (selectedVoice) utter.voice = selectedVoice;
-
-  window.speechSynthesis.speak(utter);
+// ─── Stop any in-progress AI speech ──────────────────────────────────────────
+function stopCurrentTts() {
+  if (currentTtsAudio) {
+    try {
+      currentTtsAudio.pause();
+      currentTtsAudio.src = "";
+    } catch (_) {}
+    currentTtsAudio = null;
+  }
 }
 
 import { StartInterviewModal, CancelInterviewModal } from "../components/modals/InterviewModals";
@@ -165,7 +151,10 @@ export default function InterviewPage() {
 
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
+  // Shared AudioContext + mixer destination (mic + TTS mixed into one track)
   const audioCtxRef = useRef<AudioContext | null>(null);
+  const mixerDestRef = useRef<MediaStreamAudioDestinationNode | null>(null);
+  const mixedStreamRef = useRef<MediaStream | null>(null);
   const analyserRef = useRef<AnalyserNode | null>(null);
   const rafRef = useRef<number>(0);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
@@ -175,11 +164,29 @@ export default function InterviewPage() {
   const [questionIndex, setQuestionIndex] = useState(0);
   const [countdown, setCountdown] = useState(10);
   const [recordingTime, setRecordingTime] = useState(0);
+  const recordingTimeRef = useRef(0);
+  const handleNextQuestionRef = useRef<() => void>(() => {});
   const [triesLeft, setTriesLeft] = useState(3);
   const [recordedVideoUrl, setRecordedVideoUrl] = useState<string | null>(null);
   const [transcript, setTranscript] = useState("");
   const transcriptRef = useRef("");
   const recognitionRef = useRef<any>(null);
+  const [isSavingVideo, setIsSavingVideo] = useState(false);
+  const [isAiSpeaking, setIsAiSpeaking] = useState(false);
+  const recordedVideoPlayerRef = useRef<HTMLVideoElement>(null);
+  const [isPlayingRecorded, setIsPlayingRecorded] = useState(false);
+  const [recordedCurrentTime, setRecordedCurrentTime] = useState(0);
+  const [recordedDuration, setRecordedDuration] = useState(0);
+  const totalRecordedSecondsRef = useRef(0);
+  const hasFinalizedRef = useRef(false);
+  const interviewHistoryRef = useRef<Array<{ question: string; transcript: string; duration?: number }>>([]);
+  const [aiEvaluation, setAiEvaluation] = useState<any>(null);
+  const [isEvaluating, setIsEvaluating] = useState(false);
+  const [isAiFollowUp, setIsAiFollowUp] = useState(false);
+  const userRef = useRef(user);
+  useEffect(() => {
+    userRef.current = user;
+  }, [user]);
 
   // Camera/mic states
   const [cameraOn, setCameraOn] = useState(true);
@@ -199,13 +206,10 @@ export default function InterviewPage() {
 
   // ── Stop all tracks & release webcam/audio ─────────────────────────────────
   const stopAllMediaTracks = useCallback(() => {
+    stopCurrentTts();
     if (streamRef.current) {
       streamRef.current.getTracks().forEach((track) => {
-        try {
-          track.stop();
-        } catch (e) {
-          console.warn("Track stop error:", e);
-        }
+        try { track.stop(); } catch (e) { console.warn("Track stop error:", e); }
       });
       streamRef.current = null;
     }
@@ -213,45 +217,36 @@ export default function InterviewPage() {
       try {
         videoRef.current.pause();
         videoRef.current.srcObject = null;
-      } catch (e) {
-        console.warn("videoRef clear error:", e);
-      }
+      } catch (e) { console.warn("videoRef clear error:", e); }
     }
     if (rafRef.current) {
       cancelAnimationFrame(rafRef.current);
       rafRef.current = 0;
     }
     if (audioCtxRef.current && audioCtxRef.current.state !== "closed") {
-      try {
-        audioCtxRef.current.close();
-      } catch (e) {
-        console.warn("AudioContext close error:", e);
-      }
+      try { audioCtxRef.current.close(); } catch (e) { console.warn("AudioContext close error:", e); }
       audioCtxRef.current = null;
+      mixerDestRef.current = null;
+      mixedStreamRef.current = null;
     }
     if (mediaRecorderRef.current && mediaRecorderRef.current.state !== "inactive") {
-      try {
-        mediaRecorderRef.current.stop();
-      } catch (e) {
-        console.warn("MediaRecorder stop error:", e);
-      }
+      try { mediaRecorderRef.current.stop(); } catch (e) { console.warn("MediaRecorder stop error:", e); }
     }
-    if (typeof window !== "undefined" && window.speechSynthesis) {
-      window.speechSynthesis.cancel();
-    }
+    setIsAiSpeaking(false);
     if (recognitionRef.current) {
-      try {
-        recognitionRef.current.stop();
-      } catch (e) {
-        console.warn("SpeechRecognition stop error:", e);
-      }
+      try { recognitionRef.current.stop(); } catch (e) { console.warn("SpeechRecognition stop error:", e); }
     }
   }, []);
+
+  const stopAllMediaTracksRef = useRef(stopAllMediaTracks);
+  useEffect(() => {
+    stopAllMediaTracksRef.current = stopAllMediaTracks;
+  }, [stopAllMediaTracks]);
 
   const handleNavigate = (tabKey: string) => {
     stopAllMediaTracks();
     setMenuDrawerOpen(false);
-    router.push(`/dashboard/talent?tab=${tabKey}`);
+    router.push(`/dashboard/talent?tab=${tabKey}#${tabKey}`);
   };
 
   // ── Shuffle on mount ─────────────────────────────────────────────────────────
@@ -262,15 +257,33 @@ export default function InterviewPage() {
   const currentQuestion = questions[questionIndex];
   const totalQuestions = questions.length;
 
-  // ── Audio analyser for voice animation ──────────────────────────────────────
+  // ── Audio analyser + shared AudioContext with mixer destination ───────────────
+  // The mixer destination receives both the mic track AND the Gemini TTS audio.
+  // MediaRecorder records from this merged stream so the final video has both.
   const startVoiceAnalyser = useCallback((stream: MediaStream) => {
     const ctx = new AudioContext();
-    const source = ctx.createMediaStreamSource(stream);
+    // Mixer destination: mic + TTS will both be connected here
+    const mixerDest = ctx.createMediaStreamDestination();
+    const micSource = ctx.createMediaStreamSource(stream);
+
+    // Analyser for the voice-level animation (mic only is fine)
     const analyser = ctx.createAnalyser();
     analyser.fftSize = 256;
-    source.connect(analyser);
+    micSource.connect(analyser);
+    // Mic also goes into the mixer so talent voice is recorded
+    micSource.connect(mixerDest);
+
     audioCtxRef.current = ctx;
+    mixerDestRef.current = mixerDest;
     analyserRef.current = analyser;
+
+    // Build the mixed stream: video from webcam + audio from mixer
+    const videoTracks = stream.getVideoTracks();
+    const mixedStream = new MediaStream([
+      ...videoTracks,
+      ...mixerDest.stream.getAudioTracks(),
+    ]);
+    mixedStreamRef.current = mixedStream;
 
     const data = new Uint8Array(analyser.frequencyBinCount);
     const tick = () => {
@@ -281,6 +294,76 @@ export default function InterviewPage() {
     };
     rafRef.current = requestAnimationFrame(tick);
   }, []);
+
+  // ── Speak question via Gemini TTS and mix audio into the recording ────────────
+  const speakCurrentQuestion = useCallback(() => {
+    if (!currentQuestion) return;
+    const text = currentQuestion.text;
+    const subtitle = currentQuestion.subtitle;
+
+    setIsAiSpeaking(true);
+    stopCurrentTts();
+
+    fetch("/api/ai/tts", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ text, subtitle, lang }),
+    })
+      .then(async (res) => {
+        if (!res.ok) throw new Error(`TTS API ${res.status}`);
+        const blob = await res.blob();
+        const url = URL.createObjectURL(blob);
+        const audio = new Audio(url);
+        audio.crossOrigin = "anonymous";
+        currentTtsAudio = audio;
+
+        // Route TTS audio through the shared AudioContext mixer so it gets recorded
+        if (audioCtxRef.current && mixerDestRef.current) {
+          try {
+            // Resume context if suspended (browser autoplay policy)
+            if (audioCtxRef.current.state === "suspended") {
+              await audioCtxRef.current.resume();
+            }
+            const ttsSource = audioCtxRef.current.createMediaElementSource(audio);
+            ttsSource.connect(mixerDestRef.current);
+            // Also connect to speakers so talent can hear the question live
+            ttsSource.connect(audioCtxRef.current.destination);
+          } catch (e) {
+            console.warn("TTS audio routing error:", e);
+          }
+        }
+
+        audio.onended = () => {
+          URL.revokeObjectURL(url);
+          currentTtsAudio = null;
+          setIsAiSpeaking(false);
+        };
+        audio.onerror = () => {
+          URL.revokeObjectURL(url);
+          currentTtsAudio = null;
+          setIsAiSpeaking(false);
+        };
+
+        await audio.play();
+      })
+      .catch((err) => {
+        console.warn("Gemini TTS failed, falling back to Web Speech API:", err);
+        // ── Fallback: browser SpeechSynthesis ────────────────────────────────
+        setIsAiSpeaking(false);
+        if (typeof window === "undefined" || !window.speechSynthesis) return;
+        const cleanText = text.replace(/[*_#]/g, "").trim();
+        const cleanSub = subtitle ? subtitle.replace(/[()_#]/g, "").trim() : "";
+        const fullText = cleanSub ? `${cleanText}. ${cleanSub}` : cleanText;
+        const utter = new SpeechSynthesisUtterance(fullText);
+        utter.lang = { fr: "fr-FR", en: "en-US", es: "es-ES", pt: "pt-PT", zh: "zh-CN" }[lang] || "fr-FR";
+        utter.rate = 0.95;
+        utter.onstart = () => setIsAiSpeaking(true);
+        utter.onend = () => setIsAiSpeaking(false);
+        utter.onerror = () => setIsAiSpeaking(false);
+        window.speechSynthesis.cancel();
+        window.speechSynthesis.speak(utter);
+      });
+  }, [currentQuestion, lang]);
 
   // ── Webcam & Exit Cleanups ──────────────────────────────────────────────────
   useEffect(() => {
@@ -355,8 +438,10 @@ export default function InterviewPage() {
     const timer = setInterval(() => {
       setCountdown((prev) => {
         const next = prev - 1;
-        // Beep on every tick
-        playBeep(ctx, next === 0 ? 1320 : 880);
+        // Beep seulement sur les 3 dernières secondes pour que la voix de l'IA soit audible
+        if (next <= 3 && next >= 0) {
+          playBeep(ctx, next === 0 ? 1320 : 880, 0.15, 0.05);
+        }
         if (next <= 0) {
           clearInterval(timer);
           setPhase("recording");
@@ -368,16 +453,19 @@ export default function InterviewPage() {
     return () => clearInterval(timer);
   }, [phase, questionIndex]);
 
-  // ── Speak question when recording starts ─────────────────────────────────────
+  // ── Auto-speak question when countdown starts ────────────────────────────────
+  // We wait 500ms so the AudioContext has time to initialise after user gesture
   useEffect(() => {
-    if (phase === "recording" && currentQuestion) {
-      // Small delay so beep finishes
+    if (phase === "countdown" && currentQuestion) {
       const t = setTimeout(() => {
-        speakText(currentQuestion.text, currentQuestion.subtitle, lang);
-      }, 600);
-      return () => clearTimeout(t);
+        speakCurrentQuestion();
+      }, 500);
+      return () => {
+        clearTimeout(t);
+        stopCurrentTts();
+      };
     }
-  }, [phase, questionIndex, currentQuestion, lang]);
+  }, [phase, questionIndex, currentQuestion, speakCurrentQuestion]);
 
   // ── Speech Recognition setup per question ────────────────────────────────────
   useEffect(() => {
@@ -405,61 +493,118 @@ export default function InterviewPage() {
     }
   }, [lang]);
 
-  // ── AI Evaluation Trigger ────────────────────────────────────────────────────
-  const evaluateAnswer = useCallback((currentQuestionIndex: number, textToEvaluate: string) => {
-    if (!textToEvaluate || textToEvaluate.trim() === "") return;
-    
-    // API call in background
-    fetch("/api/ai/evaluate-interview", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        interviewSessionId: "temp_session_id", // Remplacer par le vrai ID quand implémenté
-        questionIndex: currentQuestionIndex,
-        transcript: textToEvaluate
-      })
-    }).catch(console.error);
-  }, []);
+  // ── Intelligent Next Question & AI Relance ─────────────────────────────────
+  const handleNextQuestion = useCallback(async () => {
+    stopCurrentTts();
+    setIsAiSpeaking(false);
+    if (recognitionRef.current) {
+      try { recognitionRef.current.stop(); } catch (e) { console.warn(e); }
+    }
+
+    const currentText = currentQuestion ? currentQuestion.text : "";
+    const answerTranscript = transcriptRef.current || "";
+    const recordedDurationForQuestion = recordingTimeRef.current;
+
+    interviewHistoryRef.current.push({
+      question: currentText,
+      transcript: answerTranscript,
+      duration: recordedDurationForQuestion,
+    });
+
+    setRecordingTime(0);
+    recordingTimeRef.current = 0;
+
+    const answeredCount = interviewHistoryRef.current.length;
+    const maxInterviewQuestions = 5;
+
+    if (answeredCount >= maxInterviewQuestions) {
+      setPhase("finished");
+      return;
+    }
+
+    try {
+      const res = await fetch("/api/interview/next-question", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          jobDescription: "",
+          candidateTranscript: answerTranscript,
+          history: interviewHistoryRef.current,
+          maxQuestions: maxInterviewQuestions,
+          currentQuestionIndex: questionIndex,
+        }),
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        if (data.isFinished) {
+          setPhase("finished");
+          return;
+        }
+        if (data.question) {
+          setIsAiFollowUp(Boolean(data.isFollowUp));
+          const dynamicQuestion: Question = {
+            text: data.question,
+            subtitle: data.subtitle || (data.isFollowUp ? "(Relance adaptative de l'IA)" : undefined),
+            duration: data.duration || 90,
+          };
+          setQuestions((prev) => {
+            const nextList = [...prev];
+            nextList[questionIndex + 1] = dynamicQuestion;
+            return nextList;
+          });
+          setQuestionIndex((prev) => prev + 1);
+          setPhase("countdown");
+          return;
+        }
+      }
+    } catch (err) {
+      console.warn("Erreur next-question dynamique Gemini:", err);
+    }
+
+    // Repli de secours sur le catalogue existant
+    const nextIndex = questionIndex + 1;
+    if (nextIndex < totalQuestions && nextIndex < maxInterviewQuestions) {
+      setIsAiFollowUp(false);
+      setQuestionIndex(nextIndex);
+      setPhase("countdown");
+    } else {
+      setPhase("finished");
+    }
+  }, [currentQuestion, questionIndex, totalQuestions]);
+
+  useEffect(() => {
+    handleNextQuestionRef.current = handleNextQuestion;
+  }, [handleNextQuestion]);
 
   // ── Recording timer ───────────────────────────────────────────────────────────
   useEffect(() => {
     if (phase === "recording" && currentQuestion) {
       setRecordingTime(0);
+      recordingTimeRef.current = 0;
       setTranscript("");
       transcriptRef.current = "";
       if (recognitionRef.current) {
         try { recognitionRef.current.start(); } catch (e) { console.warn(e); }
       }
 
-      const maxDuration = currentQuestion.duration;
+      const maxDuration = currentQuestion.duration || 90;
       const timer = setInterval(() => {
         setRecordingTime((prev) => {
-          if (prev >= maxDuration) {
+          const next = prev + 1;
+          recordingTimeRef.current = next;
+          totalRecordedSecondsRef.current += 1;
+          if (next >= maxDuration) {
             clearInterval(timer);
-            window.speechSynthesis?.cancel();
-            
-            if (recognitionRef.current) {
-              try { recognitionRef.current.stop(); } catch (e) { console.warn(e); }
-            }
-            
-            // Évaluer la réponse en arrière-plan
-            evaluateAnswer(questionIndex, transcriptRef.current);
-
-            const nextIndex = questionIndex + 1;
-            if (nextIndex < totalQuestions) {
-              setQuestionIndex(nextIndex);
-              setPhase("countdown");
-            } else {
-              setPhase("finished");
-            }
+            handleNextQuestionRef.current();
             return maxDuration;
           }
-          return prev + 1;
+          return next;
         });
       }, 1000);
       return () => clearInterval(timer);
     }
-  }, [phase, questionIndex, questions, totalQuestions, currentQuestion, evaluateAnswer]);
+  }, [phase, questionIndex]);
 
   const getSupportedMimeType = () => {
     if (typeof MediaRecorder === "undefined") return undefined;
@@ -475,75 +620,77 @@ export default function InterviewPage() {
     return undefined;
   };
 
+  // ── Start/Restart MediaRecorder on mixed stream (mic + TTS) ─────────────────
+  const startMediaRecorder = useCallback(() => {
+    // Prefer the mixed stream (video + mic + TTS), fall back to raw webcam stream
+    const targetStream = mixedStreamRef.current ?? streamRef.current;
+    if (!targetStream) return;
+    chunksRef.current = [];
+    try {
+      const mimeType = getSupportedMimeType();
+      const options = mimeType ? { mimeType } : undefined;
+      const mr = new MediaRecorder(targetStream, options);
+      mr.ondataavailable = (e) => {
+        if (e.data && e.data.size > 0) chunksRef.current.push(e.data);
+      };
+      mr.start(1000);
+      mediaRecorderRef.current = mr;
+    } catch (err) {
+      console.warn("MediaRecorder creation error", err);
+    }
+  }, []);
+
   // ── Handlers ────────────────────────────────────────────────────────────────
   const handleStart = () => {
+    totalRecordedSecondsRef.current = 0;
+    hasFinalizedRef.current = false;
+    interviewHistoryRef.current = [];
+    setAiEvaluation(null);
+    setIsAiFollowUp(false);
+    setIsPlayingRecorded(false);
+    setRecordedCurrentTime(0);
+    setRecordedDuration(0);
     setQuestionIndex(0);
     setPhase("countdown");
-    if (streamRef.current) {
-      chunksRef.current = [];
-      try {
-        const mimeType = getSupportedMimeType();
-        const options = mimeType ? { mimeType } : undefined;
-        const mr = new MediaRecorder(streamRef.current, options);
-        mr.ondataavailable = (e) => {
-          if (e.data && e.data.size > 0) chunksRef.current.push(e.data);
-        };
-        mr.start(1000);
-        mediaRecorderRef.current = mr;
-      } catch (err) {
-        console.warn("MediaRecorder creation error", err);
-      }
-    }
+    startMediaRecorder();
   };
 
   const handleSkip = () => {
-    window.speechSynthesis?.cancel();
-    
-    if (recognitionRef.current) {
-      try { recognitionRef.current.stop(); } catch (e) { console.warn(e); }
-    }
-    
-    // Évaluer la réponse en arrière-plan
-    evaluateAnswer(questionIndex, transcriptRef.current);
-
-    setRecordingTime(0);
-    const nextIndex = questionIndex + 1;
-    if (nextIndex < totalQuestions) {
-      setQuestionIndex(nextIndex);
-      setPhase("countdown");
-    } else {
-      setPhase("finished");
-    }
+    handleNextQuestion();
   };
 
   const handleRestart = () => {
     if (triesLeft <= 0) return;
     setTriesLeft((prev) => prev - 1);
-    window.speechSynthesis?.cancel();
+    stopCurrentTts();
+    setIsAiSpeaking(false);
+    hasFinalizedRef.current = false;
+    interviewHistoryRef.current = [];
+    setAiEvaluation(null);
+    setIsAiFollowUp(false);
+    totalRecordedSecondsRef.current = 0;
+    setIsPlayingRecorded(false);
+    setRecordedCurrentTime(0);
+    setRecordedDuration(0);
     if (mediaRecorderRef.current && mediaRecorderRef.current.state !== "inactive") {
-      try {
-        mediaRecorderRef.current.stop();
-      } catch (e) {
-        console.warn(e);
-      }
+      try { mediaRecorderRef.current.stop(); } catch (e) { console.warn(e); }
     }
     setQuestions(shuffleArray(QUESTION_BANK));
     setQuestionIndex(0);
     setPhase("countdown");
-    if (streamRef.current) {
-      chunksRef.current = [];
-      try {
-        const mimeType = getSupportedMimeType();
-        const options = mimeType ? { mimeType } : undefined;
-        const mr = new MediaRecorder(streamRef.current, options);
-        mr.ondataavailable = (e) => {
-          if (e.data && e.data.size > 0) chunksRef.current.push(e.data);
-        };
-        mr.start(1000);
-        mediaRecorderRef.current = mr;
-      } catch (err) {
-        console.warn("MediaRecorder restart error", err);
-      }
+    startMediaRecorder();
+  };
+
+  const togglePlayRecordedVideo = () => {
+    const video = recordedVideoPlayerRef.current;
+    if (!video) return;
+    if (video.paused) {
+      video.scrollIntoView({ behavior: "smooth", block: "center" });
+      video.play().catch((err) => {
+        console.warn("Autoplay recorded video error:", err);
+      });
+    } else {
+      video.pause();
     }
   };
 
@@ -585,73 +732,174 @@ export default function InterviewPage() {
   const ringOpacity = micOn && phase === "recording" ? Math.min(voiceLevel * 2, 1) : 0;
 
   // ── Set recorded flag when finished ─────────────────────────────────────────
+  const recordedVideoUrlRef = useRef<string | null>(null);
   useEffect(() => {
-    if (phase === "finished") {
-      if (user?.id) localStorage.setItem(`interview_recorded_${user.id}`, "true");
-      
-      const finalizeAndSave = async () => {
-        const mimeType = MediaRecorder.isTypeSupported("video/webm;codecs=vp9")
-          ? "video/webm;codecs=vp9"
-          : MediaRecorder.isTypeSupported("video/mp4")
-          ? "video/mp4"
-          : (mediaRecorderRef.current?.mimeType || "video/webm");
+    recordedVideoUrlRef.current = recordedVideoUrl;
+  }, [recordedVideoUrl]);
+
+  useEffect(() => {
+    if (phase !== "finished") {
+      hasFinalizedRef.current = false;
+      return;
+    }
+    if (hasFinalizedRef.current) return;
+    hasFinalizedRef.current = true;
+
+    if (typeof window !== "undefined") {
+      localStorage.setItem("interview_recorded", "true");
+      const currentUserId = (userRef.current as any)?.id;
+      if (currentUserId) localStorage.setItem(`interview_recorded_${currentUserId}`, "true");
+    }
+
+    const finalizeAndSave = async () => {
+      setIsSavingVideo(true);
+      try {
+        if (mediaRecorderRef.current) {
+          mediaRecorderRef.current.onstop = null;
+          if (mediaRecorderRef.current.state !== "inactive") {
+            try {
+              mediaRecorderRef.current.stop();
+            } catch (e) {
+              console.warn("MediaRecorder stop error:", e);
+            }
+          }
+        }
+
+        // Determine the effective MIME type from the recorder or fallback
+        const recorderMime = mediaRecorderRef.current?.mimeType;
+        const mimeType = recorderMime && recorderMime.length > 0
+          ? recorderMime
+          : (typeof MediaRecorder !== "undefined" && MediaRecorder.isTypeSupported("video/webm;codecs=vp9")
+            ? "video/webm;codecs=vp9"
+            : typeof MediaRecorder !== "undefined" && MediaRecorder.isTypeSupported("video/mp4")
+            ? "video/mp4"
+            : "video/webm");
 
         if (chunksRef.current.length > 0) {
           const videoBlob = new Blob(chunksRef.current, { type: mimeType });
-          const videoUrl = URL.createObjectURL(videoBlob);
-          setRecordedVideoUrl(videoUrl);
-          await saveVideoToDB(videoBlob);
-          
-          // Upload to Supabase so recruiter/admin can view it
+          const localVideoUrl = URL.createObjectURL(videoBlob);
+          setRecordedVideoUrl(localVideoUrl);
+
+          // 1. Save to IndexedDB first (local backup)
           try {
+            await saveVideoToDB(videoBlob);
+          } catch (idbErr) {
+            console.error("Erreur sauvegarde IndexedDB:", idbErr);
+          }
+
+          // 2. Upload to Netacuv server with 15s timeout
+          try {
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 15000);
+
             const formData = new FormData();
             const ext = mimeType.includes("mp4") ? "mp4" : "webm";
             formData.append("video", videoBlob, `interview.${ext}`);
-            // Pass userId explicitly so the API can identify the user even without session cookie
-            if ((user as any)?.id) {
-              formData.append("userId", (user as any).id);
+            const currentUserId = (userRef.current as any)?.id;
+            if (currentUserId) {
+              formData.append("userId", currentUserId);
             }
             const uploadRes = await fetch("/api/talents/video", {
               method: "POST",
               body: formData,
-              credentials: "include", // Pass auth session cookies
+              credentials: "include",
+              signal: controller.signal,
             });
-            if (!uploadRes.ok) {
-              const errData = await uploadRes.json().catch(() => ({}));
-              console.error("Video upload failed:", uploadRes.status, errData);
-            } else {
+            clearTimeout(timeoutId);
+
+            if (uploadRes.ok) {
               const result = await uploadRes.json();
-              console.log("Video uploaded successfully:", result.videoUrl);
+              if (result.videoUrl && typeof window !== "undefined") {
+                localStorage.setItem("interview_video_url", result.videoUrl);
+                setRecordedVideoUrl(result.videoUrl);
+                window.dispatchEvent(new Event("dashboardProfileUpdated"));
+              }
+            } else {
+              console.warn("Échec upload vidéo serveur:", uploadRes.status);
             }
           } catch (e) {
-            console.error("Failed to upload video to Supabase", e);
+            console.warn("Erreur ou timeout upload vidéo serveur:", e);
+          }
+        } else {
+          // Chunks vides : tenter de récupérer depuis IndexedDB ou localStorage
+          try {
+            const savedBlob = await getVideoFromDB();
+            if (savedBlob && savedBlob.size > 0) {
+              const fallbackUrl = URL.createObjectURL(savedBlob);
+              setRecordedVideoUrl(fallbackUrl);
+            } else {
+              const storedUrl = typeof window !== "undefined" ? localStorage.getItem("interview_video_url") : null;
+              if (storedUrl) {
+                setRecordedVideoUrl(storedUrl);
+              }
+            }
+          } catch (fallbackErr) {
+            console.warn("Fallback IndexedDB error:", fallbackErr);
           }
         }
-        // Stop media tracks now that the interview is done
-        stopAllMediaTracks();
-      };
-
-      if (mediaRecorderRef.current && mediaRecorderRef.current.state !== "inactive") {
-        mediaRecorderRef.current.onstop = () => {
-          finalizeAndSave().catch(console.error);
-        };
+        // 3. Évaluation complète par Gemini 1.5 Pro
         try {
-          mediaRecorderRef.current.stop();
-        } catch (e) {
-          console.warn("MediaRecorder stop error", e);
-          finalizeAndSave().catch(console.error);
+          setIsEvaluating(true);
+          const evalRes = await fetch("/api/interview/evaluate", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              jobDescription: "",
+              history: interviewHistoryRef.current,
+              candidateName: (userRef.current as any)?.name || "Candidat",
+            }),
+          });
+          if (evalRes.ok) {
+            const evalJson = await evalRes.json();
+            if (evalJson.evaluation) {
+              setAiEvaluation(evalJson.evaluation);
+              if (typeof window !== "undefined") {
+                localStorage.setItem("interview_evaluation", JSON.stringify(evalJson.evaluation));
+                window.dispatchEvent(new Event("dashboardProfileUpdated"));
+              }
+            }
+          }
+        } catch (evalErr) {
+          console.warn("Évaluation finale IA non bloquante:", evalErr);
+        } finally {
+          setIsEvaluating(false);
         }
-      } else {
+      } catch (err) {
+        console.error("Erreur finalizeAndSave:", err);
+      } finally {
+        setIsSavingVideo(false);
+        // Release camera/mic AFTER everything is processed
+        stopAllMediaTracksRef.current();
+      }
+    };
+
+    // Stop the MediaRecorder first to flush the last data chunk,
+    // then finalize in the onstop callback
+    const mr = mediaRecorderRef.current;
+    if (mr && mr.state !== "inactive") {
+      mr.onstop = () => {
+        finalizeAndSave().catch(console.error);
+      };
+      try {
+        mr.stop();
+      } catch (e) {
+        console.warn("MediaRecorder stop error", e);
         finalizeAndSave().catch(console.error);
       }
+    } else {
+      finalizeAndSave().catch(console.error);
     }
-  }, [phase, stopAllMediaTracks]);
+  }, [phase]);
 
   useEffect(() => {
     return () => {
-      if (recordedVideoUrl) URL.revokeObjectURL(recordedVideoUrl);
+      if (recordedVideoUrlRef.current && recordedVideoUrlRef.current.startsWith("blob:")) {
+        try {
+          URL.revokeObjectURL(recordedVideoUrlRef.current);
+        } catch (e) {}
+      }
     };
-  }, [recordedVideoUrl]);
+  }, []);
 
   // ── Guard: wait for questions to load ─────────────────────────────────────
   if (questions.length === 0) return null;
@@ -709,44 +957,75 @@ export default function InterviewPage() {
         <div className="flex flex-col gap-3.5 sm:gap-5">
 
           {/* Video container */}
-          <div className="relative w-full aspect-[16/10] rounded-xl overflow-hidden bg-black shadow-2xl">
-            {phase === "finished" && recordedVideoUrl ? (
-              <video
-                src={recordedVideoUrl}
-                controls
-                playsInline
-                preload="auto"
-                onLoadedMetadata={(e) => {
-                  const v = e.currentTarget;
-                  if (!isFinite(v.duration) || v.duration === 0) {
-                    v.currentTime = 1e101;
-                    v.ontimeupdate = () => {
-                      v.ontimeupdate = null;
-                      v.currentTime = 0.001;
-                    };
-                  } else {
-                    if (v.currentTime === 0) {
-                      v.currentTime = 0.001;
+          <div className="relative w-full aspect-[16/10] rounded-xl overflow-hidden bg-[#061527] shadow-2xl border border-sky-400/20">
+            {/* Background Netacuv avec symbole N de la page de maintenance */}
+            <div className="pointer-events-none absolute inset-0 flex items-center justify-center overflow-hidden select-none bg-gradient-to-b from-[#0b223d] via-[#061527] to-[#030b14]">
+              <div className="absolute -top-24 -left-24 w-72 h-72 bg-[#32A8D7]/20 rounded-full blur-3xl" />
+              <div className="absolute -bottom-24 -right-24 w-80 h-80 bg-[#1e8ae9]/20 rounded-full blur-3xl" />
+              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-[#0c3e70]/30 rounded-full blur-3xl" />
+              <div className="w-[320px] h-[320px] max-w-[80vw] max-h-[80vw] opacity-[0.08] transform -rotate-12 scale-110">
+                <Image
+                  src="/Logo/SVG/Asset 14.svg"
+                  alt="Netacuv Logo"
+                  width={320}
+                  height={320}
+                  className="w-full h-full object-contain"
+                  priority
+                />
+              </div>
+            </div>
+
+            {phase === "finished" ? (
+              recordedVideoUrl ? (
+                <NetacuvVideoPlayer
+                  src={recordedVideoUrl}
+                  videoRef={recordedVideoPlayerRef}
+                  aspectRatio="aspect-[16/10]"
+                  showBorder={false}
+                  className="w-full h-full"
+                  onPlay={() => setIsPlayingRecorded(true)}
+                  onPause={() => setIsPlayingRecorded(false)}
+                  onEnded={() => setIsPlayingRecorded(false)}
+                  onTimeUpdate={(e) => {
+                    setRecordedCurrentTime(e.currentTarget.currentTime);
+                  }}
+                  onLoadedMetadata={(e) => {
+                    const v = e.currentTarget;
+                    const d = v.duration;
+                    if (d && !isNaN(d) && isFinite(d) && d > 0) {
+                      setRecordedDuration(d);
+                    } else if (totalRecordedSecondsRef.current > 0) {
+                      setRecordedDuration(totalRecordedSecondsRef.current);
                     }
-                  }
-                }}
-                className="w-full h-full object-contain"
-              />
+                  }}
+                />
+              ) : (
+                <div className="relative z-10 w-full h-full flex flex-col items-center justify-center p-6 text-center">
+                  <div className="w-12 h-12 rounded-full bg-[#008de4]/20 border border-[#008de4]/30 flex items-center justify-center mb-3 text-[#32A8D7]">
+                    <Video className="w-6 h-6 animate-pulse" />
+                  </div>
+                  <p className="text-white font-bold text-sm sm:text-base">Préparation de votre vidéo enregistrée...</p>
+                  <p className="text-white/60 text-xs sm:text-sm mt-1">Votre vidéo est en cours de traitement pour le visionnage.</p>
+                </div>
+              )
             ) : (
               <video
                 ref={videoRef}
                 autoPlay
                 muted
                 playsInline
-                className={`w-full h-full object-cover scale-x-[-1] transition-opacity duration-300 ${cameraOn ? "opacity-100" : "opacity-0"}`}
+                className={`relative z-1 w-full h-full object-cover scale-x-[-1] transition-opacity duration-300 ${cameraOn ? "opacity-100" : "opacity-0 pointer-events-none"}`}
               />
             )}
 
             {/* Camera off placeholder */}
-            {!cameraOn && (
-              <div className="absolute inset-0 flex flex-col items-center justify-center bg-[#0a1629] p-4 text-center">
-                <CameraOff className="w-10 h-10 sm:w-14 sm:h-14 text-white/30 mb-2 sm:mb-3" />
-                <p className="text-white/40 text-xs sm:text-sm">Caméra désactivée</p>
+            {!cameraOn && phase !== "finished" && (
+              <div className="relative z-10 w-full h-full flex flex-col items-center justify-center p-4 text-center">
+                <div className="w-14 h-14 rounded-full bg-white/10 border border-white/20 flex items-center justify-center mb-3">
+                  <CameraOff className="w-7 h-7 text-white/60" />
+                </div>
+                <p className="text-white font-bold text-sm">Caméra désactivée</p>
+                <p className="text-white/50 text-xs mt-1">Activez votre caméra ci-dessous pour reprendre le flux vidéo</p>
               </div>
             )}
 
@@ -837,44 +1116,92 @@ export default function InterviewPage() {
             )}
           </div>
 
-          {/* Progress Bar */}
+          {/* Progress Bar / Player Bar */}
           <div className="bg-[#03090e] rounded-full px-3.5 sm:px-6 py-2.5 sm:py-3.5 flex items-center gap-2.5 sm:gap-5 border border-white/5 shadow-inner">
-            {/* Icon */}
-            <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-[#008de4] flex items-center justify-center flex-shrink-0">
-              {phase === "recording" ? (
-                <div className="flex gap-0.5 sm:gap-1 items-center justify-center">
-                  <div className="w-[4px] sm:w-[5px] h-[4px] sm:h-[5px] bg-white rounded-full transition-transform duration-75" style={{ transform: `scale(${1 + voiceLevel * 1.5})` }}></div>
-                  <div className="w-[4px] sm:w-[5px] h-[4px] sm:h-[5px] bg-white rounded-full transition-transform duration-75 delay-[50ms]" style={{ transform: `scale(${1 + voiceLevel * 2.5})` }}></div>
-                  <div className="w-[4px] sm:w-[5px] h-[4px] sm:h-[5px] bg-white rounded-full transition-transform duration-75 delay-100" style={{ transform: `scale(${1 + voiceLevel * 1.5})` }}></div>
-                </div>
-              ) : (
-                <MoreHorizontal size={18} className="text-white" />
-              )}
-            </div>
+            {/* Play/Pause or Voice / Status Icon */}
+            {phase === "finished" ? (
+              <button
+                type="button"
+                onClick={togglePlayRecordedVideo}
+                title={isPlayingRecorded ? "Mettre en pause" : "Lire la vidéo"}
+                className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-[#008de4] hover:bg-blue-600 flex items-center justify-center flex-shrink-0 text-white cursor-pointer transition-all active:scale-95 shadow-md"
+              >
+                {isPlayingRecorded ? (
+                  <Pause size={15} className="fill-white" />
+                ) : (
+                  <Play size={15} className="fill-white ml-0.5" />
+                )}
+              </button>
+            ) : (
+              <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-[#008de4] flex items-center justify-center flex-shrink-0">
+                {phase === "recording" ? (
+                  <div className="flex gap-0.5 sm:gap-1 items-center justify-center">
+                    <div className="w-[4px] sm:w-[5px] h-[4px] sm:h-[5px] bg-white rounded-full transition-transform duration-75" style={{ transform: `scale(${1 + voiceLevel * 1.5})` }}></div>
+                    <div className="w-[4px] sm:w-[5px] h-[4px] sm:h-[5px] bg-white rounded-full transition-transform duration-75 delay-[50ms]" style={{ transform: `scale(${1 + voiceLevel * 2.5})` }}></div>
+                    <div className="w-[4px] sm:w-[5px] h-[4px] sm:h-[5px] bg-white rounded-full transition-transform duration-75 delay-100" style={{ transform: `scale(${1 + voiceLevel * 1.5})` }}></div>
+                  </div>
+                ) : (
+                  <MoreHorizontal size={18} className="text-white" />
+                )}
+              </div>
+            )}
 
             {/* Elapsed */}
             <span className="font-bold text-white text-xs sm:text-[15px] tracking-wide w-[42px] sm:w-[52px] flex-shrink-0 tabular-nums">
-              {phase === "recording" ? fmt(recordingTime) : "00:00"}
+              {phase === "recording"
+                ? fmt(recordingTime)
+                : phase === "finished"
+                ? fmt(Math.floor(recordedCurrentTime))
+                : "00:00"}
             </span>
 
             {/* Track */}
-            <div className="flex-1 h-2 sm:h-2.5 bg-slate-800 rounded-full relative overflow-hidden">
+            <div
+              className={`flex-1 h-2 sm:h-2.5 bg-slate-800 rounded-full relative overflow-hidden ${
+                phase === "finished" ? "cursor-pointer" : ""
+              }`}
+              onClick={(e) => {
+                if (phase === "finished" && recordedVideoPlayerRef.current) {
+                  const rect = e.currentTarget.getBoundingClientRect();
+                  const clickX = e.clientX - rect.left;
+                  const ratio = Math.max(0, Math.min(1, clickX / rect.width));
+                  const dur = recordedDuration || totalRecordedSecondsRef.current || 1;
+                  recordedVideoPlayerRef.current.currentTime = ratio * dur;
+                }
+              }}
+            >
               <div
-                className="absolute left-0 top-0 bottom-0 bg-[#008de4] rounded-full transition-all duration-1000 ease-linear"
-                style={{ width: `${Math.max(progressPercent, 1)}%` }}
+                className="absolute left-0 top-0 bottom-0 bg-[#008de4] rounded-full transition-all duration-200 ease-linear"
+                style={{
+                  width: `${
+                    phase === "finished"
+                      ? Math.min(
+                          100,
+                          Math.max(
+                            0,
+                            (recordedCurrentTime /
+                              (recordedDuration || totalRecordedSecondsRef.current || 1)) *
+                              100
+                          )
+                        )
+                      : Math.max(progressPercent, 1)
+                  }%`,
+                }}
               />
             </div>
 
             {/* Thumb indicator */}
             <div
               className="w-3 h-3 sm:w-4 sm:h-4 bg-[#008de4] rounded-sm shadow-[0_0_8px_rgba(0,141,228,0.6)] flex-shrink-0 transition-opacity duration-300 hidden sm:block"
-              style={{ opacity: phase === "recording" ? 1 : 0.3 }}
+              style={{ opacity: phase === "recording" || phase === "finished" ? 1 : 0.3 }}
             />
 
             {/* Max duration */}
             <span className="font-bold text-[#008de4] text-xs sm:text-[15px] tracking-wide flex-shrink-0 w-[42px] sm:w-[52px] text-right tabular-nums">
               {phase === "recording" || phase === "countdown"
                 ? fmt(currentQuestion?.duration ?? 0)
+                : phase === "finished"
+                ? fmt(Math.ceil(recordedDuration || totalRecordedSecondsRef.current || 0))
                 : "00:00"}
             </span>
           </div>
@@ -898,10 +1225,35 @@ export default function InterviewPage() {
             <h1 className="text-xl sm:text-2xl lg:text-[26px] font-bold text-[#008de4]">Entretien Vidéo</h1>
           </div>
 
-          {/* Question label */}
-          <h3 className="text-[#008de4] text-sm sm:text-lg lg:text-[20px] font-medium mb-1.5 sm:mb-3 min-h-[22px] sm:min-h-[28px]">
-            {rightLabel}
-          </h3>
+          {/* Question label with TTS audio button */}
+          <div className="flex items-center justify-between gap-2 mb-1.5 sm:mb-3 min-h-[30px]">
+            <div className="flex items-center gap-2 min-w-0">
+              <h3 className="text-[#008de4] text-sm sm:text-lg lg:text-[20px] font-medium truncate">
+                {rightLabel}
+              </h3>
+              {isAiFollowUp && (phase === "countdown" || phase === "recording") && (
+                <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-amber-500/20 border border-amber-500/40 text-amber-300 text-[10px] sm:text-xs font-semibold shrink-0">
+                  Relance IA
+                </span>
+              )}
+            </div>
+            {(phase === "countdown" || phase === "recording") && currentQuestion && (
+              <button
+                type="button"
+                onClick={speakCurrentQuestion}
+                disabled={isAiSpeaking}
+                className={`flex-shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-semibold transition-all cursor-pointer shadow-sm active:scale-95 ${
+                  isAiSpeaking
+                    ? "bg-[#32A8D7]/20 border-[#32A8D7] text-[#32A8D7] animate-pulse"
+                    : "bg-white/10 border-white/20 text-white/90 hover:bg-white/20 hover:text-white"
+                }`}
+                title="Écouter la question posée par l'IA"
+              >
+                <Volume2 className={`w-3.5 h-3.5 ${isAiSpeaking ? "text-[#32A8D7] animate-bounce" : ""}`} />
+                <span>{isAiSpeaking ? "L'IA lit la question..." : "Écouter la question"}</span>
+              </button>
+            )}
+          </div>
 
           {/* Question text */}
           <div className="text-white text-base sm:text-xl lg:text-[22px] font-bold mb-3 sm:mb-4 leading-snug min-h-[50px] sm:min-h-[80px]">
@@ -938,51 +1290,145 @@ export default function InterviewPage() {
 
           {/* Success Checkmark Modal in Right Panel */}
           {phase === "finished" && (
-            <div className="flex flex-col items-center justify-center p-5 sm:p-8 bg-green-500/10 border border-green-500/20 rounded-2xl mb-5 sm:mb-8 animate-in fade-in zoom-in duration-500 shadow-xl">
-              <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-full bg-green-500 flex items-center justify-center mb-3 sm:mb-4 text-white shadow-[0_0_15px_rgba(34,197,94,0.5)]">
-                <Check className="w-6 h-6 sm:w-8 sm:h-8" strokeWidth={3} />
+            <div className="flex flex-col items-center justify-center p-4 sm:p-6 bg-green-500/10 border border-green-500/20 rounded-2xl mb-4 shadow-xl">
+              <div className="w-10 h-10 sm:w-14 sm:h-14 rounded-full bg-green-500 flex items-center justify-center mb-2.5 text-white shadow-[0_0_15px_rgba(34,197,94,0.5)]">
+                <Check className="w-5 h-5 sm:w-7 sm:h-7" strokeWidth={3} />
               </div>
-              <h3 className="text-white text-lg sm:text-xl font-bold text-center">Félicitations !</h3>
-              <p className="text-green-400 text-xs sm:text-[14px] text-center mt-1.5 sm:mt-2 font-medium">Votre entretien a été validé et enregistré.</p>
+              <h3 className="text-white text-base sm:text-lg font-bold text-center">Félicitations !</h3>
+              <p className="text-green-400 text-xs sm:text-[13px] text-center mt-1 font-medium">Votre entretien a été validé et enregistré.</p>
+            </div>
+          )}
+
+          {/* AI Evaluation Report Summary */}
+          {phase === "finished" && isEvaluating && (
+            <div className="flex items-center gap-2.5 p-3 rounded-xl bg-sky-950/40 border border-sky-500/20 text-sky-300 text-xs mb-4 animate-pulse">
+              <Loader2 className="w-4 h-4 animate-spin shrink-0 text-[#32A8D7]" />
+              <span>Génération du rapport d&apos;évaluation IA par Gemini 1.5 Pro...</span>
+            </div>
+          )}
+
+          {phase === "finished" && aiEvaluation && (
+            <div className="p-4 rounded-2xl bg-white/5 border border-white/10 mb-4 text-xs space-y-2.5 shadow-lg">
+              <div className="flex items-center justify-between border-b border-white/10 pb-2">
+                <span className="text-white font-bold text-xs sm:text-sm">Rapport IA Netacuv</span>
+                <div className="flex items-center gap-1.5">
+                  <span className="text-slate-300 text-[11px]">Score :</span>
+                  <span className="text-sm font-extrabold text-[#32A8D7]">{aiEvaluation.overallScore}/100</span>
+                  <span
+                    className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                      aiEvaluation.recommendation === "SHORTLIST"
+                        ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/30"
+                        : aiEvaluation.recommendation === "REVIEW"
+                        ? "bg-amber-500/20 text-amber-300 border border-amber-500/30"
+                        : "bg-red-500/20 text-red-300 border border-red-500/30"
+                    }`}
+                  >
+                    {aiEvaluation.recommendation}
+                  </span>
+                </div>
+              </div>
+              <p className="text-white/80 leading-relaxed text-[11px]">
+                {aiEvaluation.summary}
+              </p>
+              {aiEvaluation.strengths && aiEvaluation.strengths.length > 0 && (
+                <div className="pt-1">
+                  <span className="text-emerald-400 font-bold block mb-1 text-[11px]">Points forts :</span>
+                  <div className="flex flex-wrap gap-1">
+                    {aiEvaluation.strengths.slice(0, 3).map((s: string, idx: number) => (
+                      <span key={idx} className="px-2 py-0.5 rounded-md bg-emerald-950/50 border border-emerald-500/30 text-emerald-200 text-[10px]">
+                        {s}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           )}
 
           {/* Buttons */}
-          <div className="flex flex-col sm:flex-row gap-2.5 sm:gap-3 items-stretch sm:items-center">
-            {/* Cancel always visible */}
-            <button 
-              onClick={() => setIsCancelModalOpen(true)}
-              className="px-4 sm:px-5 py-2.5 rounded-full border border-red-500/80 text-red-500 hover:bg-red-500/10 transition-colors text-xs sm:text-[14px] font-medium whitespace-nowrap text-center cursor-pointer"
-            >
-              Annuler le test
-            </button>
+          <div className="flex flex-col gap-3">
+            {phase === "finished" ? (
+              <div className="flex flex-col gap-2.5">
+                {/* Sync badge — only visible while saving */}
+                {isSavingVideo && (
+                  <div className="w-full flex items-center gap-2 px-4 py-2.5 rounded-xl bg-sky-950/60 border border-sky-500/30 text-sky-300 text-xs font-medium animate-in fade-in duration-200">
+                    <Loader2 className="w-3.5 h-3.5 animate-spin flex-shrink-0" />
+                    <span>Synchronisation et enregistrement de votre vidéo en cours...</span>
+                  </div>
+                )}
 
-            {phase === "pre_start" && (
-              <button
-                onClick={() => setIsStartModalOpen(true)}
-                className="flex-1 px-4 sm:px-5 py-2.5 rounded-full bg-[#008de4] text-white hover:bg-blue-600 active:scale-95 transition-all text-xs sm:text-[14px] font-medium text-center cursor-pointer shadow-md"
-              >
-                Commencer le test
-              </button>
-            )}
+                <div className="flex flex-row gap-2.5">
+                  {/* Visualiser la vidéo */}
+                  <button
+                    type="button"
+                    onClick={togglePlayRecordedVideo}
+                    className="flex-1 h-11 px-3 sm:px-4 rounded-full bg-[#008de4] hover:bg-blue-600 text-white active:scale-95 transition-all text-[11px] sm:text-[13px] font-bold flex items-center justify-center gap-2 cursor-pointer shadow-lg shadow-blue-500/20 overflow-hidden"
+                  >
+                    {isPlayingRecorded ? (
+                      <>
+                        <Pause className="w-4 h-4 fill-white flex-shrink-0" />
+                        <span className="truncate">Pause vidéo</span>
+                      </>
+                    ) : (
+                      <>
+                        <Play className="w-4 h-4 fill-white flex-shrink-0" />
+                        <span className="truncate">Visualiser la vidéo</span>
+                      </>
+                    )}
+                  </button>
 
-            {(phase === "recording" || phase === "countdown") && (
-              <button
-                onClick={handleRestart}
-                disabled={triesLeft <= 0}
-                className="flex-1 px-4 sm:px-5 py-2.5 rounded-full bg-[#008de4] text-white hover:bg-blue-600 active:scale-95 transition-all text-xs sm:text-[14px] font-medium disabled:opacity-40 disabled:cursor-not-allowed text-center cursor-pointer shadow-md"
-              >
-                Recommencer le test
-              </button>
-            )}
+                  {/* Retour au profil */}
+                  <button
+                    type="button"
+                    onClick={() => handleNavigate("video")}
+                    className="flex-1 h-11 px-3 sm:px-4 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white active:scale-95 transition-all text-[11px] sm:text-[13px] font-bold flex items-center justify-center gap-2 cursor-pointer shadow-lg shadow-emerald-500/20 overflow-hidden"
+                  >
+                    <ArrowLeft className="w-4 h-4 flex-shrink-0" />
+                    <span className="truncate">Retour au profil</span>
+                  </button>
+                </div>
 
-            {phase === "finished" && (
-              <button
-                onClick={() => handleNavigate("video")}
-                className="flex-1 w-full px-4 sm:px-5 py-2.5 rounded-full bg-green-600 text-white hover:bg-green-700 active:scale-95 transition-all text-xs sm:text-[14px] font-medium text-center cursor-pointer shadow-md"
-              >
-                Retour au profil
-              </button>
+                {/* Accéder à mon tableau de bord */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    stopAllMediaTracks();
+                    router.push("/dashboard/talent");
+                  }}
+                  className="w-full px-4 py-2.5 rounded-full border border-white/20 text-white/80 hover:bg-white/10 hover:text-white transition-all text-xs sm:text-[13px] font-medium text-center cursor-pointer"
+                >
+                  Accéder à mon tableau de bord
+                </button>
+              </div>
+            ) : (
+              <div className="flex flex-col sm:flex-row gap-2.5 sm:gap-3 items-stretch sm:items-center">
+                {/* Cancel button only during test */}
+                <button 
+                  onClick={() => setIsCancelModalOpen(true)}
+                  className="px-4 sm:px-5 py-2.5 rounded-full border border-red-500/80 text-red-500 hover:bg-red-500/10 transition-colors text-xs sm:text-[14px] font-medium whitespace-nowrap text-center cursor-pointer"
+                >
+                  Annuler le test
+                </button>
+
+                {phase === "pre_start" && (
+                  <button
+                    onClick={() => setIsStartModalOpen(true)}
+                    className="flex-1 px-4 sm:px-5 py-2.5 rounded-full bg-[#008de4] text-white hover:bg-blue-600 active:scale-95 transition-all text-xs sm:text-[14px] font-medium text-center cursor-pointer shadow-md"
+                  >
+                    Commencer le test
+                  </button>
+                )}
+
+                {(phase === "recording" || phase === "countdown") && (
+                  <button
+                    onClick={handleRestart}
+                    disabled={triesLeft <= 0}
+                    className="flex-1 px-4 sm:px-5 py-2.5 rounded-full bg-[#008de4] text-white hover:bg-blue-600 active:scale-95 transition-all text-xs sm:text-[14px] font-medium disabled:opacity-40 disabled:cursor-not-allowed text-center cursor-pointer shadow-md"
+                  >
+                    Recommencer le test
+                  </button>
+                )}
+              </div>
             )}
           </div>
         </div>
@@ -1084,9 +1530,7 @@ export default function InterviewPage() {
       <StartInterviewModal 
         isOpen={isStartModalOpen} 
         onClose={() => setIsStartModalOpen(false)} 
-        onConfirm={() => {
-          handleStart();
-        }} 
+        onConfirm={handleStart} 
       />
 
       <CancelInterviewModal 

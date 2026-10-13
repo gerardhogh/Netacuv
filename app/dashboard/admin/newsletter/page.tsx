@@ -1,9 +1,9 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import {
   Mail, Send, Users, RefreshCw, CheckCircle2, AlertCircle, Loader2,
-  ExternalLink, Eye, ShieldCheck, MailCheck
+  ExternalLink, Eye, ShieldCheck, MailCheck, Download, Trash2, Search, UserMinus
 } from "lucide-react";
 import toast from "react-hot-toast";
 
@@ -11,12 +11,15 @@ interface Subscriber {
   id: string;
   email: string;
   created_at: string;
+  status?: "ACTIVE" | "UNSUBSCRIBED";
+  source?: string;
   unsubscribed?: boolean;
 }
 
 export default function AdminNewsletterPage() {
   const [subscribers, setSubscribers] = useState<Subscriber[]>([]);
   const [loadingSubscribers, setLoadingSubscribers] = useState(true);
+  const [searchQuery, setSearchQuery] = useState("");
 
   // Formulaire d'envoi
   const [subject, setSubject] = useState("");
@@ -25,6 +28,7 @@ export default function AdminNewsletterPage() {
   const [testEmail, setTestEmail] = useState("");
   const [sending, setSending] = useState(false);
   const [previewOpen, setPreviewOpen] = useState(false);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   // Récupération des abonnés
   const fetchSubscribers = async () => {
@@ -48,6 +52,74 @@ export default function AdminNewsletterPage() {
     fetchSubscribers();
   }, []);
 
+  // Filtrage des abonnés
+  const filteredSubscribers = useMemo(() => {
+    if (!searchQuery.trim()) return subscribers;
+    const q = searchQuery.toLowerCase().trim();
+    return subscribers.filter((s) => s.email.toLowerCase().includes(q));
+  }, [subscribers, searchQuery]);
+
+  const activeCount = useMemo(() => {
+    return subscribers.filter((s) => !s.unsubscribed && s.status !== "UNSUBSCRIBED").length;
+  }, [subscribers]);
+
+  const unsubscribedCount = useMemo(() => {
+    return subscribers.filter((s) => s.unsubscribed || s.status === "UNSUBSCRIBED").length;
+  }, [subscribers]);
+
+  // Export CSV
+  const handleExportCSV = () => {
+    if (subscribers.length === 0) {
+      toast.error("Aucun abonné à exporter.");
+      return;
+    }
+    const headers = ["ID", "Email", "Statut", "Source", "Date Inscription"];
+    const rows = subscribers.map((s) => [
+      s.id,
+      s.email,
+      s.unsubscribed ? "DESABONNE" : "ACTIF",
+      s.source || "FOOTER",
+      new Date(s.created_at).toISOString(),
+    ]);
+
+    const csvContent =
+      "data:text/csv;charset=utf-8," +
+      [headers.join(","), ...rows.map((e) => e.map((val) => `"${val}"`).join(","))].join("\n");
+
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", `netacuv_newsletter_subscribers_${new Date().toISOString().slice(0, 10)}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    toast.success("Export CSV téléchargé avec succès !");
+  };
+
+  // Suppression d'un abonné
+  const handleDeleteSubscriber = async (id: string, email: string) => {
+    if (!window.confirm(`Supprimer définitivement l'abonné ${email} de la base de données ?`)) {
+      return;
+    }
+    setDeletingId(id);
+    try {
+      const res = await fetch(`/api/admin/newsletter?id=${id}`, {
+        method: "DELETE",
+      });
+      const data = await res.json();
+      if (res.ok) {
+        toast.success(data.message || "Abonné supprimé.");
+        setSubscribers((prev) => prev.filter((s) => s.id !== id));
+      } else {
+        toast.error(data.error || "Erreur lors de la suppression.");
+      }
+    } catch {
+      toast.error("Impossible de contacter le serveur.");
+    } finally {
+      setDeletingId(null);
+    }
+  };
+
   // Envoi de la newsletter
   const handleSend = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -64,7 +136,7 @@ export default function AdminNewsletterPage() {
 
     const confirmText = isTestMode
       ? `Envoyer un e-mail de test à ${testEmail} ?`
-      : `Confirmer l'envoi de cette newsletter à tous les ${subscribers.length} abonnés ?`;
+      : `Confirmer l'envoi de cette newsletter aux ${activeCount} abonnés actifs ?`;
 
     if (!window.confirm(confirmText)) return;
 
@@ -113,20 +185,29 @@ export default function AdminNewsletterPage() {
               <span className="text-[#32A8D7]">Newsletter</span>
             </h1>
             <p className="text-xs text-slate-500 mt-0.5">
-              Consultez vos abonnés et diffusez vos annonces et actualités via Resend.
+              Consultez vos abonnés, exportez vos listes et diffusez vos annonces via Resend &amp; PostgreSQL.
             </p>
           </div>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 flex-wrap">
+          <button
+            onClick={handleExportCSV}
+            disabled={subscribers.length === 0}
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-700 hover:text-[#32A8D7] text-xs font-semibold rounded-xl transition-all shadow-xs cursor-pointer disabled:opacity-50"
+            title="Exporter en CSV"
+          >
+            <Download size={14} />
+            Exporter CSV
+          </button>
           <a
             href="https://resend.com/audiences"
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 px-3.5 py-2 bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-700 hover:text-[#32A8D7] text-xs font-semibold rounded-xl transition-all shadow-xs"
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-700 hover:text-[#32A8D7] text-xs font-semibold rounded-xl transition-all shadow-xs"
           >
             <ExternalLink size={14} />
-            Dashboard Resend
+            Resend
           </a>
           <button
             onClick={fetchSubscribers}
@@ -148,8 +229,13 @@ export default function AdminNewsletterPage() {
           <div>
             <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Abonnés actifs</p>
             <h3 className="text-2xl font-black text-slate-800">
-              {loadingSubscribers ? "..." : subscribers.length}
+              {loadingSubscribers ? "..." : activeCount}
             </h3>
+            {unsubscribedCount > 0 && (
+              <p className="text-[11px] text-slate-400 mt-0.5">
+                + {unsubscribedCount} désabonné(s)
+              </p>
+            )}
           </div>
         </div>
 
@@ -158,8 +244,9 @@ export default function AdminNewsletterPage() {
             <ShieldCheck size={24} />
           </div>
           <div>
-            <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Audience Resend</p>
-            <h3 className="text-sm font-bold text-slate-800">Connectée (General)</h3>
+            <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Base de Données</p>
+            <h3 className="text-sm font-bold text-slate-800">PostgreSQL (Prisma)</h3>
+            <p className="text-[11px] text-emerald-600 font-medium mt-0.5">Stockage 100% sécurisé</p>
           </div>
         </div>
 
@@ -169,7 +256,8 @@ export default function AdminNewsletterPage() {
           </div>
           <div>
             <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Service E-mailing</p>
-            <h3 className="text-sm font-bold text-slate-800">Resend API Actif</h3>
+            <h3 className="text-sm font-bold text-slate-800">Resend Audience</h3>
+            <p className="text-[11px] text-blue-600 font-medium mt-0.5">Sync &amp; Envoi Actif</p>
           </div>
         </div>
       </div>
@@ -198,7 +286,7 @@ export default function AdminNewsletterPage() {
             <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 space-y-3 animate-fade-in text-sm">
               <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Aperçu du rendu final</p>
               <div className="bg-white border border-slate-200 rounded-lg overflow-hidden shadow-xs">
-                <div className="bg-[#1699d2] text-white p-4 text-center font-bold text-lg">
+                <div className="bg-gradient-to-r from-[#1e8ae9] to-[#32A8D7] text-white p-4 text-center font-bold text-lg">
                   Netacuv
                 </div>
                 <div className="p-5 text-slate-700 space-y-3">
@@ -232,9 +320,9 @@ export default function AdminNewsletterPage() {
                 >
                   <Users size={18} className={!isTestMode ? "text-[#32A8D7]" : "text-slate-400"} />
                   <div>
-                    <p className="text-xs font-bold">Tous les abonnés</p>
+                    <p className="text-xs font-bold">Tous les abonnés actifs</p>
                     <p className="text-[11px] text-slate-500 mt-0.5">
-                      {subscribers.length} destinataire(s) actif(s)
+                      {activeCount} destinataire(s) actif(s)
                     </p>
                   </div>
                 </button>
@@ -317,7 +405,7 @@ export default function AdminNewsletterPage() {
                 ) : (
                   <>
                     <Send size={18} />
-                    {isTestMode ? "Envoyer le test" : `Diffuser la newsletter (${subscribers.length} abonnés)`}
+                    {isTestMode ? "Envoyer le test" : `Diffuser la newsletter (${activeCount} abonnés actifs)`}
                   </>
                 )}
               </button>
@@ -330,8 +418,20 @@ export default function AdminNewsletterPage() {
           <div className="flex items-center justify-between border-b border-slate-100 pb-3">
             <h2 className="text-base font-bold text-slate-800 flex items-center gap-2">
               <Users size={18} className="text-[#32A8D7]" />
-              Liste des Abonnés ({subscribers.length})
+              Abonnés ({filteredSubscribers.length})
             </h2>
+          </div>
+
+          {/* Recherche */}
+          <div className="relative">
+            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Rechercher par adresse email..."
+              className="w-full pl-9 pr-3 py-2 text-xs rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-[#32A8D7]"
+            />
           </div>
 
           {loadingSubscribers ? (
@@ -339,28 +439,59 @@ export default function AdminNewsletterPage() {
               <Loader2 size={24} className="animate-spin text-[#32A8D7]" />
               <p className="text-xs">Chargement des abonnés...</p>
             </div>
-          ) : subscribers.length === 0 ? (
+          ) : filteredSubscribers.length === 0 ? (
             <div className="py-12 text-center text-slate-400 text-sm">
-              Aucun abonné enregistré pour le moment.
+              {searchQuery ? "Aucun abonné correspondant." : "Aucun abonné enregistré pour le moment."}
             </div>
           ) : (
             <div className="divide-y divide-slate-100 max-h-[520px] overflow-y-auto pr-1">
-              {subscribers.map((subscriber) => (
-                <div key={subscriber.id} className="py-3 flex items-center justify-between gap-3">
-                  <div className="min-w-0">
-                    <p className="text-xs font-semibold text-slate-800 truncate">
-                      {subscriber.email}
-                    </p>
-                    <p className="text-[10px] text-slate-400">
-                      Inscrit le {new Date(subscriber.created_at).toLocaleDateString("fr-FR")}
-                    </p>
+              {filteredSubscribers.map((subscriber) => {
+                const isUnsub = subscriber.unsubscribed || subscriber.status === "UNSUBSCRIBED";
+                return (
+                  <div key={subscriber.id} className="py-3 flex items-center justify-between gap-3 group">
+                    <div className="min-w-0">
+                      <p className={`text-xs font-semibold truncate ${isUnsub ? "text-slate-400 line-through" : "text-slate-800"}`}>
+                        {subscriber.email}
+                      </p>
+                      <div className="flex items-center gap-2 mt-0.5">
+                        <span className="text-[10px] text-slate-400">
+                          {new Date(subscriber.created_at).toLocaleDateString("fr-FR")}
+                        </span>
+                        {subscriber.source && (
+                          <span className="text-[9px] px-1.5 py-0.2 bg-slate-100 text-slate-500 rounded font-medium">
+                            {subscriber.source}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      {isUnsub ? (
+                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-500 flex items-center gap-1">
+                          <UserMinus size={10} />
+                          Désabonné
+                        </span>
+                      ) : (
+                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-600 flex items-center gap-1">
+                          <CheckCircle2 size={10} />
+                          Actif
+                        </span>
+                      )}
+                      <button
+                        onClick={() => handleDeleteSubscriber(subscriber.id, subscriber.email)}
+                        disabled={deletingId === subscriber.id}
+                        className="opacity-0 group-hover:opacity-100 p-1 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-all cursor-pointer"
+                        title="Supprimer cet abonné"
+                      >
+                        {deletingId === subscriber.id ? (
+                          <Loader2 size={13} className="animate-spin text-rose-500" />
+                        ) : (
+                          <Trash2 size={13} />
+                        )}
+                      </button>
+                    </div>
                   </div>
-                  <span className="shrink-0 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-600 flex items-center gap-1">
-                    <CheckCircle2 size={10} />
-                    Actif
-                  </span>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>

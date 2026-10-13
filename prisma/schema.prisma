@@ -30,6 +30,7 @@ model User {
   sessions         Session[]
   talentProfile    TalentProfile?
   transactions     Transaction[]
+  notifications    Notification[]
   role             Role?             @relation(fields: [roleId], references: [id])
 }
 
@@ -173,6 +174,7 @@ model JobOffer {
   recruiterId  String
   createdAt    DateTime         @default(now())
   updatedAt    DateTime         @updatedAt
+  expiresAt    DateTime?
   aiInterviews AIInterview[]
   applications Application[]
   recruiter    RecruiterProfile @relation(fields: [recruiterId], references: [id], onDelete: Cascade)
@@ -252,3 +254,69 @@ model Visitor {
   path      String?
   visitedAt DateTime @default(now())
 }
+
+enum NotificationType {
+  // --- TALENTS / CANDIDATS ---
+  JOB_ALERT              // Nouvelles offres correspondant aux préférences/compétences
+  APPLICATION_STATUS     // Changement de statut d'une candidature (ex: Acceptée, Refusée, Entretien)
+  INTERVIEW_REMINDER     // Rappel d'entretien à venir
+
+  // --- RECRUTEURS ---
+  NEW_APPLICATION        // Nouvelle candidature reçue sur une offre
+  JOB_EXPIRING_SOON      // Offre arrivant bientôt à expiration (ex: dans 3 jours)
+  APPLICATION_SUMMARY    // Récapitulatif hebdomadaire des candidatures reçues
+
+  // --- ADMINISTRATEURS / SUPPORT ---
+  NEW_COMPANY_PENDING    // Nouvelle entreprise/recruteur en attente de validation
+  SYSTEM_ALERT           // Alerte système ou signalement de contenu
+}
+
+model Notification {
+  id        String           @id @default(uuid())
+  userId    String           // Référence à l'utilisateur (Talent, Recruteur ou Admin)
+  title     String
+  message   String
+  type      NotificationType
+  read      Boolean          @default(false)
+  link      String?          // Lien de redirection au clic (ex: /dashboard/applications/123)
+  createdAt DateTime         @default(now())
+
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([read])
+}
+
+model Report {
+  id          String   @id @default(uuid())
+  reporterId  String?  // Utilisateur à l'origine du signalement
+  targetType  String   // "JOB_OFFER", "TALENT", "RECRUITER"
+  targetId    String   // ID de l'offre ou de l'utilisateur
+  targetTitle String?  // Titre de l'offre ou nom de l'utilisateur
+  reason      String   // Motif (ex: Fraude, Contenu trompeur, etc.)
+  details     String?  // Description complémentaire
+  status      String   @default("PENDING") // PENDING, RESOLVED, REJECTED
+  createdAt   DateTime @default(now())
+
+  @@index([targetType, targetId])
+  @@index([status])
+}
+
+enum NewsletterStatus {
+  ACTIVE
+  UNSUBSCRIBED
+}
+
+model NewsletterSubscriber {
+  id             String           @id @default(uuid())
+  email          String           @unique
+  status         NewsletterStatus @default(ACTIVE)
+  source         String?          @default("FOOTER")
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+  unsubscribedAt DateTime?
+
+  @@index([email])
+  @@index([status])
+}
+

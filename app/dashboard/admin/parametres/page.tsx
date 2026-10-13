@@ -3,11 +3,12 @@ import React, { useState } from "react";
 import { Eye, EyeOff, ChevronDown } from "lucide-react";
 import { useLocale } from "next-intl";
 import { LOCALES, Locale } from "@/app/components/LanguageSwitcher";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 
 export default function AdminParametres() {
   const locale = useLocale();
   const router = useRouter();
+  const pathname = usePathname() || "/";
   const [emailNotif, setEmailNotif] = useState(true);
   const [smsNotif, setSmsNotif] = useState(false);
   const [showPassword1, setShowPassword1] = useState(false);
@@ -105,14 +106,25 @@ export default function AdminParametres() {
             onChange={(e) => {
               const newLocale = e.target.value as Locale;
               const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-              const domainPart = isLocalhost ? '' : ' domain=.netacuv.com;';
-              document.cookie = `NEXT_LOCALE=${newLocale}; path=/;${domainPart} SameSite=Lax`;
+              const domainPart = isLocalhost ? '' : '; domain=.netacuv.com';
+              document.cookie = `NEXT_LOCALE=${newLocale}; path=/; max-age=31536000${domainPart}; SameSite=Lax`;
+
+              let newPath = pathname;
+              if (pathname.startsWith('/fr/') || pathname === '/fr') {
+                newPath = pathname.replace(/^\/fr(\/|$)/, `/${newLocale}$1`);
+              } else if (pathname.startsWith('/en/') || pathname === '/en') {
+                newPath = pathname.replace(/^\/en(\/|$)/, `/${newLocale}$1`);
+              } else {
+                newPath = `/${newLocale}${pathname === '/' ? '' : pathname}`;
+              }
+
+              router.push(newPath);
               router.refresh();
             }}
             className="w-full bg-[#f8f9fa] border-none rounded-lg py-3 px-4 text-sm focus:ring-2 focus:ring-[#1e8ae9] appearance-none cursor-pointer text-slate-800 font-medium"
           >
-            {LOCALES.map(({ code, label, flag }) => (
-              <option key={code} value={code}>{flag} {label}</option>
+            {LOCALES.map(({ code, label, flag, countryCode }) => (
+              <option key={code} value={code}>{flag} {label} ({countryCode})</option>
             ))}
           </select>
           <ChevronDown size={18} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />

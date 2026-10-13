@@ -28,12 +28,12 @@ export default function AdminLoginPage() {
 
       if (res?.error) {
         setError(`Erreur: ${res.error}`);
+        setIsLoading(false);
       } else {
-        window.location.href = "/";
+        window.location.href = "/dashboard/admin";
       }
     } catch (err) {
       setError("Une erreur est survenue.");
-    } finally {
       setIsLoading(false);
     }
   };

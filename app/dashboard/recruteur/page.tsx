@@ -43,6 +43,7 @@ import ProfilTab from "./components/ProfilTab";
 import TransactionsTab from "./components/TransactionsTab";
 import RecruteurPremium from "./components/RecruteurPremium";
 import LogoutButton from "../../components/LogoutButton";
+import NotificationBell from "@/app/components/NotificationBell";
 import PremiumBanner from "../../components/PremiumBanner";
 
 const fetcher = (url: string) => fetch(url).then(res => res.json());
@@ -195,7 +196,7 @@ export default function RecruteurDashboard() {
 
   return (
     <>
-    <div className="flex min-h-screen bg-slate-50 text-slate-800 font-sans">
+    <div className="flex min-h-screen bg-[#fafbfc] text-slate-800 font-sans">
 
       {/* ── Toast ─────────────────────────────────────────────────────────────── */}
       {toastMessage && (
@@ -362,46 +363,8 @@ export default function RecruteurDashboard() {
               <LanguageSwitcher variant="desktop" showLabel={false} align="right" />
             </div>
 
-            {/* Bell */}
-            <div className="relative">
-              <button
-                onClick={() => { setNotifMenuOpen(!notifMenuOpen); setProfileMenuOpen(false); }}
-                className="p-2 text-slate-500 hover:bg-slate-100 rounded-full transition-colors relative"
-                aria-label="Notifications"
-              >
-                <Bell size={20} />
-                {unreadCount > 0 && (
-                  <span className="absolute top-1.5 right-1.5 w-4 h-4 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center">
-                    {unreadCount}
-                  </span>
-                )}
-              </button>
-
-              {notifMenuOpen && (
-                <div className="absolute right-0 mt-3 w-80 bg-white rounded-2xl shadow-2xl border border-slate-100 py-3 z-30 animate-fade-in">
-                  <div className="px-4 py-2 border-b border-slate-100 flex items-center justify-between">
-                    <p className="text-xs font-bold text-slate-800">Notifications ({unreadCount})</p>
-                    <button
-                      onClick={() => setNotifications(notifications.map((n) => ({ ...n, read: true })))}
-                      className="text-[10px] text-[#32A8D7] hover:underline font-semibold"
-                    >
-                      Tout marquer comme lu
-                    </button>
-                  </div>
-                  <div className="max-h-64 overflow-y-auto divide-y divide-slate-50">
-                    {notifications.map((notif) => (
-                      <div
-                        key={notif.id}
-                        className={`p-3 text-xs hover:bg-slate-50 transition-colors ${!notif.read ? "bg-sky-50/40" : ""}`}
-                      >
-                        <p className="text-slate-800 font-medium leading-snug">{notif.text}</p>
-                        <span className="text-[10px] text-slate-400 mt-1 block">{notif.time}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
+            {/* Notification Bell temps réel */}
+            <NotificationBell align="right" />
 
             {/* Avatar */}
             <div className="relative">

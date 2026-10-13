@@ -79,7 +79,7 @@ export async function GET(
       date: new Date(talentUser.createdAt).toLocaleDateString('fr-FR'),
       updatedAt: profile?.updatedAt ? new Date(profile.updatedAt).toLocaleDateString('fr-FR') : "Récemment",
       status: talentUser.active ? "Actif" : "Suspendu",
-      videoUrl: shouldHideSensitive ? "" : profile?.videoUrl,
+      videoUrl: profile?.videoUrl || "",
       domaine: profile?.degree || "Général",
       location: (profile?.city && profile?.country) 
         ? `${profile.city}, ${profile.country}` 
@@ -115,7 +115,7 @@ export async function GET(
       interviewSession: interviewSession ? {
         id: interviewSession.id,
         status: interviewSession.status,
-        videoRecordings: shouldHideSensitive ? "" : interviewSession.videoRecordings,
+        videoRecordings: interviewSession.videoRecordings || profile?.videoUrl || "",
         aiScore: interviewSession.aiScore,
         aiFeedback: interviewSession.aiFeedback,
       } : null,

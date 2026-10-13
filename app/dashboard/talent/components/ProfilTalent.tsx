@@ -26,8 +26,28 @@ import { getVideoFromDB, deleteVideoFromDB, saveCvToDB, getCvFromDB } from "../.
 import { QRCodeSVG } from "qrcode.react";
 import PremiumRequiredModal from "../../../components/PremiumRequiredModal";
 import { compressImage } from "@/lib/compressImage";
+import NetacuvVideoPlayer from "@/components/NetacuvVideoPlayer";
 
 type SubTab = "informations" | "reseaux" | "video";
+
+// Helper de dédoublonnage pour /api/talents/me (évite 4 requêtes simultanées à chaque affichage)
+let talentMeCachePromise: Promise<any> | null = null;
+let talentMeCacheTime = 0;
+
+function getTalentMeCached(force = false) {
+  const now = Date.now();
+  if (!force && talentMeCachePromise && now - talentMeCacheTime < 3500) {
+    return talentMeCachePromise;
+  }
+  talentMeCacheTime = now;
+  talentMeCachePromise = fetch("/api/talents/me", { credentials: "include" })
+    .then((r) => r.json())
+    .catch((err) => {
+      talentMeCachePromise = null;
+      throw err;
+    });
+  return talentMeCachePromise;
+}
 
 function ProfilTalentContent({ initialTab = "informations" }: { initialTab?: SubTab }) {
   const { user, updateUser } = useAuth();
@@ -59,9 +79,8 @@ function ProfilTalentContent({ initialTab = "informations" }: { initialTab?: Sub
     setTimeout(() => setToastMessage(null), 3500);
   };
 
-  const fetchProfile = () => {
-    fetch("/api/talents/me")
-      .then(res => res.json())
+  const fetchProfile = (force = false) => {
+    getTalentMeCached(force)
       .then(data => {
         if (!data.error) {
           if (data.avatar) setUserAvatar(data.avatar);
@@ -731,8 +750,7 @@ function InformationsTab({ onUpdate }: { onUpdate: () => void }) {
   };
 
   useEffect(() => {
-    fetch("/api/talents/me")
-      .then(res => res.json())
+    getTalentMeCached()
       .then(data => {
         if (!data.error) {
           setFormData({
@@ -1069,8 +1087,7 @@ function ReseauxTab() {
   };
 
   useEffect(() => {
-    fetch("/api/talents/me")
-      .then(res => res.json())
+    getTalentMeCached()
       .then(data => {
         if (!data.error) {
           setFormData({
@@ -1207,94 +1224,143 @@ function VideoTab() {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isReplaceModalOpen, setIsReplaceModalOpen] = useState(false);
   const [showPremiumModal, setShowPremiumModal] = useState(false);
+  const [toastMsg, setToastMsg] = useState<string | null>(null);
+  const showToast = (msg: string) => {
+    setToastMsg(msg);
+    setTimeout(() => setToastMsg(null), 3500);
+  };
 
   useEffect(() => {
     let isMounted = true;
 
-    const loadVideo = async () => {
+    const loadVideo = async (forceRefresh = false) => {
       setIsLoading(true);
       try {
-        // 1. Check if video URL exists in DB (Supabase) via API
-        const res = await fetch("/api/talents/me", { credentials: "include" });
-        if (res.ok) {
-          const data = await res.json();
-          const dbVideoUrl = data.talentProfile?.videoUrl;
-          if (dbVideoUrl && isMounted) {
-            setVideoUrl(dbVideoUrl);
-            setHasVideo(true);
-            setIsLoading(false);
-            return; // Supabase URL found — no need to check IndexedDB
-          }
+        // 1. Check if video URL exists in DB — force refresh to bypass stale cache
+        const data = await getTalentMeCached(forceRefresh);
+        const dbVideoUrl = data.talentProfile?.videoUrl;
+        if (dbVideoUrl && isMounted) {
+          setVideoUrl(dbVideoUrl);
+          setHasVideo(true);
+          setIsLoading(false);
+          return;
         }
       } catch (e) {
         console.warn("Could not fetch profile videoUrl from API", e);
       }
 
-      // 2. Fallback: check IndexedDB (local blob)
-      const isRecorded = typeof window !== "undefined" && user?.id && localStorage.getItem(`interview_recorded_${user.id}`) === "true";
-      if (isRecorded) {
-        try {
-          const blob = await getVideoFromDB();
-          if (!isMounted) return;
-          if (blob && blob.size > 0) {
-            setVideoBlob(blob);
-            const url = URL.createObjectURL(blob);
-            setVideoUrl(url);
-            setHasVideo(true);
-
-            // Auto-sync local video to server so admin can see it
-            const formData = new FormData();
-            const ext = blob.type?.includes("mp4") ? "mp4" : "webm";
-            formData.append("video", blob, `interview-sync.${ext}`);
-            if (user?.id) formData.append("userId", user.id);
-            fetch("/api/talents/video", {
-              method: "POST",
-              body: formData,
-              credentials: "include"
-            }).catch(console.error);
-
-          } else {
-            setHasVideo(false);
-            setVideoUrl(null);
-          }
-        } catch (err) {
-          console.error("Error loading video from DB:", err);
-          if (isMounted) setHasVideo(false);
+      // 2. Check localStorage video url if cached
+      if (typeof window !== "undefined") {
+        const storedUrl = localStorage.getItem("interview_video_url");
+        if (storedUrl && isMounted) {
+          setVideoUrl(storedUrl);
+          setHasVideo(true);
+          setIsLoading(false);
+          return;
         }
-      } else {
-        setHasVideo(false);
-        setVideoUrl(null);
       }
 
-      if (isMounted) setIsLoading(false);
+      // 3. Fallback: check IndexedDB (local blob recorded during interview)
+      try {
+        const blob = await getVideoFromDB();
+        if (!isMounted) return;
+        if (blob && blob.size > 0) {
+          setVideoBlob(blob);
+          const url = URL.createObjectURL(blob);
+          setVideoUrl(url);
+          setHasVideo(true);
+
+          // Auto-sync local video to server so admin and recruiters can see it
+          const formData = new FormData();
+          const ext = blob.type?.includes("mp4") ? "mp4" : "webm";
+          formData.append("video", blob, `interview-sync.${ext}`);
+          if (user?.id) formData.append("userId", user.id);
+          fetch("/api/talents/video", {
+            method: "POST",
+            body: formData,
+            credentials: "include"
+          })
+            .then(r => r.json())
+            .then(res => {
+              if (res.videoUrl) {
+                if (typeof window !== "undefined") {
+                  localStorage.setItem("interview_video_url", res.videoUrl);
+                }
+                window.dispatchEvent(new Event("dashboardProfileUpdated"));
+              }
+            })
+            .catch(console.error);
+
+          setIsLoading(false);
+          return;
+        }
+      } catch (err) {
+        console.error("Error loading video from IndexedDB:", err);
+      }
+
+      if (isMounted) {
+        setHasVideo(false);
+        setVideoUrl(null);
+        setIsLoading(false);
+      }
     };
 
-    loadVideo();
+    // Force-refresh on mount to ensure we get fresh data (e.g. after recording)
+    loadVideo(true);
+
+    const handleProfileUpdate = () => {
+      loadVideo(true);
+    };
+    window.addEventListener("dashboardProfileUpdated", handleProfileUpdate);
 
     return () => {
       isMounted = false;
+      window.removeEventListener("dashboardProfileUpdated", handleProfileUpdate);
     };
-  }, []);
-
+  }, [user?.id]);
 
   useEffect(() => {
     return () => {
-      if (videoUrl) {
+      if (videoUrl && videoUrl.startsWith("blob:")) {
         URL.revokeObjectURL(videoUrl);
       }
     };
   }, [videoUrl]);
 
-  const handleDelete = () => {
-    if (user?.id) localStorage.removeItem(`interview_recorded_${user.id}`);
-    deleteVideoFromDB()
-      .then(() => {
-        setHasVideo(false);
-        if (videoUrl) URL.revokeObjectURL(videoUrl);
-        setVideoUrl(null);
-        setVideoBlob(null);
-      })
-      .catch(console.error);
+  const handleDelete = async () => {
+    try {
+      if (typeof window !== "undefined") {
+        localStorage.removeItem("interview_recorded");
+        localStorage.removeItem("interview_video_url");
+        if (user?.id) {
+          localStorage.removeItem(`interview_recorded_${user.id}`);
+        }
+      }
+
+      // 1. Supprimer côté serveur (Base de données et fichier physique)
+      await fetch("/api/talents/video", {
+        method: "DELETE",
+        credentials: "include",
+      }).catch(console.error);
+
+      // 2. Supprimer côté local IndexedDB
+      await deleteVideoFromDB().catch(console.error);
+
+      // 3. Réinitialiser les états
+      setHasVideo(false);
+      if (videoUrl && videoUrl.startsWith("blob:")) {
+        URL.revokeObjectURL(videoUrl);
+      }
+      setVideoUrl(null);
+      setVideoBlob(null);
+
+      // 4. Émettre l'événement pour recalculer immédiatement le % du profil
+      window.dispatchEvent(new Event("dashboardProfileUpdated"));
+      showToast("Vidéo supprimée avec succès !");
+    } catch (err) {
+      console.error("Erreur suppression vidéo:", err);
+      showToast("Erreur lors de la suppression de la vidéo.");
+    }
   };
 
   const handleDownloadVideo = () => {
@@ -1406,30 +1472,10 @@ function VideoTab() {
           </div>
         ) : hasVideo && videoUrl ? (
           <div className="space-y-4">
-            <div className="w-full bg-black rounded-xl aspect-[16/9] overflow-hidden shadow-md relative border border-slate-200">
-              <video 
-                src={videoUrl} 
-                controls 
-                playsInline
-                preload="auto"
-                onLoadedMetadata={(e) => {
-                  const v = e.currentTarget;
-                  // Fix WebM 0:00 / Infinity duration in Chromium and paint first frame
-                  if (!isFinite(v.duration) || v.duration === 0) {
-                    v.currentTime = 1e101;
-                    v.ontimeupdate = () => {
-                      v.ontimeupdate = null;
-                      v.currentTime = 0.001;
-                    };
-                  } else {
-                    if (v.currentTime === 0) {
-                      v.currentTime = 0.001;
-                    }
-                  }
-                }}
-                className="w-full h-full object-contain" 
-              />
-            </div>
+            <NetacuvVideoPlayer
+              src={videoUrl}
+              aspectRatio="aspect-video"
+            />
             <div className="flex flex-wrap gap-3">
               <button 
                 onClick={() => setIsDeleteModalOpen(true)} 

@@ -92,6 +92,19 @@ export async function POST(request: Request) {
       },
     });
 
+    // Si c'est un recruteur / entreprise, notifier les administrateurs
+    if (roleName === "RECRUTEUR") {
+      try {
+        const { notifyNewCompanyPending } = await import("@/lib/notifications");
+        notifyNewCompanyPending({
+          companyName: name,
+          email,
+        }).catch(() => {});
+      } catch (notifErr) {
+        console.error("[Register] Erreur notification admin:", notifErr);
+      }
+    }
+
     return NextResponse.json(
       { message: "Inscription réussie", userId: newUser.id },
       { status: 201 }

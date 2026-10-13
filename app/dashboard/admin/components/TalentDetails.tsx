@@ -2,6 +2,7 @@
 import React, { useState } from "react";
 import Image from "next/image";
 import { Download, Eye } from "lucide-react";
+import NetacuvVideoPlayer from "@/components/NetacuvVideoPlayer";
 
 export function TalentDetails({ talent, onBack }: { talent: any, onBack: () => void }) {
   const [activeTab, setActiveTab] = useState("Informations");
@@ -239,32 +240,28 @@ export function TalentDetails({ talent, onBack }: { talent: any, onBack: () => v
             </div>
           )}
           
-          {activeTab === "Vidéo Entretien" && (
-            <div className="flex flex-col items-center justify-center min-h-[300px]">
-              {talent.videoUrl ? (
-                <div className="w-full bg-black rounded-xl aspect-[16/9] overflow-hidden shadow-md relative border border-slate-200">
-                  <video 
-                    src={talent.videoUrl} 
-                    controls 
-                    className="w-full h-full object-contain"
-                    onError={(e) => {
-                      const target = e.currentTarget;
-                      target.style.display = 'none';
-                    }}
+          {activeTab === "Vidéo Entretien" && (() => {
+            const adminVideoUrl = talent.videoUrl || talent.videoRecordings || talent.interviewSession?.videoRecordings;
+            return (
+              <div className="flex flex-col items-center justify-center min-h-[300px]">
+                {adminVideoUrl ? (
+                  <NetacuvVideoPlayer
+                    src={adminVideoUrl}
+                    aspectRatio="aspect-video"
                   />
-                </div>
-              ) : (
-                <div className="text-center text-slate-500 py-20 bg-slate-50 rounded-xl border border-slate-100 w-full">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" className="mx-auto mb-3 text-slate-300">
-                    <path d="m22 8-6 4 6 4V8z"/>
-                    <rect width="14" height="12" x="2" y="6" rx="2" ry="2"/>
-                  </svg>
-                  <p className="font-medium text-sm">Aucune vidéo d&apos;entretien disponible</p>
-                  <p className="text-xs text-slate-400 mt-1">Ce talent n&apos;a pas encore soumis de vidéo d&apos;entretien.</p>
-                </div>
-              )}
-            </div>
-          )}
+                ) : (
+                  <div className="text-center text-slate-500 py-20 bg-slate-50 rounded-xl border border-slate-100 w-full">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" className="mx-auto mb-3 text-slate-300">
+                      <path d="m22 8-6 4 6 4V8z"/>
+                      <rect width="14" height="12" x="2" y="6" rx="2" ry="2"/>
+                    </svg>
+                    <p className="font-medium text-sm">Aucune vidéo d&apos;entretien disponible</p>
+                    <p className="text-xs text-slate-400 mt-1">Ce talent n&apos;a pas encore soumis de vidéo d&apos;entretien.</p>
+                  </div>
+                )}
+              </div>
+            );
+          })()}
         </div>
       </div>
     </div>

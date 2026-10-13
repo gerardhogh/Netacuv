@@ -4,7 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { signIn } from "next-auth/react";
+import { signIn, getSession } from "next-auth/react";
 import { Eye, EyeOff, Lock, Mail, AlertCircle, UserPlus } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import GoogleAuthModal from "../components/GoogleAuthModal";
@@ -69,16 +69,24 @@ export default function ConnexionPage() {
           setFormError(result.error);
         }
       } else {
-        // Redirection dynamique gérée après le login, par exemple via le callback,
-        // Mais ici, on va rediriger vers le dashboard par défaut (ou on pourrait vérifier la session).
-        // Si l'utilisateur est admin, on devrait l'envoyer vers /dashboard/admin. 
-        // Pour simplifier l'UI sans await getSession(), on redirige vers le tab sélectionné s'il était bon, ou on fetch la session.
-        if (email.trim().toLowerCase() === "admin@gmail.com") {
-          router.push("/dashboard/admin");
-        } else if (tab === "recruteur") {
-          router.push("/dashboard/recruteur");
-        } else {
-          router.push("/dashboard/talent");
+        try {
+          const session = await getSession();
+          const userRole = (session?.user as any)?.role?.toString()?.toUpperCase() || "";
+          const isAdmin = [
+            "SUPER ADMIN", "ADMIN", "ADMINISTRATEUR",
+            "ADMIN RH / MODÉRATEUR", "MANAGER IA & CERTIFICATION",
+            "GESTIONNAIRE FINANCIER", "SUPPORT CLIENT"
+          ].includes(userRole);
+
+          if (isAdmin) {
+            window.location.href = "/dashboard/admin";
+          } else if (userRole === "RECRUTEUR" || userRole === "RECRUITER" || tab === "recruteur") {
+            window.location.href = "/dashboard/recruteur";
+          } else {
+            window.location.href = "/dashboard/talent";
+          }
+        } catch {
+          window.location.href = "/dashboard";
         }
       }
     } catch (err) {

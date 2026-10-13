@@ -3,8 +3,9 @@
 import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { Bookmark, BadgeCheck, CheckCircle, Crown } from "lucide-react";
+import { Bookmark, BadgeCheck, CheckCircle, Crown, Flag } from "lucide-react";
 import PremiumRequiredModal from "./PremiumRequiredModal";
+import ReportModal from "./ReportModal";
 
 export interface TalentCardProps {
   id?: string | number;
@@ -41,6 +42,7 @@ export default function TalentCard({
   hasVideo = false,
 }: TalentCardProps) {
   const [showPremiumModal, setShowPremiumModal] = useState(false);
+  const [showReportModal, setShowReportModal] = useState(false);
 
   const destination = (!blurSensitive && (profileHref || id)) 
     ? (profileHref ?? `/dashboard/recruteur/talents/${id}`) 
@@ -116,17 +118,29 @@ export default function TalentCard({
                 {blurSensitive ? "Localisation Masquée" : location}
               </p>
             </div>
-            <button
-              type="button"
-              onClick={() => onFavorite?.(id)}
-              aria-label="Ajouter aux favoris"
-              className="text-[#32A8D7] hover:text-[#258eb8] p-1 -mr-1 -mt-1 rounded-lg hover:bg-sky-50 transition-colors shrink-0"
-            >
-              <Bookmark
-                className="w-5 h-5"
-                fill={isFavorite ? "currentColor" : "none"}
-              />
-            </button>
+            <div className="flex items-center gap-0.5 -mr-1 -mt-1 shrink-0">
+              <button
+                type="button"
+                onClick={() => onFavorite?.(id)}
+                aria-label="Ajouter aux favoris"
+                title="Ajouter aux favoris"
+                className="text-[#32A8D7] hover:text-[#258eb8] p-1 rounded-lg hover:bg-sky-50 transition-colors"
+              >
+                <Bookmark
+                  className="w-5 h-5"
+                  fill={isFavorite ? "currentColor" : "none"}
+                />
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowReportModal(true)}
+                aria-label="Signaler ce profil"
+                title="Signaler ce profil"
+                className="text-slate-300 hover:text-rose-500 p-1 rounded-lg hover:bg-rose-50 transition-colors"
+              >
+                <Flag className="w-4 h-4" />
+              </button>
+            </div>
           </div>
 
           {/* Profession */}
@@ -193,6 +207,14 @@ export default function TalentCard({
           message="Passez au plan Premium pour contacter ce talent et consulter son profil complet."
         />
       )}
+
+      <ReportModal
+        isOpen={showReportModal}
+        onClose={() => setShowReportModal(false)}
+        targetType="TALENT"
+        targetId={String(id || "")}
+        targetTitle={name}
+      />
     </>
   );
 }
