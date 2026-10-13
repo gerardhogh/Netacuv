@@ -105,7 +105,7 @@ export async function POST(req: NextRequest) {
     }
 
     const resend = new Resend(apiKey);
-    const fromSender = process.env.RESEND_FROM_EMAIL || "Netacuv <onboarding@resend.dev>";
+    const fromSender = process.env.RESEND_FROM_EMAIL || "Netacuv <contact@netacuv.com>";
     const siteUrl = process.env.NEXTAUTH_URL || "https://netacuv.com";
 
     // Récupération des destinataires depuis la base de données

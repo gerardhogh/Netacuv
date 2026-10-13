@@ -210,7 +210,7 @@ export async function POST(req: NextRequest) {
 
       // B. Envoi du mail de bienvenue si c'est une nouvelle inscription ou réactivation
       if (isNewSubscriber) {
-        const fromSender = process.env.RESEND_FROM_EMAIL || "Netacuv <onboarding@resend.dev>";
+        const fromSender = process.env.RESEND_FROM_EMAIL || "Netacuv <contact@netacuv.com>";
         resend.emails
           .send({
             from: fromSender,
