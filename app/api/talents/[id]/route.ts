@@ -88,7 +88,9 @@ export async function GET(
       city: profile?.city || "",
       profession: profile?.degree || "Talent", 
       bio: profile?.bio || "Aucune biographie",
-      imageUrl: talentUser.image || "/assets/avatar_africain.jpg",
+      imageUrl: talentUser.image?.startsWith("data:image")
+        ? `/api/users/${talentUser.id}/avatar`
+        : (talentUser.image || "/assets/avatar_africain.jpg"),
       cvUrl: shouldHideSensitive ? "" : (profile?.cvUrl || ""),
       isVerified: true,
       skills: skills,

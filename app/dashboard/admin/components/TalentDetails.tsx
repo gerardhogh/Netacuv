@@ -23,8 +23,18 @@ export function TalentDetails({ talent, onBack }: { talent: any, onBack: () => v
         {/* Left Sidebar */}
         <div className="w-full lg:w-1/3 flex flex-col gap-6">
           <div className="bg-white rounded-xl border border-slate-200 p-6 flex flex-col items-center text-center shadow-sm">
-            <div className="w-24 h-24 rounded-full overflow-hidden border-4 border-white shadow-md mb-4 relative">
-              <Image src={talent.avatar || "/assets/avatar_africain.jpg"} alt={talent.name} fill className="object-cover object-center w-full h-full" />
+            <div className="w-24 h-24 rounded-full overflow-hidden border-4 border-white shadow-md mb-4 relative bg-slate-100">
+              <Image 
+                src={talent.avatar || "/assets/avatar_africain.jpg"} 
+                alt={talent.name} 
+                fill 
+                sizes="96px"
+                priority
+                onError={(e) => {
+                  (e.target as HTMLImageElement).src = "/assets/avatar_africain.jpg";
+                }}
+                className="object-cover object-center w-full h-full" 
+              />
             </div>
             <h2 className="text-xl font-black text-slate-900">{talent.name}</h2>
             <p className="text-slate-500 text-sm mb-4">{talent.domaine}</p>

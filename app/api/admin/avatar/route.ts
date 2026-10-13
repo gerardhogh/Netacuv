@@ -49,17 +49,32 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Image trop volumineuse. La taille maximale est de 5 Mo." }, { status: 400 });
     }
 
-    // Sauvegarde en Base64 dans la BDD pour contourner le read-only de Vercel
-    const fileUrl = avatarBase64;
+    let finalBase64 = base64Data;
+    let finalMime = mimeType;
+    try {
+      const sharp = (await import('sharp')).default;
+      const compressed = await sharp(buffer)
+        .resize(400, 400, { fit: 'cover', position: 'center' })
+        .webp({ quality: 82 })
+        .toBuffer();
+      finalBase64 = compressed.toString('base64');
+      finalMime = 'image/webp';
+    } catch (e) {
+      // fallback to original if sharp fails
+    }
+
+    const fileUrl = `data:${finalMime};base64,${finalBase64}`;
 
     await prisma.user.update({
       where: { id: userId },
       data: { image: fileUrl }
     });
 
+    const publicUrl = `/api/users/${userId}/avatar?v=${Date.now()}`;
+
     return NextResponse.json({
       success: true,
-      avatarUrl: fileUrl
+      avatarUrl: publicUrl
     });
 
   } catch (error: any) {

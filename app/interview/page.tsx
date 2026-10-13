@@ -685,7 +685,17 @@ export default function InterviewPage() {
             className="flex items-center gap-1.5 sm:gap-2 cursor-pointer group"
           >
             <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full overflow-hidden bg-blue-100 relative border-2 border-transparent group-hover:border-[#008de4] transition-colors">
-              <Image src={user?.avatar || "/assets/avatar_africain.jpg"} alt="Avatar" fill className="object-cover object-center w-full h-full" />
+              <Image 
+                src={user?.avatar || "/assets/avatar_africain.jpg"} 
+                alt="Avatar" 
+                fill 
+                sizes="(max-width: 640px) 32px, 40px"
+                priority
+                onError={(e) => {
+                  (e.target as HTMLImageElement).src = "/assets/avatar_africain.jpg";
+                }}
+                className="object-cover object-center w-full h-full" 
+              />
             </div>
             <ChevronDown className="text-white opacity-80 group-hover:opacity-100 w-3.5 h-3.5 sm:w-4 sm:h-4" />
           </div>
@@ -1039,6 +1049,10 @@ export default function InterviewPage() {
                     alt="Avatar"
                     width={40}
                     height={40}
+                    priority
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).src = "/assets/avatar_africain.jpg";
+                    }}
                     className="object-cover w-full h-full object-center"
                   />
                 </div>

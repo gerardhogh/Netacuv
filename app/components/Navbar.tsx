@@ -106,12 +106,16 @@ export default function Navbar({
                 href={getDashboardHref()}
                 className="flex items-center gap-2.5 px-3 py-1.5 rounded-full border border-slate-200 bg-white hover:border-blue-500 hover:bg-blue-50/30 transition-all shadow-sm group"
               >
-                <div className="w-8 h-8 rounded-full overflow-hidden relative border border-slate-200">
+                <div className="w-8 h-8 rounded-full overflow-hidden relative border border-slate-200 bg-slate-100">
                   <Image
                     src={user.avatar || "/assets/avatar_africain.jpg"}
                     alt={user.name}
                     width={32}
                     height={32}
+                    priority
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).src = "/assets/avatar_africain.jpg";
+                    }}
                     className="object-cover w-full h-full object-center"
                   />
                 </div>

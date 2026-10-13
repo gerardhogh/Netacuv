@@ -29,7 +29,9 @@ export async function GET(req: NextRequest) {
       id: user.id,
       name: user.name,
       email: user.email,
-      avatar: user.image,
+      avatar: user.image?.startsWith("data:image")
+        ? `/api/users/${user.id}/avatar`
+        : (user.image || "/assets/avatar_africain.jpg"),
       isPremium: user.isPremium,
       recruiterProfile: user.recruiterProfile || {}
     });

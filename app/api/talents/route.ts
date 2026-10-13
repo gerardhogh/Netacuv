@@ -107,7 +107,9 @@ export async function GET(request: Request) {
         country: profile?.country || "Non spécifié",
         profession: profile?.degree || "Talent", 
         bio: profile?.bio || "Aucune biographie",
-        avatar: t.image || "/assets/avatar_africain.jpg",
+        avatar: t.image?.startsWith("data:image") 
+          ? `/api/users/${t.id}/avatar` 
+          : (t.image || "/assets/avatar_africain.jpg"),
         cvUrl: shouldHideSensitive ? "" : (profile?.cvUrl || ""),
         isVerified: true,
         isPremium: t.isPremium || false,

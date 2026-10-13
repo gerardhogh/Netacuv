@@ -46,17 +46,41 @@ export default function TalentCard({
     ? (profileHref ?? `/dashboard/recruteur/talents/${id}`) 
     : undefined;
 
+  const [isLoaded, setIsLoaded] = useState(false);
+  const [currentSrc, setCurrentSrc] = useState(imageUrl || "/assets/avatar_africain.jpg");
+
+  // Keep currentSrc in sync if imageUrl prop changes
+  if (imageUrl && currentSrc !== imageUrl && currentSrc !== "/assets/avatar_africain.jpg") {
+    setCurrentSrc(imageUrl);
+  }
+
   return (
     <>
       <div className="bg-white border border-slate-200 rounded-xl overflow-hidden flex flex-col hover:shadow-lg transition-all duration-200 group">
         {/* Image container */}
-        <div className="relative w-full aspect-[4/3] bg-pink-100 overflow-hidden">
+        <div className="relative w-full aspect-[4/3] bg-slate-100 overflow-hidden">
+          {!isLoaded && (
+            <div className="absolute inset-0 bg-slate-100 animate-pulse flex items-center justify-center z-0">
+              <div className="w-12 h-12 rounded-full bg-slate-200/80" />
+            </div>
+          )}
           <Image
-            src={imageUrl || "/assets/avatar_africain.jpg"}
+            src={currentSrc}
             alt={name}
             fill
-            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
-            className={`object-cover object-center w-full h-full group-hover:scale-102 transition-transform duration-300 ${blurSensitive ? 'blur-md select-none' : ''}`}
+            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, (max-width: 1280px) 33vw, 25vw"
+            loading="lazy"
+            decoding="async"
+            onLoad={() => setIsLoaded(true)}
+            onError={() => {
+              if (currentSrc !== "/assets/avatar_africain.jpg") {
+                setCurrentSrc("/assets/avatar_africain.jpg");
+              }
+              setIsLoaded(true);
+            }}
+            className={`object-cover object-center w-full h-full group-hover:scale-102 transition-all duration-300 z-10 ${
+              isLoaded ? 'opacity-100' : 'opacity-0'
+            } ${blurSensitive ? 'blur-md select-none' : ''}`}
           />
           {/* Verification badge */}
           {isVerified && (

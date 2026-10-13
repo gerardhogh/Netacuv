@@ -635,6 +635,10 @@ export default function TalentDetailPage() {
                     alt="Avatar"
                     width={32}
                     height={32}
+                    priority
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).src = "/assets/avatar_africain.jpg";
+                    }}
                     className="object-cover w-full h-full object-center"
                   />
                 </div>
@@ -703,11 +707,13 @@ export default function TalentDetailPage() {
                 {/* Profile card */}
                 <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6 flex flex-col items-center text-center">
                   {/* Avatar */}
-                  <div className="relative w-28 h-28 rounded-full overflow-hidden border-4 border-slate-100 shadow-md mb-4">
+                  <div className="relative w-28 h-28 rounded-full overflow-hidden border-4 border-slate-100 shadow-md mb-4 bg-slate-100">
                     <Image
-                      src={talent.imageUrl}
+                      src={talent.imageUrl || "/assets/avatar_africain.jpg"}
                       alt={talent.name}
                       fill
+                      sizes="112px"
+                      priority
                       className="object-cover object-top"
                       onError={(e) => {
                         (e.target as HTMLImageElement).src = `https://ui-avatars.com/api/?name=${encodeURIComponent(talent.name)}&background=32A8D7&color=fff&size=256`;

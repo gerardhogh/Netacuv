@@ -584,12 +584,15 @@ export default function TalentDashboard() {
                 }
                 className="flex items-center gap-2 p-1 rounded-full hover:bg-slate-100 transition-colors"
               >
-                <div className="w-9 h-9 rounded-full overflow-hidden relative border border-slate-200">
+                <div className="w-9 h-9 rounded-full overflow-hidden relative border border-slate-200 bg-slate-100">
                   <Image
-                    src={userAvatar}
+                    src={userAvatar || "/assets/avatar_africain.jpg"}
                     alt="Avatar"
                     width={36}
                     height={36}
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).src = "/assets/avatar_africain.jpg";
+                    }}
                     className="object-cover w-full h-full object-center"
                   />
                 </div>

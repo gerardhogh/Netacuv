@@ -415,6 +415,10 @@ export default function RecruteurDashboard() {
                     alt="Avatar"
                     width={32}
                     height={32}
+                    priority
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).src = "/assets/avatar_africain.jpg";
+                    }}
                     className="object-cover w-full h-full object-center"
                   />
                 </div>

@@ -41,7 +41,9 @@ export async function GET(req: NextRequest) {
       id: user.id,
       name: user.name,
       email: user.email,
-      avatar: user.image
+      avatar: user.image?.startsWith("data:image")
+        ? `/api/users/${user.id}/avatar`
+        : (user.image || "/assets/avatar_africain.jpg")
     });
   } catch (error) {
     logger.error("Error GET /api/admin/me", { error: error instanceof Error ? error.message : "Unknown", context: "api/admin/me/GET" });

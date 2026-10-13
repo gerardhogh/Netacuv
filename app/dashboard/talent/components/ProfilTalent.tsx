@@ -25,6 +25,7 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { getVideoFromDB, deleteVideoFromDB, saveCvToDB, getCvFromDB } from "../../../../lib/indexedDB";
 import { QRCodeSVG } from "qrcode.react";
 import PremiumRequiredModal from "../../../components/PremiumRequiredModal";
+import { compressImage } from "@/lib/compressImage";
 
 type SubTab = "informations" | "reseaux" | "video";
 
@@ -156,9 +157,11 @@ function ProfilTalentContent({ initialTab = "informations" }: { initialTab?: Sub
     }
 
     try {
-      showToast("Mise à jour de la photo en cours...");
+      showToast("Optimisation et mise à jour de la photo...");
+      const compressedFile = await compressImage(file, 400, 400, 0.85);
+
       const formData = new FormData();
-      formData.append("avatar", file);
+      formData.append("avatar", compressedFile);
 
       const res = await fetch("/api/talents/avatar", {
         method: "POST",
@@ -170,6 +173,9 @@ function ProfilTalentContent({ initialTab = "informations" }: { initialTab?: Sub
       if (!res.ok) throw new Error(data.error || "Erreur lors de l'upload");
 
       showToast("Photo de profil mise à jour avec succès !");
+      if (data.avatarUrl) {
+        setUserAvatar(data.avatarUrl);
+      }
       fetchProfile();
       if (updateUser) {
         updateUser({ user: { image: data.avatarUrl } });
@@ -347,9 +353,14 @@ function ProfilTalentContent({ initialTab = "informations" }: { initialTab?: Sub
             >
               <div className="w-full h-full rounded-full overflow-hidden relative">
                 <Image
-                  src={userAvatar}
+                  src={userAvatar || "/assets/avatar_africain.jpg"}
                   alt="Avatar"
                   fill
+                  sizes="112px"
+                  priority
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).src = "/assets/avatar_africain.jpg";
+                  }}
                   className="object-cover object-center w-full h-full group-hover:scale-105 transition-transform duration-300"
                 />
               </div>

@@ -36,9 +36,22 @@ export async function POST(req: NextRequest) {
     // -------------------------------------------------
 
     const bytes = await file.arrayBuffer();
-    const buffer = Buffer.from(bytes);
-    const base64String = buffer.toString('base64');
-    const fileUrl = `data:${file.type};base64,${base64String}`;
+    const inputBuffer = Buffer.from(bytes);
+
+    let base64String: string;
+    let outputMime = 'image/webp';
+    try {
+      const sharp = (await import('sharp')).default;
+      const compressed = await sharp(inputBuffer)
+        .resize(400, 400, { fit: 'cover', position: 'center' })
+        .webp({ quality: 82 })
+        .toBuffer();
+      base64String = compressed.toString('base64');
+    } catch (e) {
+      base64String = inputBuffer.toString('base64');
+      outputMime = file.type;
+    }
+    const fileUrl = `data:${outputMime};base64,${base64String}`;
 
     // Mettre à jour l'utilisateur dans la base de données
     await prisma.user.update({
@@ -46,9 +59,11 @@ export async function POST(req: NextRequest) {
       data: { image: fileUrl }
     });
 
+    const publicUrl = `/api/users/${userId}/avatar?v=${Date.now()}`;
+
     return NextResponse.json({
       success: true,
-      avatarUrl: fileUrl
+      avatarUrl: publicUrl
     });
 
   } catch (error) {

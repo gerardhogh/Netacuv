@@ -142,12 +142,16 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 onClick={() => { setProfileMenuOpen(!profileMenuOpen); setNotifMenuOpen(false); }}
                 className="flex items-center gap-2 p-1 rounded-full hover:bg-slate-100 transition-colors"
               >
-                <div className="w-9 h-9 rounded-full overflow-hidden relative border border-slate-200">
+                <div className="w-9 h-9 rounded-full overflow-hidden relative border border-slate-200 bg-slate-100">
                   <Image
                     src={user?.avatar || "/assets/avatar_africain.jpg"}
                     alt="Avatar"
                     width={36}
                     height={36}
+                    priority
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).src = "/assets/avatar_africain.jpg";
+                    }}
                     className="object-cover w-full h-full object-center"
                   />
                 </div>

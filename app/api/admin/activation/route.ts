@@ -116,7 +116,9 @@ export async function GET(request: Request) {
           ? u.recruiterProfile?.companyName || u.name || "Entreprise"
           : u.name || "Talent",
         email: u.email || "",
-        avatar: u.image || "/assets/avatar_africain.jpg",
+        avatar: u.image?.startsWith("data:image")
+          ? `/api/users/${u.id}/avatar`
+          : (u.image || "/assets/avatar_africain.jpg"),
         userType: isRecruiter ? "recruteur" : "talent",
         roleName: u.role?.name || (isRecruiter ? "RECRUTEUR" : "TALENT"),
         isPremium: u.isPremium || false,
