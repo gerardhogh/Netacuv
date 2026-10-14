@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { getMaintenanceMode, toggleMaintenanceMode } from "@/app/actions/maintenance";
 import { Wrench, AlertTriangle, CheckCircle2, X, Loader2, ShieldAlert, Sparkles } from "lucide-react";
 import toast from "react-hot-toast";
@@ -10,8 +11,10 @@ export default function MaintenanceToggle() {
   const [isLoading, setIsLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
+    setMounted(true);
     async function fetchStatus() {
       try {
         const status = await getMaintenanceMode();
@@ -72,9 +75,9 @@ export default function MaintenanceToggle() {
         </span>
       </button>
 
-      {/* Modal de Confirmation au centre de l'écran */}
-      {isModalOpen && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-md animate-fade-in">
+      {/* Modal de Confirmation au centre de l'écran (porté dans document.body pour ne pas être contraint par l'aside transformé) */}
+      {mounted && isModalOpen && typeof document !== "undefined" && createPortal(
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-md animate-fade-in">
           {/* Backdrop click to close */}
           <div
             className="fixed inset-0"
@@ -204,7 +207,8 @@ export default function MaintenanceToggle() {
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </>
   );
