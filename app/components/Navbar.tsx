@@ -36,19 +36,18 @@ export default function Navbar({
 
   return (
     <header
-      className={`sticky top-3 sm:top-4 z-50 transition-all duration-300 ${
+      className={`sticky top-0 z-50 transition-all duration-300 ${
         variant === "transparent" || variant === "auth"
-          ? "max-w-[1240px] w-[95%] mx-auto rounded-full border shadow-lg"
+          ? "max-w-[1200px] w-[95%] mx-auto mt-6 rounded-full border shadow-sm"
           : ""
       } ${
-        variant === "auth" ? "border-sky-400/20 shadow-[0_10px_30px_rgba(0,0,0,0.5)]" : variant === "transparent" ? "border-white/40 shadow-sm" : ""
+        variant === "auth" ? "border-white/10" : variant === "transparent" ? "border-white/40" : ""
       }`}
       style={
         variant === "auth"
           ? {
-              background: "rgba(11, 34, 61, 0.88)",
-              backdropFilter: "blur(20px)",
-              WebkitBackdropFilter: "blur(20px)",
+              background: "rgba(255,255,255,0.05)",
+              backdropFilter: "blur(16px)",
             }
           : variant === "transparent"
           ? {

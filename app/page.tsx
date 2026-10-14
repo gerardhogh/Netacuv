@@ -87,7 +87,7 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen bg-[#F8FAFC] selection:bg-[#2BAFE3]/30 selection:text-[#0F172A] font-sans">
-      <Navbar variant="auth" />
+      <Navbar variant="default" />
 
       {/* ── HERO SECTION ── */}
       <section
@@ -136,16 +136,14 @@ export default function HomePage() {
           <div className="flex flex-col lg:flex-row items-center justify-between gap-5 sm:gap-6 lg:gap-8">
             {/* Left Content */}
             <div className="flex-1 max-w-2xl animate-fade-in-up w-full">
-              <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-[44px] xl:text-[54px] font-black text-white leading-tight tracking-tight mb-4 sm:mb-6">
-                <span className="inline lg:whitespace-nowrap">
-                  Le recrutement{" "}
-                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-sky-400 via-[#32A8D7] to-cyan-300">
-                    au-delà du CV
-                  </span>{" "}
-                  <span className="text-[#F59E0B]">classique.</span>
-                </span>
+              <h1 className="text-4xl sm:text-5xl lg:text-[54px] xl:text-6xl font-black text-white leading-[1.12] tracking-tight mb-4 sm:mb-6">
+                Le recrutement au-delà<br />
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-sky-400 via-[#32A8D7] to-cyan-300">
+                  du CV
+                </span>{" "}
+                <span className="text-[#F59E0B]">classique.</span>
               </h1>
-              <p className="text-blue-100/80 text-base sm:text-lg lg:text-xl leading-relaxed mb-4 sm:mb-6 lg:mb-8 max-w-xl font-normal">
+              <p className="text-blue-100/80 text-base sm:text-lg lg:text-xl leading-relaxed mb-4 sm:mb-6 lg:mb-8 max-w-[480px] font-normal">
                 Découvrez une plateforme conçue pour mettre en lumière vos véritables 
                 compétences grâce à des entretiens vidéo certifiés et une mise en relation directe.
               </p>
@@ -166,8 +164,8 @@ export default function HomePage() {
               </div>
             </div>
 
-            {/* Arrow — absolute, centered vertically between the two columns */}
-            <div className="hidden lg:block absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-10 pointer-events-none">
+            {/* Arrow — positioned comfortably between left text and right card pointing to the dropzone */}
+            <div className="hidden lg:block absolute left-[54%] xl:left-[52%] top-[50%] -translate-y-1/2 z-10 pointer-events-none">
               <Image
                 src="/assets/Arrow.png"
                 alt="Flèche indicative"
