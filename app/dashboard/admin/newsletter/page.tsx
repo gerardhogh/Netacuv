@@ -286,8 +286,8 @@ export default function AdminNewsletterPage() {
             <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 space-y-3 animate-fade-in text-sm">
               <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Aperçu du rendu final</p>
               <div className="bg-white border border-slate-200 rounded-lg overflow-hidden shadow-xs">
-                <div className="bg-gradient-to-r from-[#1e8ae9] to-[#32A8D7] text-white p-4 text-center font-bold text-lg">
-                  Netacuv
+                <div className="bg-gradient-to-r from-[#1e8ae9] to-[#32A8D7] text-white p-4 flex items-center justify-center">
+                  <img src="/Logo/PNG/Logo%20white.png" alt="Netacuv" className="h-8 w-auto object-contain" />
                 </div>
                 <div className="p-5 text-slate-700 space-y-3">
                   <p className="font-bold text-slate-900 text-base">{subject || "(Objet du message)"}</p>

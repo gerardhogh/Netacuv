@@ -143,7 +143,6 @@ export async function POST(req: NextRequest) {
               body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f8fafc; margin: 0; padding: 24px; color: #1e293b; }
               .container { max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 16px; overflow: hidden; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
               .header { background: linear-gradient(135deg, #1e8ae9 0%, #32A8D7 100%); padding: 32px 24px; text-align: center; }
-              .header h1 { color: #ffffff; margin: 0; font-size: 24px; font-weight: 800; letter-spacing: -0.5px; }
               .content { padding: 32px 28px; line-height: 1.6; font-size: 15px; color: #334155; }
               .footer { background: #f8fafc; padding: 20px 24px; text-align: center; font-size: 12px; color: #64748b; border-top: 1px solid #e2e8f0; }
               .footer a { color: #1e8ae9; text-decoration: none; }
@@ -152,8 +151,9 @@ export async function POST(req: NextRequest) {
           <body>
             <div class="container">
               <div class="header">
-                <h1>Netacuv</h1>
-                <p style="color: #e0f2fe; margin: 6px 0 0 0; font-size: 14px;">La plateforme intelligente de recrutement</p>
+                <a href="${siteUrl}" target="_blank" style="text-decoration: none; display: inline-block;">
+                  <img src="https://www.netacuv.com/Logo/PNG/Logo%20white.png" alt="Netacuv" width="150" style="width: 150px; max-width: 150px; height: auto; display: block; margin: 0 auto; border: 0;" />
+                </a>
               </div>
               <div class="content">
                 ${message.replace(/\n/g, "<br />")}

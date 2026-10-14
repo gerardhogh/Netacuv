@@ -51,6 +51,7 @@ function isRateLimited(ip: string): boolean {
 function getWelcomeEmailHtml(email: string) {
   const siteUrl = process.env.NEXTAUTH_URL || "https://netacuv.com";
   const unsubscribeUrl = `${siteUrl}/api/newsletter/unsubscribe?email=${encodeURIComponent(email)}`;
+  const logoUrl = "https://www.netacuv.com/Logo/PNG/Logo%20white.png";
 
   return `
     <!DOCTYPE html>
@@ -62,52 +63,51 @@ function getWelcomeEmailHtml(email: string) {
         <style>
           body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f8fafc; margin: 0; padding: 24px; color: #1e293b; }
           .container { max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 16px; overflow: hidden; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
-          .header { background: linear-gradient(135deg, #1e8ae9 0%, #32A8D7 100%); padding: 36px 24px; text-align: center; }
-          .header h1 { color: #ffffff; margin: 0; font-size: 26px; font-weight: 800; letter-spacing: -0.5px; }
-          .badge { display: inline-block; background: rgba(255,255,255,0.2); color: #ffffff; padding: 4px 12px; border-radius: 9999px; font-size: 12px; font-weight: 600; margin-top: 8px; }
-          .content { padding: 32px 28px; line-height: 1.6; font-size: 15px; color: #334155; }
-          .content h2 { font-size: 18px; color: #0f172a; margin-top: 0; margin-bottom: 12px; }
-          .feature-list { margin: 20px 0; padding-left: 0; list-style: none; }
-          .feature-item { display: flex; align-items: flex-start; margin-bottom: 12px; }
-          .feature-icon { color: #1e8ae9; font-weight: bold; margin-right: 10px; font-size: 16px; }
-          .btn-container { text-align: center; margin: 28px 0 16px; }
-          .btn { display: inline-block; background: #1e8ae9; color: #ffffff !important; text-decoration: none; padding: 12px 28px; border-radius: 10px; font-weight: 700; font-size: 14px; box-shadow: 0 4px 10px rgba(30,138,233,0.3); }
-          .footer { background: #f8fafc; padding: 20px 24px; text-align: center; font-size: 12px; color: #64748b; border-top: 1px solid #e2e8f0; }
+          .header { background: linear-gradient(135deg, #1e8ae9 0%, #32A8D7 100%); padding: 32px 24px; text-align: center; }
+          .content { padding: 36px 32px; line-height: 1.6; font-size: 15px; color: #334155; }
+          .content h2 { font-size: 20px; font-weight: 800; color: #0f172a; margin-top: 0; margin-bottom: 14px; letter-spacing: -0.3px; }
+          .feature-list { margin: 26px 0; padding-left: 0; list-style: none; }
+          .feature-item { display: flex; align-items: flex-start; margin-bottom: 16px; }
+          .bullet { display: inline-block; width: 8px; height: 8px; min-width: 8px; min-height: 8px; border-radius: 50%; background: #1e8ae9; box-shadow: 0 0 0 4px #e0f2fe; margin-right: 14px; margin-top: 7px; flex-shrink: 0; }
+          .btn-container { text-align: center; margin: 34px 0 18px; }
+          .btn { display: inline-block; background: linear-gradient(135deg, #fb923c 0%, #f59e0b 50%, #d97706 100%); background-color: #f59e0b; color: #ffffff !important; text-decoration: none; padding: 14px 34px; border-radius: 12px; font-weight: 700; font-size: 15px; box-shadow: 0 6px 18px rgba(245, 158, 11, 0.35); }
+          .footer { background: #f8fafc; padding: 22px 24px; text-align: center; font-size: 12px; color: #64748b; border-top: 1px solid #e2e8f0; }
           .footer a { color: #1e8ae9; text-decoration: none; }
         </style>
       </head>
       <body>
         <div class="container">
           <div class="header">
-            <h1>Netacuv</h1>
-            <div class="badge">🚀 Recrutement & Évaluation par IA</div>
+            <a href="${siteUrl}" target="_blank" style="text-decoration: none; display: inline-block;">
+              <img src="${logoUrl}" alt="Netacuv" width="150" style="width: 150px; max-width: 150px; height: auto; display: block; margin: 0 auto; border: 0;" />
+            </a>
           </div>
           <div class="content">
             <h2>Bienvenue dans notre communauté !</h2>
-            <p>Bonjour et merci d'avoir rejoint la newsletter Netacuv.</p>
-            <p>Vous êtes désormais aux premières loges pour recevoir :</p>
-            <ul class="feature-list">
-              <li class="feature-item">
-                <span class="feature-icon">✨</span>
-                <span><strong>Nos dernières opportunités d'emploi</strong> certifiées et vérifiées.</span>
+            <p style="margin-top: 0; margin-bottom: 16px;">Bonjour et merci d'avoir rejoint la newsletter Netacuv.</p>
+            <p style="margin-bottom: 20px;">Vous êtes désormais aux premières loges pour recevoir :</p>
+            <ul class="feature-list" style="margin: 26px 0; padding-left: 0; list-style: none;">
+              <li class="feature-item" style="display: flex; align-items: flex-start; margin-bottom: 16px;">
+                <span class="bullet" style="display: inline-block; width: 8px; height: 8px; min-width: 8px; min-height: 8px; border-radius: 50%; background: #1e8ae9; box-shadow: 0 0 0 4px #e0f2fe; margin-right: 14px; margin-top: 7px; flex-shrink: 0;"></span>
+                <span style="font-size: 15px; color: #334155; line-height: 1.6;"><strong>Nos dernières opportunités d'emploi</strong> certifiées et vérifiées.</span>
               </li>
-              <li class="feature-item">
-                <span class="feature-icon">🤖</span>
-                <span><strong>Les innovations RH & IA</strong> pour réussir vos entretiens vidéo intelligents.</span>
+              <li class="feature-item" style="display: flex; align-items: flex-start; margin-bottom: 16px;">
+                <span class="bullet" style="display: inline-block; width: 8px; height: 8px; min-width: 8px; min-height: 8px; border-radius: 50%; background: #1e8ae9; box-shadow: 0 0 0 4px #e0f2fe; margin-right: 14px; margin-top: 7px; flex-shrink: 0;"></span>
+                <span style="font-size: 15px; color: #334155; line-height: 1.6;"><strong>Les innovations RH & IA</strong> pour réussir vos entretiens vidéo intelligents.</span>
               </li>
-              <li class="feature-item">
-                <span class="feature-icon">💡</span>
-                <span><strong>Conseils pratiques</strong> pour maximiser votre attractivité en tant que talent ou recruteur.</span>
+              <li class="feature-item" style="display: flex; align-items: flex-start; margin-bottom: 16px;">
+                <span class="bullet" style="display: inline-block; width: 8px; height: 8px; min-width: 8px; min-height: 8px; border-radius: 50%; background: #1e8ae9; box-shadow: 0 0 0 4px #e0f2fe; margin-right: 14px; margin-top: 7px; flex-shrink: 0;"></span>
+                <span style="font-size: 15px; color: #334155; line-height: 1.6;"><strong>Conseils pratiques</strong> pour maximiser votre attractivité en tant que talent ou recruteur.</span>
               </li>
             </ul>
-            <div class="btn-container">
-              <a href="${siteUrl}" class="btn">Découvrir la plateforme Netacuv</a>
+            <div class="btn-container" style="text-align: center; margin: 34px 0 18px;">
+              <a href="${siteUrl}" class="btn" style="display: inline-block; background: linear-gradient(135deg, #fb923c 0%, #f59e0b 50%, #d97706 100%); background-color: #f59e0b; color: #ffffff !important; text-decoration: none; padding: 14px 34px; border-radius: 12px; font-weight: 700; font-size: 15px; box-shadow: 0 6px 18px rgba(245, 158, 11, 0.35);">Découvrir la plateforme Netacuv</a>
             </div>
           </div>
           <div class="footer">
-            <p>© ${new Date().getFullYear()} Netacuv. Tous droits réservés.</p>
-            <p>Vous recevez cet e-mail car vous vous êtes inscrit(e) sur Netacuv.</p>
-            <p><a href="${unsubscribeUrl}">Se désabonner en 1 clic</a></p>
+            <p style="margin: 0 0 6px 0;">© ${new Date().getFullYear()} Netacuv. Tous droits réservés.</p>
+            <p style="margin: 0 0 6px 0;">Vous recevez cet e-mail car vous vous êtes inscrit(e) sur Netacuv.</p>
+            <p style="margin: 0;"><a href="${unsubscribeUrl}">Se désabonner en 1 clic</a></p>
           </div>
         </div>
       </body>
