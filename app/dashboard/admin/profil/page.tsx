@@ -23,7 +23,7 @@ export default function AdminProfil() {
 
   const fetchProfile = async () => {
     try {
-      const res = await fetch("/api/admin/me");
+      const res = await fetch(`/api/admin/me?t=${Date.now()}`);
       if (res.ok) {
         const data = await res.json();
         setName(data.name || "");
@@ -63,6 +63,11 @@ export default function AdminProfil() {
       
       showToast("Profil mis à jour avec succès");
       
+      // Notify AdminLayout to update navbar immediately
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(new Event("admin_profile_updated"));
+      }
+
       if (updateUser) {
         updateUser({ user: { name } });
       }
@@ -107,8 +112,13 @@ export default function AdminProfil() {
         if (!res.ok) throw new Error(data.error || "Erreur lors de l'upload");
 
         showToast("Photo de profil mise à jour avec succès !");
-        fetchProfile();
+        await fetchProfile();
         
+        // Notify AdminLayout to update navbar immediately
+        if (typeof window !== "undefined") {
+          window.dispatchEvent(new Event("admin_profile_updated"));
+        }
+
         if (updateUser && authUser) {
           updateUser({ user: { image: data.avatarUrl } });
         }

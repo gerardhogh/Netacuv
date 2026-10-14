@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
@@ -40,11 +40,67 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const [notifMenuOpen, setNotifMenuOpen] = useState(false);
+  const [adminProfile, setAdminProfile] = useState<{
+    name: string;
+    email: string;
+    avatar: string;
+  } | null>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
   const pathname = usePathname();
   const { user, logout } = useAuth();
   const locale = useLocale();
   const t = useTranslations();
   const router = useRouter();
+
+  // Load fresh profile from API to ensure instant updates without waiting for NextAuth cookie refresh
+  useEffect(() => {
+    let isMounted = true;
+    const fetchAdminProfile = async () => {
+      try {
+        const res = await fetch(`/api/admin/me?t=${Date.now()}`);
+        if (res.ok) {
+          const data = await res.json();
+          if (isMounted) {
+            setAdminProfile({
+              name: data.name || "",
+              email: data.email || "",
+              avatar: data.avatar || ""
+            });
+          }
+        }
+      } catch (e) {
+        console.error("Failed to load admin profile in navbar", e);
+      }
+    };
+
+    fetchAdminProfile();
+
+    const handleProfileUpdate = () => {
+      fetchAdminProfile();
+    };
+
+    window.addEventListener("admin_profile_updated", handleProfileUpdate);
+    return () => {
+      isMounted = false;
+      window.removeEventListener("admin_profile_updated", handleProfileUpdate);
+    };
+  }, []);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setProfileMenuOpen(false);
+      }
+    };
+
+    if (profileMenuOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [profileMenuOpen]);
 
   return (
     <div className="flex min-h-screen bg-[#fafbfc] text-slate-800">
@@ -120,18 +176,16 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
             {/* Notification Bell temps réel */}
             <NotificationBell align="right" />
-            <div className="relative">
+            <div className="relative" ref={dropdownRef}>
               <button
                 onClick={() => { setProfileMenuOpen(!profileMenuOpen); setNotifMenuOpen(false); }}
                 className="flex items-center gap-2 p-1 rounded-full hover:bg-slate-100 transition-colors"
+                title="Menu administrateur"
               >
-                <div className="w-9 h-9 rounded-full overflow-hidden relative border border-slate-200 bg-slate-100">
-                  <Image
-                    src={user?.avatar || "/assets/avatar_africain.jpg"}
+                <div className="w-9 h-9 rounded-full overflow-hidden relative border border-slate-200 bg-slate-100 flex items-center justify-center">
+                  <img
+                    src={adminProfile?.avatar || user?.avatar || "/assets/avatar_africain.jpg"}
                     alt="Avatar"
-                    width={36}
-                    height={36}
-                    priority
                     onError={(e) => {
                       (e.target as HTMLImageElement).src = "/assets/avatar_africain.jpg";
                     }}
@@ -141,15 +195,27 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 <ChevronDown size={14} className="text-slate-400" />
               </button>
               {profileMenuOpen && (
-                <div className="absolute right-0 mt-2 w-48 bg-white rounded-2xl shadow-xl border border-slate-100 py-2 z-30 animate-fade-in">
+                <div className="absolute right-0 mt-2 w-52 bg-white rounded-2xl shadow-xl border border-slate-100 py-2 z-30 animate-fade-in">
                   <div className="px-4 py-2 border-b border-slate-100">
-                    <p className="text-xs font-bold text-slate-800 truncate">{user?.name || "Admin"}</p>
-                    <p className="text-[11px] text-slate-400 truncate">{user?.email || "admin@check.cv"}</p>
+                    <p className="text-xs font-bold text-slate-800 truncate">
+                      {adminProfile?.name || user?.name || "Admin"}
+                    </p>
+                    <p className="text-[11px] text-slate-400 truncate">
+                      {adminProfile?.email || user?.email || "admin@netacuv.com"}
+                    </p>
                   </div>
-                  <Link href="/dashboard/admin/profil" className="block px-4 py-2 text-xs text-slate-600 hover:bg-slate-50 font-medium">
+                  <Link
+                    href="/dashboard/admin/profil"
+                    onClick={() => setProfileMenuOpen(false)}
+                    className="block px-4 py-2 text-xs text-slate-600 hover:bg-slate-50 font-medium"
+                  >
                     Mon profil
                   </Link>
-                  <Link href="/dashboard/admin/parametres" className="block px-4 py-2 text-xs text-slate-600 hover:bg-slate-50 font-medium">
+                  <Link
+                    href="/dashboard/admin/parametres"
+                    onClick={() => setProfileMenuOpen(false)}
+                    className="block px-4 py-2 text-xs text-slate-600 hover:bg-slate-50 font-medium"
+                  >
                     Paramètres
                   </Link>
                   <LogoutButton 

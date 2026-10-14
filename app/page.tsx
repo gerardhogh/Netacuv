@@ -87,49 +87,79 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen bg-[#F8FAFC] selection:bg-[#2BAFE3]/30 selection:text-[#0F172A] font-sans">
-      <Navbar variant="default" />
+      <Navbar variant="auth" />
 
       {/* ── HERO SECTION ── */}
       <section
         id="accueil"
-        className="relative min-h-[calc(100vh-80px)] flex flex-col justify-center pt-8 pb-16 md:py-20 overflow-hidden bg-[#f4f9ff]"
+        className="relative min-h-[calc(100vh-80px)] flex flex-col justify-center pt-8 pb-16 md:py-20 overflow-hidden bg-gradient-to-b from-[#0b223d] via-[#061527] to-[#030b14] text-white selection:bg-sky-400/30"
       >
-        {/* Background Decorative Gradients */}
-        <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          {/* Tache rose à gauche */}
-          <div className="absolute top-[15%] -left-[15%] w-[40%] h-[60%] rounded-full bg-[#f9d8e6] opacity-80 blur-[120px]" />
-          {/* Tache rose en haut à droite */}
-          <div className="absolute -top-[10%] -right-[10%] w-[45%] h-[50%] rounded-full bg-[#f9d8e6] opacity-80 blur-[120px]" />
-          {/* Tache bleue au centre / bas */}
-          <div className="absolute bottom-[-10%] left-[10%] w-[80%] h-[70%] rounded-full bg-[#d0eefd] opacity-90 blur-[140px]" />
+        {/* Ambient Lighting & Glows bleu nuit teintés Netacuv */}
+        <div className="pointer-events-none absolute -top-40 -left-40 w-96 h-96 bg-[#32A8D7]/20 rounded-full blur-3xl" />
+        <div className="pointer-events-none absolute -bottom-40 -right-40 w-[30rem] h-[30rem] bg-[#1e8ae9]/20 rounded-full blur-3xl" />
+        <div className="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[45rem] h-[45rem] bg-[#0c3e70]/30 rounded-full blur-3xl" />
+        <div className="pointer-events-none absolute top-1/4 right-1/4 w-80 h-80 bg-[#f97316]/10 rounded-full blur-3xl" />
+
+        {/* Netacuv "N" Symbol Watermarks in Background */}
+        <div className="pointer-events-none absolute inset-0 flex items-center justify-center overflow-hidden select-none">
+          <div className="w-[620px] h-[620px] max-w-[90vw] max-h-[90vw] opacity-[0.06] transform -rotate-12 scale-110">
+            <Image
+              src="/Logo/SVG/Asset 14.svg"
+              alt=""
+              width={620}
+              height={620}
+              className="w-full h-full object-contain"
+              priority
+            />
+          </div>
+          <div className="absolute -top-16 -right-16 w-80 h-80 opacity-[0.04] transform rotate-12">
+            <Image
+              src="/Logo/SVG/Asset 14.svg"
+              alt=""
+              width={320}
+              height={320}
+              className="w-full h-full object-contain"
+            />
+          </div>
+          <div className="absolute -bottom-20 -left-20 w-80 h-80 opacity-[0.04] transform -rotate-6">
+            <Image
+              src="/Logo/SVG/Asset 14.svg"
+              alt=""
+              width={320}
+              height={320}
+              className="w-full h-full object-contain"
+            />
+          </div>
         </div>
 
         <div className="max-w-7xl mx-auto px-6 relative z-10">
           <div className="flex flex-col lg:flex-row items-center justify-between gap-5 sm:gap-6 lg:gap-8">
             {/* Left Content */}
             <div className="flex-1 max-w-2xl animate-fade-in-up w-full">
-              <h1 className="text-[50px] sm:text-6xl lg:text-7xl font-black text-slate-900 leading-[1.03] sm:leading-[1.08] tracking-tight mb-4 sm:mb-6">
-                Le recrutement,<br />
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-[#32A8D7]">
-                  au-delà du CV
-                </span><br />
-                <span className="text-[#F59E0B] opacity-80">classique.</span>
+              <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-[44px] xl:text-[54px] font-black text-white leading-tight tracking-tight mb-4 sm:mb-6">
+                <span className="inline lg:whitespace-nowrap">
+                  Le recrutement{" "}
+                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-sky-400 via-[#32A8D7] to-cyan-300">
+                    au-delà du CV
+                  </span>{" "}
+                  <span className="text-[#F59E0B]">classique.</span>
+                </span>
               </h1>
-              <p className="text-slate-600 text-base sm:text-lg lg:text-xl leading-relaxed mb-3 sm:mb-4 lg:mb-8 max-w-xl">
+              <p className="text-blue-100/80 text-base sm:text-lg lg:text-xl leading-relaxed mb-4 sm:mb-6 lg:mb-8 max-w-xl font-normal">
                 Découvrez une plateforme conçue pour mettre en lumière vos véritables 
                 compétences grâce à des entretiens vidéo certifiés et une mise en relation directe.
               </p>
-              {/* Desktop CTA Buttons (visibles uniquement sur grand écran) */}
+              {/* Desktop CTA Buttons */}
               <div className="hidden lg:flex items-center gap-4 flex-wrap">
                 <Link
                   href="/talents"
-                  className="px-8 py-4 rounded-full font-bold text-base text-white bg-blue-600 hover:bg-blue-700 hover:scale-[1.02] hover:shadow-lg hover:shadow-blue-500/25 shadow-xl shadow-blue-500/25 active:scale-95 transition-all duration-300 ease-in-out inline-flex items-center gap-2"
+                  className="px-8 py-4 rounded-full font-bold text-base text-white bg-gradient-to-r from-[#1e8ae9] to-[#32A8D7] hover:from-[#1875c7] hover:to-[#2998c5] hover:scale-[1.02] hover:shadow-lg hover:shadow-sky-500/30 shadow-xl shadow-sky-500/25 active:scale-95 transition-all duration-300 ease-in-out inline-flex items-center gap-2"
                 >
                   Je suis un Talent
                 </Link>
                 <Link
                   href="/recruteurs"
-                  className="px-8 py-4 rounded-full font-bold text-base text-blue-600 bg-white/80 hover:bg-white border border-blue-200 shadow-sm hover:scale-[1.02] hover:shadow-lg hover:shadow-blue-500/25 transition-all duration-300 ease-in-out"
+                  className="px-8 py-4 rounded-full font-bold text-base text-white bg-white/10 hover:bg-white/15 border border-white/20 backdrop-blur-md shadow-sm hover:scale-[1.02] hover:shadow-lg hover:shadow-white/10 active:scale-95 transition-all duration-300 ease-in-out"
                 >
                   Je suis un Recruteur
                 </Link>
@@ -143,7 +173,7 @@ export default function HomePage() {
                 alt="Flèche indicative"
                 width={130}
                 height={95}
-                className="object-contain opacity-75"
+                className="object-contain opacity-90 drop-shadow-[0_0_15px_rgba(50,168,215,0.4)] brightness-125"
               />
             </div>
 
@@ -151,29 +181,29 @@ export default function HomePage() {
             <div className="flex-1 flex flex-col items-center justify-center lg:justify-end w-full">
               <div className="relative w-full max-w-md animate-fade-in mb-4 sm:mb-5 lg:mb-0">
                 {/* Floating graphic from Figma */}
-                <div className="relative rounded-3xl overflow-hidden shadow-2xl transition-transform hover:scale-[1.01]">
+                <div className="relative rounded-3xl overflow-hidden shadow-[0_25px_60px_-15px_rgba(0,0,0,0.8),0_0_35px_rgba(50,168,215,0.2)] border border-sky-400/20 backdrop-blur-xl transition-transform hover:scale-[1.01]">
                   <Image
                     src="/assets/image 1.png"
                     alt="Dépose ton CV - Netacuv"
                     width={460}
                     height={590}
                     priority
-                    className="w-full h-auto object-contain rounded-3xl bg-white/60 backdrop-blur-md"
+                    className="w-full h-auto object-contain rounded-3xl bg-slate-900/40"
                   />
                 </div>
               </div>
 
-              {/* Boutons CTA sur Mobile : ramenés après l'image de dépôt de dossier, sur la même ligne avec le même format que la tab bar mobile */}
-              <div className="flex lg:hidden items-center gap-3 w-full max-w-md">
+              {/* Boutons CTA sur Mobile */}
+              <div className="flex lg:hidden items-center gap-3 w-full max-w-md mt-2">
                 <Link
                   href="/talents"
-                  className="flex-1 flex justify-center items-center text-center text-xs sm:text-sm font-semibold h-[42px] px-2 sm:px-4 !rounded-full btn-primary shadow-sm transition-all whitespace-nowrap"
+                  className="flex-1 flex justify-center items-center text-center text-xs sm:text-sm font-bold h-[44px] px-2 sm:px-4 rounded-full text-white bg-gradient-to-r from-[#1e8ae9] to-[#32A8D7] shadow-md shadow-sky-500/25 transition-all whitespace-nowrap"
                 >
                   Je suis un Talent
                 </Link>
                 <Link
                   href="/recruteurs"
-                  className="flex-1 flex justify-center items-center text-center text-xs sm:text-sm font-semibold h-[42px] px-2 sm:px-4 !rounded-full btn-outline bg-white/90 shadow-xs transition-all whitespace-nowrap"
+                  className="flex-1 flex justify-center items-center text-center text-xs sm:text-sm font-semibold h-[44px] px-2 sm:px-4 rounded-full text-white bg-white/10 hover:bg-white/15 border border-white/20 backdrop-blur-md shadow-xs transition-all whitespace-nowrap"
                 >
                   Je suis un Recruteur
                 </Link>
