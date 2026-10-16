@@ -18,29 +18,30 @@ import {
   Sparkles,
 } from "lucide-react";
 import { useNotifications, NotificationItem } from "../context/NotificationContext";
+import { useTranslations, useLocale } from "next-intl";
 
 interface NotificationBellProps {
   align?: "left" | "right";
   variant?: "default" | "dark" | "transparent";
 }
 
-// Helper pour formater la date relative en français
-function formatRelativeTime(dateString: string): string {
+// Helper pour formater la date relative selon la langue
+function formatRelativeTime(dateString: string, t: any, locale: string): string {
   try {
     const date = new Date(dateString);
     const now = new Date();
     const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
 
-    if (diffInSeconds < 60) return "À l'instant";
+    if (diffInSeconds < 60) return t("justNow");
     const diffInMinutes = Math.floor(diffInSeconds / 60);
-    if (diffInMinutes < 60) return `Il y a ${diffInMinutes} min`;
+    if (diffInMinutes < 60) return t("minutesAgo", { count: diffInMinutes });
     const diffInHours = Math.floor(diffInMinutes / 60);
-    if (diffInHours < 24) return `Il y a ${diffInHours} h`;
+    if (diffInHours < 24) return t("hoursAgo", { count: diffInHours });
     const diffInDays = Math.floor(diffInHours / 24);
-    if (diffInDays === 1) return "Hier";
-    if (diffInDays < 7) return `Il y a ${diffInDays} j`;
+    if (diffInDays === 1) return t("yesterday");
+    if (diffInDays < 7) return t("daysAgo", { count: diffInDays });
 
-    return date.toLocaleDateString("fr-FR", {
+    return date.toLocaleDateString(locale === "en" ? "en-US" : "fr-FR", {
       day: "numeric",
       month: "short",
     });
@@ -50,56 +51,56 @@ function formatRelativeTime(dateString: string): string {
 }
 
 // Configuration d'affichage par type de notification
-function getNotificationMeta(type: NotificationItem["type"]) {
+function getNotificationMeta(type: NotificationItem["type"], t: any) {
   switch (type) {
     case "JOB_ALERT":
       return {
         icon: Briefcase,
         color: "text-[#32A8D7] bg-sky-50 border-sky-100",
-        label: "Alerte Emploi",
+        label: t("types.jobAlert"),
       };
     case "APPLICATION_STATUS":
       return {
         icon: CheckCircle2,
         color: "text-emerald-600 bg-emerald-50 border-emerald-100",
-        label: "Candidature",
+        label: t("types.applicationStatus"),
       };
     case "INTERVIEW_REMINDER":
       return {
         icon: Video,
         color: "text-indigo-600 bg-indigo-50 border-indigo-100",
-        label: "Entretien Vidéo",
+        label: t("types.interviewReminder"),
       };
     case "NEW_APPLICATION":
       return {
         icon: UserPlus,
         color: "text-blue-600 bg-blue-50 border-blue-100",
-        label: "Nouvelle Candidature",
+        label: t("types.newApplication"),
       };
     case "JOB_EXPIRING_SOON":
       return {
         icon: AlertTriangle,
         color: "text-amber-600 bg-amber-50 border-amber-100",
-        label: "Expiration Proche",
+        label: t("types.jobExpiringSoon"),
       };
     case "APPLICATION_SUMMARY":
       return {
         icon: BarChart3,
         color: "text-cyan-600 bg-cyan-50 border-cyan-100",
-        label: "Récapitulatif",
+        label: t("types.applicationSummary"),
       };
     case "NEW_COMPANY_PENDING":
       return {
         icon: Building2,
         color: "text-violet-600 bg-violet-50 border-violet-100",
-        label: "Entreprise en attente",
+        label: t("types.newCompanyPending"),
       };
     case "SYSTEM_ALERT":
     default:
       return {
         icon: ShieldAlert,
         color: "text-rose-600 bg-rose-50 border-rose-100",
-        label: "Système",
+        label: t("types.systemAlert"),
       };
   }
 }
@@ -108,6 +109,8 @@ export default function NotificationBell({
   align = "right",
   variant = "default",
 }: NotificationBellProps) {
+  const t = useTranslations("notifications");
+  const locale = useLocale();
   const router = useRouter();
   const {
     notifications,
@@ -194,11 +197,11 @@ export default function NotificationBell({
           <div className="px-5 py-3 border-b border-slate-100/80 flex items-center justify-between">
             <div className="flex items-center gap-2">
               <span className="font-bold text-slate-800 text-sm">
-                Notifications
+                {t("title")}
               </span>
               {unreadCount > 0 && (
                 <span className="bg-[#32A8D7]/10 text-[#1e8ae9] text-[11px] font-bold px-2 py-0.5 rounded-full">
-                  {unreadCount} new
+                  {unreadCount} {t("newBadge")}
                 </span>
               )}
             </div>
@@ -207,10 +210,10 @@ export default function NotificationBell({
               <button
                 onClick={() => markAllAsRead()}
                 className="text-xs font-semibold text-[#1e8ae9] hover:text-[#0071a2] flex items-center gap-1 transition-colors"
-                title="Tout marquer comme lu"
+                title={t("markAllRead")}
               >
                 <CheckCheck size={14} />
-                <span>Tout lire</span>
+                <span>{t("markReadShort")}</span>
               </button>
             )}
           </div>
@@ -225,7 +228,7 @@ export default function NotificationBell({
                   : "text-slate-500 hover:text-slate-800 hover:bg-slate-100"
               }`}
             >
-              Toutes ({notifications.length})
+              {t("all")} ({notifications.length})
             </button>
             <button
               onClick={() => setFilter("unread")}
@@ -235,7 +238,7 @@ export default function NotificationBell({
                   : "text-slate-500 hover:text-slate-800 hover:bg-slate-100"
               }`}
             >
-              Non lues ({unreadCount})
+              {t("unread")} ({unreadCount})
             </button>
           </div>
 
@@ -244,7 +247,7 @@ export default function NotificationBell({
             {loading ? (
               <div className="py-10 text-center text-slate-400 text-xs">
                 <div className="w-5 h-5 border-2 border-slate-200 border-t-[#32A8D7] rounded-full animate-spin mx-auto mb-2" />
-                Chargement...
+                {t("loading")}
               </div>
             ) : filteredNotifications.length === 0 ? (
               <div className="py-10 px-6 text-center text-slate-400 text-xs">
@@ -253,16 +256,16 @@ export default function NotificationBell({
                 </div>
                 <p className="font-semibold text-slate-600 mb-1">
                   {filter === "unread"
-                    ? "Aucune notification non lue"
-                    : "Aucune notification"}
+                    ? t("noUnread")
+                    : t("empty")}
                 </p>
                 <p className="text-[11px] text-slate-400">
-                  Vous serez averti en temps réel des nouvelles activités.
+                  {t("realtimeNotice")}
                 </p>
               </div>
             ) : (
               filteredNotifications.map((notif) => {
-                const meta = getNotificationMeta(notif.type);
+                const meta = getNotificationMeta(notif.type, t);
                 const IconComponent = meta.icon;
 
                 return (
@@ -302,7 +305,7 @@ export default function NotificationBell({
 
                       <div className="flex items-center gap-1.5 text-[10px] text-slate-400 mt-1.5">
                         <Clock size={11} />
-                        <span>{formatRelativeTime(notif.createdAt)}</span>
+                        <span>{formatRelativeTime(notif.createdAt, t, locale)}</span>
                       </div>
                     </div>
 
@@ -314,7 +317,7 @@ export default function NotificationBell({
                           deleteNotification(notif.id);
                         }}
                         className="p-1 text-slate-400 hover:text-red-500 rounded-md hover:bg-white transition-colors"
-                        title="Supprimer"
+                        title={t("deleteTooltip")}
                       >
                         <Trash2 size={13} />
                       </button>

@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import { Gift, Save, Search, Edit2, Check, X } from "lucide-react";
 import toast from "react-hot-toast";
 import { updateSystemSettings, updateUserReferralCode } from "./actions";
+import { useTranslations } from "next-intl";
 
 interface UserWithAffiliation {
   id: string;
@@ -24,6 +25,7 @@ export default function AffiliationClient({
   initialFixedBonus: string;
   initialPercentBonus: string;
 }) {
+  const t = useTranslations("admin.affiliationPage");
   const [fixedBonus, setFixedBonus] = useState(initialFixedBonus);
   const [percentBonus, setPercentBonus] = useState(initialPercentBonus);
   const [isSavingConfig, setIsSavingConfig] = useState(false);
@@ -38,9 +40,9 @@ export default function AffiliationClient({
         { key: "AFFILIATE_BONUS_FIXED", value: fixedBonus },
         { key: "AFFILIATE_BONUS_PERCENT", value: percentBonus }
       ]);
-      toast.success("Paramètres d'affiliation mis à jour");
+      toast.success(t("toastSettingsSaved"));
     } catch (error: any) {
-      toast.error(error.message || "Une erreur est survenue");
+      toast.error(error.message || "Error");
     } finally {
       setIsSavingConfig(false);
     }
@@ -49,10 +51,10 @@ export default function AffiliationClient({
   const handleSaveCode = async (userId: string) => {
     try {
       await updateUserReferralCode(userId, editCodeValue.trim());
-      toast.success("Code d'affiliation mis à jour");
+      toast.success(t("toastCodeSaved"));
       setEditingUserId(null);
     } catch (error: any) {
-      toast.error(error.message || "Erreur lors de la mise à jour du code");
+      toast.error(error.message || t("toastCodeError"));
     }
   };
 
@@ -71,14 +73,14 @@ export default function AffiliationClient({
             <Gift size={20} />
           </div>
           <div>
-            <h2 className="text-lg font-bold text-slate-800">Configuration des Bonus</h2>
-            <p className="text-sm text-slate-500">Définissez les récompenses globales pour les parrains.</p>
+            <h2 className="text-lg font-bold text-slate-800">{t("bonusConfigTitle")}</h2>
+            <p className="text-sm text-slate-500">{t("bonusConfigSubtitle")}</p>
           </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
           <div className="space-y-2">
-            <label className="text-sm font-semibold text-slate-700">Bonus Fixe (€)</label>
+            <label className="text-sm font-semibold text-slate-700">{t("fixedBonusLabel")}</label>
             <div className="relative">
               <input 
                 type="number"
@@ -89,11 +91,11 @@ export default function AffiliationClient({
               />
               <span className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 font-semibold">€</span>
             </div>
-            <p className="text-xs text-slate-500">Montant fixe attribué au parrain lors d'une inscription ou action validée.</p>
+            <p className="text-xs text-slate-500">{t("fixedBonusHelp")}</p>
           </div>
           
           <div className="space-y-2">
-            <label className="text-sm font-semibold text-slate-700">Bonus Pourcentage (%)</label>
+            <label className="text-sm font-semibold text-slate-700">{t("percentBonusLabel")}</label>
             <div className="relative">
               <input 
                 type="number"
@@ -104,7 +106,7 @@ export default function AffiliationClient({
               />
               <span className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 font-semibold">%</span>
             </div>
-            <p className="text-xs text-slate-500">Pourcentage perçu par le parrain sur les transactions du filleul.</p>
+            <p className="text-xs text-slate-500">{t("percentBonusHelp")}</p>
           </div>
         </div>
 
@@ -114,19 +116,19 @@ export default function AffiliationClient({
           className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-medium transition-colors disabled:opacity-50"
         >
           <Save size={18} />
-          {isSavingConfig ? "Enregistrement..." : "Enregistrer la configuration"}
+          {isSavingConfig ? t("savingBtn") : t("saveConfigBtn")}
         </button>
       </div>
 
       {/* Users Affiliation Table */}
       <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
         <div className="p-5 border-b border-slate-100 flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <h2 className="text-lg font-bold text-slate-800">Gestion des codes par Utilisateur</h2>
+          <h2 className="text-lg font-bold text-slate-800">{t("userCodesTitle")}</h2>
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
             <input 
               type="text"
-              placeholder="Rechercher (Nom, Email, Code)..."
+              placeholder={t("searchPlaceholder")}
               className="pl-10 pr-4 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 w-full md:w-72"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
@@ -138,12 +140,12 @@ export default function AffiliationClient({
           <table className="w-full text-left text-sm">
             <thead className="bg-slate-50 text-slate-600 font-semibold border-b border-slate-100">
               <tr>
-                <th className="px-5 py-4">Utilisateur</th>
-                <th className="px-5 py-4">Rôle</th>
-                <th className="px-5 py-4">Code d'Affiliation</th>
-                <th className="px-5 py-4">Filleuls (Inscrits)</th>
-                <th className="px-5 py-4">Solde Affilié</th>
-                <th className="px-5 py-4 text-right">Action</th>
+                <th className="px-5 py-4">{t("thUser")}</th>
+                <th className="px-5 py-4">{t("thRole")}</th>
+                <th className="px-5 py-4">{t("thAffiliationCode")}</th>
+                <th className="px-5 py-4">{t("thReferrals")}</th>
+                <th className="px-5 py-4">{t("thAffiliateBalance")}</th>
+                <th className="px-5 py-4 text-right">{t("thAction")}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 text-slate-700">
@@ -156,7 +158,7 @@ export default function AffiliationClient({
                     </td>
                     <td className="px-5 py-4">
                       <span className={`inline-flex items-center px-2 py-1 rounded-md text-xs font-medium ${u.roleName === 'TALENT' ? 'bg-indigo-50 text-indigo-600' : u.roleName === 'RECRUTEUR' ? 'bg-emerald-50 text-emerald-600' : 'bg-slate-100 text-slate-600'}`}>
-                        {u.roleName || "Inconnu"}
+                        {u.roleName || t("unknownRole")}
                       </span>
                     </td>
                     <td className="px-5 py-4">
@@ -173,7 +175,7 @@ export default function AffiliationClient({
                         </div>
                       ) : (
                         <span className="font-mono text-sm font-semibold text-slate-700 bg-slate-100 px-2 py-1 rounded">
-                          {u.referralCode || <span className="text-slate-400 italic font-sans text-xs">Aucun code</span>}
+                          {u.referralCode || <span className="text-slate-400 italic font-sans text-xs">{t("noCode")}</span>}
                         </span>
                       )}
                     </td>
@@ -182,10 +184,10 @@ export default function AffiliationClient({
                     <td className="px-5 py-4 text-right">
                       {editingUserId === u.id ? (
                         <div className="flex items-center justify-end gap-2">
-                          <button onClick={() => handleSaveCode(u.id)} className="p-1.5 bg-green-100 text-green-600 rounded hover:bg-green-200 transition-colors" title="Enregistrer">
+                          <button onClick={() => handleSaveCode(u.id)} className="p-1.5 bg-green-100 text-green-600 rounded hover:bg-green-200 transition-colors" title={t("saveTooltip")}>
                             <Check size={16} />
                           </button>
-                          <button onClick={() => setEditingUserId(null)} className="p-1.5 bg-slate-100 text-slate-600 rounded hover:bg-slate-200 transition-colors" title="Annuler">
+                          <button onClick={() => setEditingUserId(null)} className="p-1.5 bg-slate-100 text-slate-600 rounded hover:bg-slate-200 transition-colors" title={t("cancelTooltip")}>
                             <X size={16} />
                           </button>
                         </div>
@@ -193,7 +195,7 @@ export default function AffiliationClient({
                         <button 
                           onClick={() => { setEditingUserId(u.id); setEditCodeValue(u.referralCode || ""); }}
                           className="p-1.5 text-blue-600 bg-blue-50 rounded hover:bg-blue-100 transition-colors inline-flex"
-                          title="Personnaliser le code"
+                          title={t("customizeCodeTooltip")}
                         >
                           <Edit2 size={16} />
                         </button>
@@ -204,7 +206,7 @@ export default function AffiliationClient({
               ) : (
                 <tr>
                   <td colSpan={6} className="px-5 py-8 text-center text-slate-500">
-                    Aucun utilisateur trouvé.
+                    {t("noUsersFound")}
                   </td>
                 </tr>
               )}

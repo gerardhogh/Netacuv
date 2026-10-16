@@ -5,18 +5,12 @@ import { useRouter } from "next/navigation";
 import { CheckCircle, XCircle, CreditCard, ArrowLeft, CheckCheck, Sparkles, Loader2, Check, X } from "lucide-react";
 import { useAuth } from "../../../context/AuthContext";
 import { useSession } from "next-auth/react";
+import { useTranslations } from "next-intl";
 
 type PayStep = "plan" | "method" | "input" | "processing";
 
-const PAYMENT_METHODS = [
-  { id: "mtn", label: "MTN MoMo", description: "Paiement mobile", logo: "🟡", prefix: "+229", color: "#FFCC00", textColor: "#000" },
-  { id: "moov", label: "Moov Money", description: "Paiement mobile", logo: "🔵", prefix: "+229", color: "#0066CC", textColor: "#FFF" },
-  { id: "orange", label: "Orange Money", description: "Paiement mobile", logo: "🟠", prefix: "+225", color: "#FF6600", textColor: "#FFF" },
-  { id: "wave", label: "Wave", description: "Paiement mobile", logo: "🐧", prefix: "+225", color: "#00C3FF", textColor: "#FFF" },
-  { id: "card", label: "Carte Bancaire", description: "Visa, Mastercard", logo: "💳", prefix: "", color: "#333", textColor: "#FFF" }
-];
-
 export default function TalentPremium({ isPremium: propIsPremium }: { isPremium?: boolean }) {
+  const t = useTranslations("talentPremium");
   const router = useRouter();
   const { user } = useAuth();
   const { update } = useSession();
@@ -25,6 +19,14 @@ export default function TalentPremium({ isPremium: propIsPremium }: { isPremium?
   const [method, setMethod] = useState("");
   const [phone, setPhone] = useState("");
   const [error, setError] = useState<string | null>(null);
+
+  const PAYMENT_METHODS = [
+    { id: "mtn", label: "MTN MoMo", description: t("mobilePayment"), logo: "🟡", prefix: "+229", color: "#FFCC00", textColor: "#000" },
+    { id: "moov", label: "Moov Money", description: t("mobilePayment"), logo: "🔵", prefix: "+229", color: "#0066CC", textColor: "#FFF" },
+    { id: "orange", label: "Orange Money", description: t("mobilePayment"), logo: "🟠", prefix: "+225", color: "#FF6600", textColor: "#FFF" },
+    { id: "wave", label: "Wave", description: t("mobilePayment"), logo: "🐧", prefix: "+225", color: "#00C3FF", textColor: "#FFF" },
+    { id: "card", label: t("bankCard"), description: "Visa, Mastercard", logo: "💳", prefix: "", color: "#333", textColor: "#FFF" }
+  ];
 
   const selectedMethod = PAYMENT_METHODS.find(m => m.id === method);
   const prefix = selectedMethod?.prefix || "";
@@ -41,10 +43,7 @@ export default function TalentPremium({ isPremium: propIsPremium }: { isPremium?
       const data = await res.json();
       
       if (res.ok && data.success) {
-        // Force le rafraîchissement du token JWT depuis la DB sur TOUS les appareils
-        // updateAge: 60 dans auth.ts assure la sync automatique en 60s max
         await update({ isPremium: true });
-        // Puis recharge la page pour refléter le nouveau statut
         router.refresh();
         setTimeout(() => window.location.reload(), 300);
       } else {
@@ -53,7 +52,7 @@ export default function TalentPremium({ isPremium: propIsPremium }: { isPremium?
       }
     } catch (e) {
       console.error("Erreur réseau paiement:", e);
-      setError("Erreur de connexion au serveur.");
+      setError(t("networkError"));
       setStep("plan");
     }
   };
@@ -65,7 +64,7 @@ export default function TalentPremium({ isPremium: propIsPremium }: { isPremium?
       {step === "plan" && (
         <div className="bg-white/95 backdrop-blur-xl rounded-[32px] p-8 md:p-12 shadow-[0_8px_30px_rgb(0,0,0,0.1)] max-w-4xl mx-auto border border-white/50 relative overflow-hidden">
           <h2 className="text-3xl font-black text-center text-[#32A8D7] mb-10 relative z-10 drop-shadow-sm">
-            Devenez Talent Premium sur Netacuv
+            {t("title")}
           </h2>
 
           {error && (
@@ -77,30 +76,30 @@ export default function TalentPremium({ isPremium: propIsPremium }: { isPremium?
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 relative z-10">
             {/* Gratuit */}
             <div className="rounded-2xl overflow-hidden border border-slate-200 bg-white flex flex-col shadow-sm">
-              <div className="bg-[#374151] text-white text-center py-4 font-bold text-lg">Mode Gratuit</div>
+              <div className="bg-[#374151] text-white text-center py-4 font-bold text-lg">{t("freeMode")}</div>
               <div className="p-8 text-center border-b border-slate-100 bg-white">
                 <div className="text-5xl font-black text-slate-800 mb-2 flex items-baseline justify-center gap-1">
-                  0 FCFA<span className="text-base font-medium text-slate-500">/mois</span>
+                  0 FCFA<span className="text-base font-medium text-slate-500">{t("freeDuration")}</span>
                 </div>
-                <p className="text-sm text-slate-500 font-medium">L'essentiel pour démarrer</p>
+                <p className="text-sm text-slate-500 font-medium">{t("freeSubtitle")}</p>
               </div>
               <div className="p-8 flex-1 bg-white flex flex-col">
                 <ul className="space-y-4 mb-8 flex-1">
-                  <li className="flex items-start gap-3"><Check className="text-[#32A8D7] mt-0.5 flex-shrink-0" size={20} /> <span className="text-slate-600">Création de profil Talent</span></li>
-                  <li className="flex items-start gap-3"><Check className="text-[#32A8D7] mt-0.5 flex-shrink-0" size={20} /> <span className="text-slate-600">Postuler aux offres</span></li>
-                  <li className="flex items-start gap-3"><Check className="text-[#32A8D7] mt-0.5 flex-shrink-0" size={20} /> <span className="text-slate-600">Affiliation <span className="text-xs font-semibold text-green-600 bg-green-50 px-2 py-0.5 rounded-full ml-1 border border-green-200">Gains par parrainage</span></span></li>
-                  <li className="flex items-start gap-3 opacity-50"><X className="text-slate-400 mt-0.5 flex-shrink-0" size={20} /> <span className="text-slate-500 line-through decoration-slate-300">Badge "Profil Certifié"</span></li>
-                  <li className="flex items-start gap-3 opacity-50"><X className="text-slate-400 mt-0.5 flex-shrink-0" size={20} /> <span className="text-slate-500 line-through decoration-slate-300">Entretien Vidéo par IA</span></li>
-                  <li className="flex items-start gap-3 opacity-50"><X className="text-slate-400 mt-0.5 flex-shrink-0" size={20} /> <span className="text-slate-500 line-through decoration-slate-300">Priorité dans les recherches des recruteurs</span></li>
-                  <li className="flex items-start gap-3 opacity-50"><X className="text-slate-400 mt-0.5 flex-shrink-0" size={20} /> <span className="text-slate-500 line-through decoration-slate-300">Statistiques de profil avancées</span></li>
-                  <li className="flex items-start gap-3 opacity-50"><X className="text-slate-400 mt-0.5 flex-shrink-0" size={20} /> <span className="text-slate-500 line-through decoration-slate-300">Coaching CV personnalisé par IA</span></li>
+                  <li className="flex items-start gap-3"><Check className="text-[#32A8D7] mt-0.5 flex-shrink-0" size={20} /> <span className="text-slate-600">{t("featureProfile")}</span></li>
+                  <li className="flex items-start gap-3"><Check className="text-[#32A8D7] mt-0.5 flex-shrink-0" size={20} /> <span className="text-slate-600">{t("featureApply")}</span></li>
+                  <li className="flex items-start gap-3"><Check className="text-[#32A8D7] mt-0.5 flex-shrink-0" size={20} /> <span className="text-slate-600">{t("featureAffiliation")} <span className="text-xs font-semibold text-green-600 bg-green-50 px-2 py-0.5 rounded-full ml-1 border border-green-200">{t("featureAffiliationBadge")}</span></span></li>
+                  <li className="flex items-start gap-3 opacity-50"><X className="text-slate-400 mt-0.5 flex-shrink-0" size={20} /> <span className="text-slate-500 line-through decoration-slate-300">{t("featureBadge")}</span></li>
+                  <li className="flex items-start gap-3 opacity-50"><X className="text-slate-400 mt-0.5 flex-shrink-0" size={20} /> <span className="text-slate-500 line-through decoration-slate-300">{t("featureInterview")}</span></li>
+                  <li className="flex items-start gap-3 opacity-50"><X className="text-slate-400 mt-0.5 flex-shrink-0" size={20} /> <span className="text-slate-500 line-through decoration-slate-300">{t("featurePriority")}</span></li>
+                  <li className="flex items-start gap-3 opacity-50"><X className="text-slate-400 mt-0.5 flex-shrink-0" size={20} /> <span className="text-slate-500 line-through decoration-slate-300">{t("featureStats")}</span></li>
+                  <li className="flex items-start gap-3 opacity-50"><X className="text-slate-400 mt-0.5 flex-shrink-0" size={20} /> <span className="text-slate-500 line-through decoration-slate-300">{t("featureCoaching")}</span></li>
                 </ul>
 
                 <button
                   onClick={() => router.push("/dashboard/talent")}
-                  className="w-full bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold py-4 rounded-xl transition-all shadow-sm flex items-center justify-center gap-2 mt-auto"
+                  className="w-full bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold py-4 rounded-xl transition-all shadow-sm flex items-center justify-center gap-2 mt-auto cursor-pointer"
                 >
-                  <ArrowLeft size={18} /> Rester sur le mode Gratuit
+                  <ArrowLeft size={18} /> {t("stayFree")}
                 </button>
               </div>
             </div>
@@ -108,43 +107,43 @@ export default function TalentPremium({ isPremium: propIsPremium }: { isPremium?
             {/* Premium */}
             <div className="rounded-2xl overflow-hidden border-2 border-[#32A8D7] bg-white flex flex-col shadow-xl shadow-[#32A8D7]/20 relative">
               <div className="absolute -top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-[#FFC107] text-slate-900 text-[10px] font-black px-4 py-1.5 rounded-full uppercase tracking-widest z-10 border-2 border-white">
-                Recommandé
+                {t("recommended")}
               </div>
               <div className="bg-[#32A8D7] text-white text-center py-4 font-bold text-lg flex items-center justify-center gap-2">
-                <Sparkles size={18} className="text-yellow-300" fill="currentColor" /> Mode Premium
+                <Sparkles size={18} className="text-yellow-300" fill="currentColor" /> {t("premiumMode")}
               </div>
               <div className="p-8 text-center border-b border-slate-100 bg-white">
                 <div className="text-5xl font-black text-[#32A8D7] mb-2 flex items-baseline justify-center gap-1">
-                  700 FCFA<span className="text-base font-medium text-slate-500">/mois</span>
+                  700 FCFA<span className="text-base font-medium text-slate-500">{t("premiumDuration")}</span>
                 </div>
-                <p className="text-sm text-slate-500 font-medium">Pour maximiser vos chances</p>
+                <p className="text-sm text-slate-500 font-medium">{t("premiumSubtitle")}</p>
               </div>
               
               <div className="p-8 flex-1 bg-white flex flex-col">
                 <ul className="space-y-4 mb-8 flex-1">
-                  <li className="flex items-start gap-3"><Check className="text-[#32A8D7] mt-0.5 flex-shrink-0" size={20} /> <span className="text-slate-600 font-bold">Création de profil Talent</span></li>
-                  <li className="flex items-start gap-3"><Check className="text-[#32A8D7] mt-0.5 flex-shrink-0" size={20} /> <span className="text-slate-600 font-bold">Postuler aux offres</span></li>
-                  <li className="flex items-start gap-3"><Check className="text-[#32A8D7] mt-0.5 flex-shrink-0" size={20} /> <span className="text-slate-600 font-bold">Affiliation <span className="text-xs font-semibold text-green-600 bg-green-50 px-2 py-0.5 rounded-full ml-1 border border-green-200">Gains par parrainage</span></span></li>
-                  <li className="flex items-start gap-3"><Check className="text-[#32A8D7] mt-0.5 flex-shrink-0" size={20} /> <span className="text-slate-600 font-bold">Badge "Profil Certifié" <Sparkles className="inline text-yellow-400" size={16} /></span></li>
-                  <li className="flex items-start gap-3"><Check className="text-[#32A8D7] mt-0.5 flex-shrink-0" size={20} /> <span className="text-slate-600 font-bold">Entretien Vidéo par IA</span></li>
-                  <li className="flex items-start gap-3"><Check className="text-[#32A8D7] mt-0.5 flex-shrink-0" size={20} /> <span className="text-slate-600 font-bold">Priorité dans les recherches des recruteurs</span></li>
-                  <li className="flex items-start gap-3"><Check className="text-[#32A8D7] mt-0.5 flex-shrink-0" size={20} /> <span className="text-slate-600 font-bold">Statistiques de profil avancées</span></li>
-                  <li className="flex items-start gap-3"><Check className="text-[#32A8D7] mt-0.5 flex-shrink-0" size={20} /> <span className="text-slate-600 font-bold">Coaching CV personnalisé par IA</span></li>
+                  <li className="flex items-start gap-3"><Check className="text-[#32A8D7] mt-0.5 flex-shrink-0" size={20} /> <span className="text-slate-600 font-bold">{t("featureProfile")}</span></li>
+                  <li className="flex items-start gap-3"><Check className="text-[#32A8D7] mt-0.5 flex-shrink-0" size={20} /> <span className="text-slate-600 font-bold">{t("featureApply")}</span></li>
+                  <li className="flex items-start gap-3"><Check className="text-[#32A8D7] mt-0.5 flex-shrink-0" size={20} /> <span className="text-slate-600 font-bold">{t("featureAffiliation")} <span className="text-xs font-semibold text-green-600 bg-green-50 px-2 py-0.5 rounded-full ml-1 border border-green-200">{t("featureAffiliationBadge")}</span></span></li>
+                  <li className="flex items-start gap-3"><Check className="text-[#32A8D7] mt-0.5 flex-shrink-0" size={20} /> <span className="text-slate-600 font-bold">{t("featureBadge")} <Sparkles className="inline text-yellow-400" size={16} /></span></li>
+                  <li className="flex items-start gap-3"><Check className="text-[#32A8D7] mt-0.5 flex-shrink-0" size={20} /> <span className="text-slate-600 font-bold">{t("featureInterview")}</span></li>
+                  <li className="flex items-start gap-3"><Check className="text-[#32A8D7] mt-0.5 flex-shrink-0" size={20} /> <span className="text-slate-600 font-bold">{t("featurePriority")}</span></li>
+                  <li className="flex items-start gap-3"><Check className="text-[#32A8D7] mt-0.5 flex-shrink-0" size={20} /> <span className="text-slate-600 font-bold">{t("featureStats")}</span></li>
+                  <li className="flex items-start gap-3"><Check className="text-[#32A8D7] mt-0.5 flex-shrink-0" size={20} /> <span className="text-slate-600 font-bold">{t("featureCoaching")}</span></li>
                 </ul>
                 
                 <button
                   disabled={isPremium}
                   onClick={() => !isPremium && setStep("method")}
-                  className={`w-full font-bold py-4 rounded-xl transition-all shadow-md flex items-center justify-center gap-2 mt-auto ${
+                  className={`w-full font-bold py-4 rounded-xl transition-all shadow-md flex items-center justify-center gap-2 mt-auto cursor-pointer ${
                     isPremium 
                       ? "bg-slate-100 text-slate-400 cursor-not-allowed border border-slate-200" 
                       : "bg-gradient-to-r from-orange-400 to-amber-500 hover:from-orange-500 hover:to-amber-600 text-white hover:shadow-lg hover:-translate-y-0.5"
                   }`}
                 >
                   {isPremium ? (
-                    <><CheckCheck size={18} /> Offre Premium activée</>
+                    <><CheckCheck size={18} /> {t("premiumActive")}</>
                   ) : (
-                    <><CreditCard size={18} /> Activer mon Premium à 700 FCFA</>
+                    <><CreditCard size={18} /> {t("activatePremium")}</>
                   )}
                 </button>
               </div>
@@ -153,7 +152,7 @@ export default function TalentPremium({ isPremium: propIsPremium }: { isPremium?
 
           <div className="mt-10 py-5 bg-[#F8FAFC] rounded-2xl border border-slate-100">
             <p className="text-center text-sm font-medium text-slate-600 px-6">
-              Paiement sécurisé (Mobile Money et Carte). Aucun engagement, résiliable à tout moment.
+              {t("securityFooter")}
             </p>
           </div>
         </div>
@@ -163,15 +162,15 @@ export default function TalentPremium({ isPremium: propIsPremium }: { isPremium?
       {step === "method" && (
         <div className="max-w-lg mx-auto space-y-6">
           <div className="text-center">
-            <h3 className="text-2xl font-black text-slate-900">Choisissez votre méthode</h3>
-            <p className="text-sm text-slate-500 mt-1">Sélectionnez un moyen de paiement pour votre abonnement à <strong>700 FCFA/mois</strong></p>
+            <h3 className="text-2xl font-black text-slate-900">{t("chooseMethod")}</h3>
+            <p className="text-sm text-slate-500 mt-1">{t("chooseMethodSubtitle")}</p>
           </div>
           <div className="grid grid-cols-2 gap-4">
             {PAYMENT_METHODS.map((pm) => (
               <button
                 key={pm.id}
                 onClick={() => { setMethod(pm.id); setStep("input"); }}
-                className="flex flex-col items-center gap-3 p-5 rounded-2xl border-2 border-slate-100 hover:border-[#008de4] hover:shadow-lg hover:shadow-blue-500/10 transition-all bg-white"
+                className="flex flex-col items-center gap-3 p-5 rounded-2xl border-2 border-slate-100 hover:border-[#008de4] hover:shadow-lg hover:shadow-blue-500/10 transition-all bg-white cursor-pointer"
               >
                 <span className="text-3xl">{pm.logo}</span>
                 <div>
@@ -194,14 +193,14 @@ export default function TalentPremium({ isPremium: propIsPremium }: { isPremium?
       {step === "input" && selectedMethod && (
         <div className="max-w-md mx-auto space-y-6">
           <div className="text-center">
-            <h3 className="text-2xl font-black text-slate-900">Entrer votre numéro</h3>
-            <p className="text-sm text-slate-500 mt-1">Paiement via <strong>{selectedMethod.label}</strong></p>
+            <h3 className="text-2xl font-black text-slate-900">{t("enterNumberTitle")}</h3>
+            <p className="text-sm text-slate-500 mt-1">{t("paymentVia", { method: selectedMethod.label })}</p>
           </div>
 
           <div className="bg-white rounded-2xl p-6 border border-slate-100 shadow-sm space-y-5">
             <div>
               <label className="block text-sm font-semibold text-slate-600 mb-2">
-                {method === "card" ? "Numéro de carte" : "Numéro de téléphone"}
+                {method === "card" ? t("cardNumber") : t("phoneNumber")}
               </label>
               {method !== "card" ? (
                 <div className="flex gap-3">
@@ -229,22 +228,22 @@ export default function TalentPremium({ isPremium: propIsPremium }: { isPremium?
             </div>
 
             <div className="bg-slate-50 rounded-xl p-4 space-y-2 text-sm">
-              <div className="flex justify-between"><span className="text-slate-500">Service</span><span className="font-bold">Abonnement Talent Premium</span></div>
-              <div className="flex justify-between"><span className="text-slate-500">Montant</span><span className="font-black text-[#008de4]">700 FCFA</span></div>
-              <div className="flex justify-between"><span className="text-slate-500">Méthode</span><span className="font-bold">{selectedMethod.label}</span></div>
+              <div className="flex justify-between"><span className="text-slate-500">{t("serviceLabel")}</span><span className="font-bold">{t("serviceValue")}</span></div>
+              <div className="flex justify-between"><span className="text-slate-500">{t("amountLabel")}</span><span className="font-black text-[#008de4]">700 FCFA</span></div>
+              <div className="flex justify-between"><span className="text-slate-500">{t("methodLabel")}</span><span className="font-bold">{selectedMethod.label}</span></div>
             </div>
 
             <button
               disabled={phone.length < 8}
               onClick={handleCheckout}
-              className="w-full py-3.5 rounded-xl bg-[#008de4] hover:bg-blue-600 text-white font-bold text-sm transition-colors shadow-lg shadow-blue-500/20 disabled:opacity-40 disabled:cursor-not-allowed"
+              className="w-full py-3.5 rounded-xl bg-[#008de4] hover:bg-blue-600 text-white font-bold text-sm transition-colors shadow-lg shadow-blue-500/20 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
             >
-              Confirmer et payer 700 FCFA
+              {t("confirmPay")}
             </button>
           </div>
 
           <p className="text-center text-xs text-slate-400">
-            🔒 Paiement sécurisé. Vos données sont protégées.
+            {t("securePaymentNotice")}
           </p>
         </div>
       )}
@@ -253,8 +252,8 @@ export default function TalentPremium({ isPremium: propIsPremium }: { isPremium?
       {step === "processing" && (
         <div className="max-w-md mx-auto py-20 text-center space-y-6">
           <Loader2 size={48} className="mx-auto text-blue-500 animate-spin" />
-          <h3 className="text-xl font-bold text-slate-800">Initialisation du paiement...</h3>
-          <p className="text-slate-500 text-sm">Veuillez patienter quelques instants.</p>
+          <h3 className="text-xl font-bold text-slate-800">{t("initPayment")}</h3>
+          <p className="text-slate-500 text-sm">{t("pleaseWait")}</p>
         </div>
       )}
       </div>

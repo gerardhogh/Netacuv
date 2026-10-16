@@ -146,9 +146,10 @@ async function handleMiddleware(req: NextRequest) {
   const requestHeaders = new Headers(req.headers);
   requestHeaders.set("x-pathname", path);
   requestHeaders.set("x-url", req.url);
-  if (urlLocale) {
-    requestHeaders.set("x-locale", urlLocale);
-  }
+  const cookieLocale = req.cookies.get("NEXT_LOCALE")?.value;
+  const activeLocale: SupportedLocale =
+    urlLocale || (cookieLocale === "en" || cookieLocale === "fr" ? (cookieLocale as SupportedLocale) : "fr");
+  requestHeaders.set("x-locale", activeLocale);
 
   // REWRITE 1 : Masquer /dashboard/admin dans l'URL pour le sous-domaine admin
   if (isAdminSubdomain && !isPublicRoute && !path.startsWith("/dashboard")) {

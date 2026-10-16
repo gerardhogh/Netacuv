@@ -2,28 +2,30 @@
 
 import { Modal } from "../ui/Modal";
 import { Trash2, Video } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 export function StartInterviewModal({ isOpen, onClose, onConfirm }: { isOpen: boolean, onClose: () => void, onConfirm: () => void }) {
+  const t = useTranslations("interview.modals");
   return (
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title="Prêt à commencer votre entretien ?"
-      description="Rappel : Vous disposez de 3 essais maximum. Assurez-vous d'être dans un environnement calme."
+      title={t("startTitle")}
+      description={t("startDesc")}
     >
       <div className="flex flex-col-reverse sm:flex-row justify-end gap-2 sm:gap-3 mt-3 sm:mt-4">
         <button 
           onClick={onClose}
           className="w-full sm:w-auto px-4 py-2 rounded-md text-xs sm:text-sm font-medium text-slate-600 hover:bg-slate-100 transition-colors text-center cursor-pointer"
         >
-          Annuler
+          {t("startCancel")}
         </button>
         <button 
           onClick={() => { onClose(); onConfirm(); }}
           className="w-full sm:w-auto px-4 py-2 rounded-md text-xs sm:text-sm font-medium bg-[#008de4] text-white hover:bg-blue-600 transition-colors flex items-center justify-center gap-2 cursor-pointer shadow-sm"
         >
           <Video size={16} />
-          C'est parti !
+          {t("startConfirm")}
         </button>
       </div>
     </Modal>
@@ -31,25 +33,26 @@ export function StartInterviewModal({ isOpen, onClose, onConfirm }: { isOpen: bo
 }
 
 export function CancelInterviewModal({ isOpen, onClose, onConfirm }: { isOpen: boolean, onClose: () => void, onConfirm: () => void }) {
+  const t = useTranslations("interview.modals");
   return (
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title="Quitter l'entretien ?"
-      description="Si vous quittez maintenant, votre tentative en cours ne sera pas enregistrée."
+      title={t("cancelTitle")}
+      description={t("cancelDesc")}
     >
       <div className="flex flex-col-reverse sm:flex-row justify-end gap-2 sm:gap-3 mt-3 sm:mt-4">
         <button 
           onClick={() => { onClose(); onConfirm(); }}
           className="w-full sm:w-auto px-4 py-2 rounded-md text-xs sm:text-sm font-medium text-red-600 bg-red-50 hover:bg-red-100 transition-colors text-center cursor-pointer"
         >
-          Quitter quand même
+          {t("cancelLeave")}
         </button>
         <button 
           onClick={onClose}
           className="w-full sm:w-auto px-4 py-2 rounded-md text-xs sm:text-sm font-medium bg-[#008de4] text-white hover:bg-blue-600 transition-colors text-center cursor-pointer shadow-sm"
         >
-          Continuer l'entretien
+          {t("cancelContinue")}
         </button>
       </div>
     </Modal>
@@ -57,26 +60,27 @@ export function CancelInterviewModal({ isOpen, onClose, onConfirm }: { isOpen: b
 }
 
 export function DeleteVideoModal({ isOpen, onClose, onConfirm }: { isOpen: boolean, onClose: () => void, onConfirm: () => void }) {
+  const t = useTranslations("interview.modals");
   return (
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title="Supprimer cet enregistrement ?"
-      description="Cette action est irréversible. Voulez-vous utiliser une autre tentative ?"
+      title={t("deleteTitle")}
+      description={t("deleteDesc")}
     >
       <div className="flex justify-end gap-3 mt-2">
         <button 
           onClick={onClose}
           className="px-4 py-2 rounded-md text-sm font-medium text-slate-600 hover:bg-slate-100 transition-colors"
         >
-          Garder la vidéo
+          {t("deleteKeep")}
         </button>
         <button 
           onClick={() => { onClose(); onConfirm(); }}
           className="px-4 py-2 rounded-md text-sm font-medium bg-red-600 text-white hover:bg-red-700 transition-colors flex items-center gap-2"
         >
           <Trash2 size={16} />
-          Supprimer
+          {t("deleteConfirm")}
         </button>
       </div>
     </Modal>
@@ -92,12 +96,13 @@ export function ReplaceVideoModal({
   onClose: () => void;
   onConfirm: () => void;
 }) {
+  const t = useTranslations("interview.modals");
   return (
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title="Vidéo déjà enregistrée"
-      description="Une vidéo d'entretien a déjà été réalisée pour votre profil. Souhaitez-vous supprimer la vidéo existante pour recommencer un nouvel entretien ?"
+      title={t("replaceTitle")}
+      description={t("replaceDesc")}
       maxWidth="max-w-lg"
     >
       <div className="flex flex-col-reverse sm:flex-row justify-end items-stretch sm:items-center gap-2.5 sm:gap-3 mt-4">
@@ -105,7 +110,7 @@ export function ReplaceVideoModal({
           onClick={onClose}
           className="w-full sm:w-auto px-4 py-2.5 rounded-md text-xs sm:text-sm font-medium text-slate-600 hover:bg-slate-100 transition-colors whitespace-nowrap text-center cursor-pointer"
         >
-          Non, retourner
+          {t("replaceCancel")}
         </button>
         <button
           onClick={() => {
@@ -115,7 +120,7 @@ export function ReplaceVideoModal({
           className="w-full sm:w-auto px-5 py-2.5 rounded-md text-xs sm:text-sm font-medium bg-red-600 hover:bg-red-700 text-white transition-colors flex items-center justify-center gap-2 shadow-sm whitespace-nowrap cursor-pointer"
         >
           <Trash2 size={16} />
-          Oui, supprimer et recommencer
+          {t("replaceConfirm")}
         </button>
       </div>
     </Modal>

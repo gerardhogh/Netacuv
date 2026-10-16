@@ -26,8 +26,17 @@ import {
   X
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { Caveat } from "next/font/google";
+import { useTranslations } from "next-intl";
+
+const scriptFont = Caveat({
+  subsets: ["latin"],
+  weight: ["500"],
+  display: "swap",
+});
 
 export default function HomePage() {
+  const t = useTranslations("landing");
   const [activeHowTab, setActiveHowTab] = useState<"talents" | "recruteurs">("talents");
   const [activePricingTab, setActivePricingTab] = useState<"talents" | "recruteurs">("talents");
   const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(0);
@@ -51,38 +60,14 @@ export default function HomePage() {
   };
 
   const faqs = [
-    {
-      q: "Comment fonctionne l'entretien vidéo IA ?",
-      a: "Notre intelligence artificielle vous pose des questions adaptées à votre domaine. Elle analyse ensuite vos réponses, votre élocution, votre posture et votre pertinence pour certifier vos compétences. Tout se passe directement depuis votre navigateur ou mobile.",
-    },
-    {
-      q: "Quelles sont les limites de l'offre gratuite ?",
-      a: "Les talents peuvent postuler à 1 offre gratuitement (limite à vie). Pour postuler en illimité, le compte Premium est requis. Les recruteurs peuvent créer leur profil d'entreprise et publier 1 seule offre gratuitement, mais les informations de contact des talents restent masquées.",
-    },
-    {
-      q: "Quels sont les avantages de l'offre Premium pour un recruteur ?",
-      a: "Les recruteurs Premium bénéficient de publications d'offres illimitées, d'un accès complet aux profils (coordonnées, téléchargement de CV PDF, vidéos d'entretien IA), d'un accès prioritaire aux profils étoilés et de filtres de recherche avancés.",
-    },
-    {
-      q: "Comment fonctionne le programme d'affiliation (Parrainage) ?",
-      a: "Que vous soyez en offre Gratuite ou Premium, vous gagnez de l'argent en parrainant vos connaissances. Chaque fois qu'une personne s'inscrit via votre lien et souscrit à l'offre Premium, vous gagnez immédiatement une prime (ex: 2 500 CFA) !",
-    },
-    {
-      q: "Comment les recruteurs contactent-ils les talents ?",
-      a: "Avec l'abonnement Premium, les recruteurs ont un accès direct aux emails, numéros de téléphone et réseaux sociaux des candidats. Ils peuvent également télécharger le CV au format PDF pour les contacter facilement.",
-    },
-    {
-      q: "Comment l'IA évalue-t-elle les compétences des candidats ?",
-      a: "Notre IA analyse non seulement le contenu des réponses (pertinence, vocabulaire) mais aussi la communication non-verbale (posture, clarté, confiance) pour délivrer un score de performance et certifier les meilleurs profils avec des badges.",
-    },
-    {
-      q: "Les paiements sont-ils sécurisés et quels sont les modes acceptés ?",
-      a: "Oui, totalement sécurisés. Nous acceptons les paiements par Mobile Money (Orange Money, MTN, Moov) très populaires en Afrique, ainsi que les paiements classiques par Carte Bancaire via des passerelles reconnues.",
-    },
-    {
-      q: "Quels sont les avantages de l'offre Premium pour un talent ?",
-      a: "Les talents Premium peuvent postuler à un nombre illimité d'offres d'emploi, augmenter la visibilité de leur profil auprès des recruteurs (badge Premium) et accéder à l'intégralité des fonctionnalités pour maximiser leurs chances.",
-    },
+    t.raw("faq.items.0"),
+    t.raw("faq.items.1"),
+    t.raw("faq.items.2"),
+    t.raw("faq.items.3"),
+    t.raw("faq.items.4"),
+    t.raw("faq.items.5"),
+    t.raw("faq.items.6"),
+    t.raw("faq.items.7"),
   ];
 
   return (
@@ -92,118 +77,93 @@ export default function HomePage() {
       {/* ── HERO SECTION ── */}
       <section
         id="accueil"
-        className="relative min-h-[calc(100vh-80px)] flex flex-col justify-center pt-8 pb-16 md:py-20 overflow-hidden bg-gradient-to-b from-[#0b223d] via-[#061527] to-[#030b14] text-white selection:bg-sky-400/30"
+        className="relative min-h-[calc(100vh-80px)] flex flex-col justify-center pt-8 pb-16 md:py-20 overflow-hidden bg-[#f4f9ff]"
       >
-        {/* Ambient Lighting & Glows bleu nuit teintés Netacuv */}
-        <div className="pointer-events-none absolute -top-40 -left-40 w-96 h-96 bg-[#32A8D7]/20 rounded-full blur-3xl" />
-        <div className="pointer-events-none absolute -bottom-40 -right-40 w-[30rem] h-[30rem] bg-[#1e8ae9]/20 rounded-full blur-3xl" />
-        <div className="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[45rem] h-[45rem] bg-[#0c3e70]/30 rounded-full blur-3xl" />
-        <div className="pointer-events-none absolute top-1/4 right-1/4 w-80 h-80 bg-[#f97316]/10 rounded-full blur-3xl" />
-
-        {/* Netacuv "N" Symbol Watermarks in Background */}
-        <div className="pointer-events-none absolute inset-0 flex items-center justify-center overflow-hidden select-none">
-          <div className="w-[620px] h-[620px] max-w-[90vw] max-h-[90vw] opacity-[0.06] transform -rotate-12 scale-110">
-            <Image
-              src="/Logo/SVG/Asset 14.svg"
-              alt=""
-              width={620}
-              height={620}
-              className="w-full h-full object-contain"
-              priority
-            />
-          </div>
-          <div className="absolute -top-16 -right-16 w-80 h-80 opacity-[0.04] transform rotate-12">
-            <Image
-              src="/Logo/SVG/Asset 14.svg"
-              alt=""
-              width={320}
-              height={320}
-              className="w-full h-full object-contain"
-            />
-          </div>
-          <div className="absolute -bottom-20 -left-20 w-80 h-80 opacity-[0.04] transform -rotate-6">
-            <Image
-              src="/Logo/SVG/Asset 14.svg"
-              alt=""
-              width={320}
-              height={320}
-              className="w-full h-full object-contain"
-            />
-          </div>
+        {/* Background Decorative Gradients */}
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          {/* Tache rose à gauche */}
+          <div className="absolute top-[15%] -left-[15%] w-[40%] h-[60%] rounded-full bg-[#f9d8e6] opacity-80 blur-[120px]" />
+          {/* Tache rose en haut à droite */}
+          <div className="absolute -top-[10%] -right-[10%] w-[45%] h-[50%] rounded-full bg-[#f9d8e6] opacity-80 blur-[120px]" />
+          {/* Tache bleue au centre / bas */}
+          <div className="absolute bottom-[-10%] left-[10%] w-[80%] h-[70%] rounded-full bg-[#d0eefd] opacity-90 blur-[140px]" />
         </div>
 
-        <div className="max-w-7xl mx-auto px-6 relative z-10">
-          <div className="flex flex-col lg:flex-row items-center justify-between gap-5 sm:gap-6 lg:gap-8">
+        <div className="max-w-6xl mx-auto px-6 relative z-10">
+          <div className="flex flex-col lg:flex-row items-center justify-center gap-6 lg:gap-6 xl:gap-8">
             {/* Left Content */}
-            <div className="flex-1 max-w-2xl animate-fade-in-up w-full">
-              <h1 className="text-4xl sm:text-5xl lg:text-[54px] xl:text-6xl font-black text-white leading-[1.12] tracking-tight mb-4 sm:mb-6">
-                Le recrutement au-delà<br />
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-sky-400 via-[#32A8D7] to-cyan-300">
-                  du CV
-                </span>{" "}
-                <span className="text-[#F59E0B]">classique.</span>
+            <div className="w-full lg:w-auto lg:max-w-[500px] xl:max-w-[540px] animate-fade-in-up shrink-0">
+              <h1 className="leading-[1.08] tracking-tight mb-4 sm:mb-6">
+                <span className={`${scriptFont.className} block text-5xl sm:text-6xl lg:text-[62px] xl:text-[68px] font-medium text-slate-800 leading-tight mb-1`}>
+                  {t("heroScript")}
+                </span>
+                <span className="block text-4xl sm:text-5xl lg:text-[48px] xl:text-[54px] font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-600 via-[#1e8ae9] to-[#32A8D7] tracking-tight leading-[1.08]">
+                  {t("heroTitle1")}
+                </span>
+                <span className="block text-4xl sm:text-5xl lg:text-[48px] xl:text-[54px] font-black text-[#F59E0B] tracking-tight leading-[1.08]">
+                  {t("heroTitle2")}
+                </span>
               </h1>
-              <p className="text-blue-100/80 text-base sm:text-lg lg:text-xl leading-relaxed mb-4 sm:mb-6 lg:mb-8 max-w-[480px] font-normal">
-                Découvrez une plateforme conçue pour mettre en lumière vos véritables 
-                compétences grâce à des entretiens vidéo certifiés et une mise en relation directe.
+              <p className="text-slate-600 text-base sm:text-lg lg:text-xl leading-relaxed mb-4 sm:mb-6 lg:mb-8 max-w-[460px] font-normal">
+                {t("heroDesc")}
               </p>
-              {/* Desktop CTA Buttons */}
+              {/* Desktop CTA Buttons (visibles uniquement sur grand écran) */}
               <div className="hidden lg:flex items-center gap-4 flex-wrap">
                 <Link
                   href="/talents"
-                  className="px-8 py-4 rounded-full font-bold text-base text-white bg-gradient-to-r from-[#1e8ae9] to-[#32A8D7] hover:from-[#1875c7] hover:to-[#2998c5] hover:scale-[1.02] hover:shadow-lg hover:shadow-sky-500/30 shadow-xl shadow-sky-500/25 active:scale-95 transition-all duration-300 ease-in-out inline-flex items-center gap-2"
+                  className="px-8 py-4 rounded-full font-bold text-base text-white bg-blue-600 hover:bg-blue-700 hover:scale-[1.02] hover:shadow-lg hover:shadow-blue-500/25 shadow-xl shadow-blue-500/25 active:scale-95 transition-all duration-300 ease-in-out inline-flex items-center gap-2"
                 >
-                  Je suis un Talent
+                  {t("ctaTalent")}
                 </Link>
                 <Link
                   href="/recruteurs"
-                  className="px-8 py-4 rounded-full font-bold text-base text-white bg-white/10 hover:bg-white/15 border border-white/20 backdrop-blur-md shadow-sm hover:scale-[1.02] hover:shadow-lg hover:shadow-white/10 active:scale-95 transition-all duration-300 ease-in-out"
+                  className="px-8 py-4 rounded-full font-bold text-base text-blue-600 bg-white/80 hover:bg-white border border-blue-200 shadow-sm hover:scale-[1.02] hover:shadow-lg hover:shadow-blue-500/25 transition-all duration-300 ease-in-out"
                 >
-                  Je suis un Recruteur
+                  {t("ctaRecruiter")}
                 </Link>
               </div>
             </div>
 
-            {/* Arrow — positioned comfortably between left text and right card pointing to the dropzone */}
-            <div className="hidden lg:block absolute left-[54%] xl:left-[52%] top-[50%] -translate-y-1/2 z-10 pointer-events-none">
+            {/* Arrow — nicely placed in between, harmoniously close to text and card */}
+            <div className="hidden lg:flex flex-col items-center justify-center shrink-0 px-1 select-none pointer-events-none">
               <Image
                 src="/assets/Arrow.png"
                 alt="Flèche indicative"
-                width={130}
-                height={95}
-                className="object-contain opacity-90 drop-shadow-[0_0_15px_rgba(50,168,215,0.4)] brightness-125"
+                width={110}
+                height={78}
+                className="object-contain opacity-85"
               />
             </div>
 
-            {/* Right Card Mockup (image 1.png from Figma) & Mobile CTA Buttons */}
-            <div className="flex-1 flex flex-col items-center justify-center lg:justify-end w-full">
-              <div className="relative w-full max-w-md animate-fade-in mb-4 sm:mb-5 lg:mb-0">
+            {/* Right Card Mockup (rapprochée) & Mobile CTA Buttons */}
+            <div className="w-full lg:w-auto flex flex-col items-center justify-center shrink-0">
+              <div className="relative w-full max-w-[380px] sm:max-w-[410px] xl:max-w-[430px] animate-fade-in mb-4 sm:mb-5 lg:mb-0">
                 {/* Floating graphic from Figma */}
-                <div className="relative rounded-3xl overflow-hidden shadow-[0_25px_60px_-15px_rgba(0,0,0,0.8),0_0_35px_rgba(50,168,215,0.2)] border border-sky-400/20 backdrop-blur-xl transition-transform hover:scale-[1.01]">
+                <div className="relative rounded-3xl overflow-hidden shadow-2xl transition-transform hover:scale-[1.01]">
                   <Image
                     src="/assets/image 1.png"
                     alt="Dépose ton CV - Netacuv"
                     width={460}
                     height={590}
                     priority
-                    className="w-full h-auto object-contain rounded-3xl bg-slate-900/40"
+                    className="w-full h-auto object-contain rounded-3xl bg-white/60 backdrop-blur-md"
                   />
                 </div>
               </div>
 
-              {/* Boutons CTA sur Mobile */}
+              {/* Boutons CTA sur Mobile : ramenés après l'image de dépôt de dossier */}
               <div className="flex lg:hidden items-center gap-3 w-full max-w-md mt-2">
                 <Link
                   href="/talents"
-                  className="flex-1 flex justify-center items-center text-center text-xs sm:text-sm font-bold h-[44px] px-2 sm:px-4 rounded-full text-white bg-gradient-to-r from-[#1e8ae9] to-[#32A8D7] shadow-md shadow-sky-500/25 transition-all whitespace-nowrap"
+                  className="flex-1 flex justify-center items-center text-center text-xs sm:text-sm font-semibold h-[42px] px-2 sm:px-4 !rounded-full btn-primary shadow-sm transition-all whitespace-nowrap"
                 >
-                  Je suis un Talent
+                  {t("ctaTalent")}
                 </Link>
                 <Link
                   href="/recruteurs"
-                  className="flex-1 flex justify-center items-center text-center text-xs sm:text-sm font-semibold h-[44px] px-2 sm:px-4 rounded-full text-white bg-white/10 hover:bg-white/15 border border-white/20 backdrop-blur-md shadow-xs transition-all whitespace-nowrap"
+                  className="flex-1 flex justify-center items-center text-center text-xs sm:text-sm font-semibold h-[42px] px-2 sm:px-4 !rounded-full btn-outline bg-white/90 shadow-xs transition-all whitespace-nowrap"
                 >
-                  Je suis un Recruteur
+                  {t("ctaRecruiter")}
                 </Link>
               </div>
             </div>
@@ -218,19 +178,19 @@ export default function HomePage() {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6 text-center divide-x divide-slate-200">
             <div className="px-4">
               <h4 className="text-3xl font-black text-[#2BAFE3] mb-1">+90%</h4>
-              <p className="text-sm font-semibold text-slate-600">Visibilité des certifiés</p>
+              <p className="text-sm font-semibold text-slate-600">{t("stats.certifiedVisibility")}</p>
             </div>
             <div className="px-4">
               <h4 className="text-3xl font-black text-[#2BAFE3] mb-1">x3</h4>
-              <p className="text-sm font-semibold text-slate-600">Plus rapide pour recruter</p>
+              <p className="text-sm font-semibold text-slate-600">{t("stats.fasterHiring")}</p>
             </div>
             <div className="px-4">
               <h4 className="text-3xl font-black text-[#2BAFE3] mb-1">100%</h4>
-              <p className="text-sm font-semibold text-slate-600">Profils vérifiés par IA</p>
+              <p className="text-sm font-semibold text-slate-600">{t("stats.aiVerified")}</p>
             </div>
             <div className="px-4">
               <h4 className="text-3xl font-black text-[#2BAFE3] mb-1">24/7</h4>
-              <p className="text-sm font-semibold text-slate-600">Disponibilité du vivier</p>
+              <p className="text-sm font-semibold text-slate-600">{t("stats.poolAvailability")}</p>
             </div>
           </div>
         </div>
@@ -247,7 +207,7 @@ export default function HomePage() {
         <div className="max-w-7xl mx-auto px-6 relative z-10">
           <div className="text-center mb-16">
             <h2 className="text-3xl md:text-5xl font-black mb-8 text-[#0F172A]">
-              Comment ça marche ?
+              {t("how.title")}
             </h2>
             
             {/* Tabs */}
@@ -260,7 +220,7 @@ export default function HomePage() {
                     : "text-slate-500 hover:text-[#2BAFE3] bg-transparent"
                 }`}
               >
-                Côté Candidats
+                {t("how.tabTalents")}
               </button>
               <button
                 onClick={() => setActiveHowTab("recruteurs")}
@@ -270,7 +230,7 @@ export default function HomePage() {
                     : "text-slate-500 hover:text-[#F59E0B] bg-transparent"
                 }`}
               >
-                Côté Recruteurs
+                {t("how.tabRecruiters")}
               </button>
             </div>
           </div>
@@ -302,34 +262,37 @@ export default function HomePage() {
                     {/* Steps list */}
                     <div className="flex-1 w-full flex flex-col gap-6">
                       {[
-                        { num: "01", title: "Crée ton compte en 1 minute", desc: "Accède à la plateforme avec un petit abonnement de 700 FCFA/mois.", icon: LogIn, iconColor: "text-blue-600", iconBg: "bg-blue-100" },
-                        { num: "02", title: "Téléverse ton CV", desc: "Ou remplis directement ton profil avec tes infos clés.", icon: Upload, iconColor: "text-amber-500", iconBg: "bg-amber-100" },
-                        { num: "03", title: "Passe le test vidéo IA", desc: "Réponds à des questions métiers en vidéo, évalue-toi en 3 essais.", icon: Ticket, iconColor: "text-fuchsia-500", iconBg: "bg-fuchsia-100" },
-                        { num: "04", title: "Obtiens ta certification", desc: "L'IA note ta prestation et t'attribue un badge et des étoiles visibles.", icon: Award, iconColor: "text-amber-500", iconBg: "bg-amber-100" },
-                        { num: "05", title: "Sois visible par les recruteurs", desc: "Ton profil apparaît dans les recherches selon ton score, ton CV et ta vidéo.", icon: Ticket, iconColor: "text-fuchsia-500", iconBg: "bg-fuchsia-100" },
-                        { num: "06", title: "Gagne avec l'affiliation", desc: "Partage ton code et reçois des bonus quand tes filleuls s'inscrivent.", icon: Gift, iconColor: "text-amber-500", iconBg: "bg-amber-100" },
-                      ].map((step, idx) => (
-                        <div key={idx} className={`flex items-center gap-4 ${idx % 2 === 0 ? 'flex-row' : 'flex-row-reverse'}`}>
-                          <div className="w-20 flex-shrink-0 flex items-center justify-center">
-                            <span className="text-6xl lg:text-7xl font-black leading-none select-none text-[#CBD5E1]">
-                              {step.num}
-                            </span>
-                          </div>
-                          <div className="flex-1 bg-white/90 backdrop-blur-sm rounded-[2rem] shadow-[0_8px_30px_rgb(0,0,0,0.04)] px-4 lg:px-6 py-4 flex items-center gap-4 transition-all">
-                            <div className={`w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0 ${step.iconBg}`}>
-                              <step.icon className={`w-5 h-5 ${step.iconColor}`} />
+                        { icon: LogIn, iconColor: "text-blue-600", iconBg: "bg-blue-100" },
+                        { icon: Upload, iconColor: "text-amber-500", iconBg: "bg-amber-100" },
+                        { icon: Ticket, iconColor: "text-fuchsia-500", iconBg: "bg-fuchsia-100" },
+                        { icon: Award, iconColor: "text-amber-500", iconBg: "bg-amber-100" },
+                        { icon: Ticket, iconColor: "text-fuchsia-500", iconBg: "bg-fuchsia-100" },
+                        { icon: Gift, iconColor: "text-amber-500", iconBg: "bg-amber-100" },
+                      ].map((stepConfig, idx) => {
+                        const stepData = t.raw(`how.candidateSteps.${idx}`);
+                        return (
+                          <div key={idx} className={`flex items-center gap-4 ${idx % 2 === 0 ? 'flex-row' : 'flex-row-reverse'}`}>
+                            <div className="w-20 flex-shrink-0 flex items-center justify-center">
+                              <span className="text-6xl lg:text-7xl font-black leading-none select-none text-[#CBD5E1]">
+                                {stepData.num}
+                              </span>
                             </div>
-                            <div className="flex-1 min-w-0">
-                              <h3 className="font-bold text-base leading-snug mb-0.5 text-[#0F172A]">
-                                {step.title}
-                              </h3>
-                              <p className="text-sm text-slate-500 leading-relaxed">
-                                {step.desc}
-                              </p>
+                            <div className="flex-1 bg-white/90 backdrop-blur-sm rounded-[2rem] shadow-[0_8px_30px_rgb(0,0,0,0.04)] px-4 lg:px-6 py-4 flex items-center gap-4 transition-all">
+                              <div className={`w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0 ${stepConfig.iconBg}`}>
+                                <stepConfig.icon className={`w-5 h-5 ${stepConfig.iconColor}`} />
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <h3 className="font-bold text-base leading-snug mb-0.5 text-[#0F172A]">
+                                  {stepData.title}
+                                </h3>
+                                <p className="text-sm text-slate-500 leading-relaxed">
+                                  {stepData.desc}
+                                </p>
+                              </div>
                             </div>
                           </div>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   </div>
                 </motion.div>
@@ -357,33 +320,36 @@ export default function HomePage() {
                     </div>
                     <div className="flex-1 w-full flex flex-col gap-6">
                       {[
-                        { num: "01", title: "Créez un compte recruteur en quelques minutes", desc: "Inscrivez-vous rapidement sur la plateforme pour commencer à accéder aux talents.", icon: LogIn, iconColor: "text-blue-600", iconBg: "bg-blue-100" },
-                        { num: "02", title: "Accédez à la base de talents avec profils certifiés", desc: "Explorez les profils des talents, tous certifiés avec des badges de confiance.", icon: Users, iconColor: "text-amber-500", iconBg: "bg-amber-100" },
-                        { num: "03", title: "Consultez les CV, vidéos de présentation et badges", desc: "Visualisez les CV et les vidéos de présentation des talents, ainsi que leurs badges.", icon: Ticket, iconColor: "text-fuchsia-500", iconBg: "bg-fuchsia-100" },
-                        { num: "04", title: "Contactez directement les talents ou publiez une offre", desc: "Entrez en contact avec les talents qui correspondent à vos critères.", icon: Share2, iconColor: "text-amber-500", iconBg: "bg-amber-100" },
-                        { num: "05", title: "Gagnez avec l'affiliation", desc: "Partagez votre code et recevez des bonus quand vos filleuls s'inscrivent.", icon: Gift, iconColor: "text-fuchsia-500", iconBg: "bg-fuchsia-100" },
-                      ].map((step, idx) => (
-                        <div key={idx} className={`flex items-center gap-4 ${idx % 2 === 0 ? 'flex-row' : 'flex-row-reverse'}`}>
-                          <div className="w-20 flex-shrink-0 flex items-center justify-center">
-                            <span className="text-6xl lg:text-7xl font-black leading-none select-none text-[#CBD5E1]">
-                              {step.num}
-                            </span>
-                          </div>
-                          <div className="flex-1 bg-white/90 backdrop-blur-sm rounded-[2rem] shadow-[0_8px_30px_rgb(0,0,0,0.04)] px-4 lg:px-6 py-4 flex items-center gap-4 transition-all">
-                            <div className={`w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0 ${step.iconBg}`}>
-                              <step.icon className={`w-5 h-5 ${step.iconColor}`} />
+                        { icon: LogIn, iconColor: "text-blue-600", iconBg: "bg-blue-100" },
+                        { icon: Users, iconColor: "text-amber-500", iconBg: "bg-amber-100" },
+                        { icon: Ticket, iconColor: "text-fuchsia-500", iconBg: "bg-fuchsia-100" },
+                        { icon: Share2, iconColor: "text-amber-500", iconBg: "bg-amber-100" },
+                        { icon: Gift, iconColor: "text-fuchsia-500", iconBg: "bg-fuchsia-100" },
+                      ].map((stepConfig, idx) => {
+                        const stepData = t.raw(`how.recruiterSteps.${idx}`);
+                        return (
+                          <div key={idx} className={`flex items-center gap-4 ${idx % 2 === 0 ? 'flex-row' : 'flex-row-reverse'}`}>
+                            <div className="w-20 flex-shrink-0 flex items-center justify-center">
+                              <span className="text-6xl lg:text-7xl font-black leading-none select-none text-[#CBD5E1]">
+                                {stepData.num}
+                              </span>
                             </div>
-                            <div className="flex-1 min-w-0">
-                              <h3 className="font-bold text-base leading-snug mb-0.5 text-[#0F172A]">
-                                {step.title}
-                              </h3>
-                              <p className="text-sm text-slate-500 leading-relaxed">
-                                {step.desc}
-                              </p>
+                            <div className="flex-1 bg-white/90 backdrop-blur-sm rounded-[2rem] shadow-[0_8px_30px_rgb(0,0,0,0.04)] px-4 lg:px-6 py-4 flex items-center gap-4 transition-all">
+                              <div className={`w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0 ${stepConfig.iconBg}`}>
+                                <stepConfig.icon className={`w-5 h-5 ${stepConfig.iconColor}`} />
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <h3 className="font-bold text-base leading-snug mb-0.5 text-[#0F172A]">
+                                  {stepData.title}
+                                </h3>
+                                <p className="text-sm text-slate-500 leading-relaxed">
+                                  {stepData.desc}
+                                </p>
+                              </div>
                             </div>
                           </div>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   </div>
                 </motion.div>
@@ -407,11 +373,11 @@ export default function HomePage() {
           <div className="flex flex-col lg:flex-row items-center gap-12 lg:gap-20">
             <div className="flex-1 text-white">
               <h2 className="text-3xl md:text-5xl font-black mb-6 leading-tight">
-                <span className="whitespace-nowrap">L'attitude face caméra :</span> <br className="hidden md:block" />
-                <span className="text-[#F59E0B]">Ce que les recruteurs attendent vraiment</span>
+                <span className="whitespace-nowrap">{t("posture.title1")}</span> <br className="hidden md:block" />
+                <span className="text-[#F59E0B]">{t("posture.title2")}</span>
               </h2>
               <p className="text-blue-100 text-lg leading-relaxed mb-10">
-                Sur Netacuv, le CV n'est que la première étape. L'entretien vidéo IA est votre véritable vitrine. Une bonne posture et une communication claire rassurent les recruteurs et décuplent vos chances d'embauche.
+                {t("posture.desc")}
               </p>
               
               <ul className="space-y-8">
@@ -420,8 +386,8 @@ export default function HomePage() {
                     <Check className="text-[#F59E0B]" size={16} strokeWidth={3} />
                   </div>
                   <div>
-                    <h4 className="text-xl font-bold mb-2 text-white">Clarté et Confiance</h4>
-                    <p className="text-blue-100/80 leading-relaxed">Regardez bien l'objectif de la caméra, parlez distinctement avec une voix assurée. C'est le premier indicateur de votre leadership naturel.</p>
+                    <h4 className="text-xl font-bold mb-2 text-white">{t("posture.point1Title")}</h4>
+                    <p className="text-blue-100/80 leading-relaxed">{t("posture.point1Desc")}</p>
                   </div>
                 </li>
                 <li className="flex items-start gap-4">
@@ -429,8 +395,8 @@ export default function HomePage() {
                     <Check className="text-[#F59E0B]" size={16} strokeWidth={3} />
                   </div>
                   <div>
-                    <h4 className="text-xl font-bold mb-2 text-white">Authenticité absolue</h4>
-                    <p className="text-blue-100/80 leading-relaxed">Les recruteurs recherchent des personnalités, pas des robots. Soyez vous-même et évitez de lire un texte préparé à l'avance.</p>
+                    <h4 className="text-xl font-bold mb-2 text-white">{t("posture.point2Title")}</h4>
+                    <p className="text-blue-100/80 leading-relaxed">{t("posture.point2Desc")}</p>
                   </div>
                 </li>
                 <li className="flex items-start gap-4">
@@ -438,8 +404,8 @@ export default function HomePage() {
                     <Check className="text-[#F59E0B]" size={16} strokeWidth={3} />
                   </div>
                   <div>
-                    <h4 className="text-xl font-bold mb-2 text-white">Environnement professionnel</h4>
-                    <p className="text-blue-100/80 leading-relaxed">Un arrière-plan soigné, un bon éclairage sur votre visage et l'absence de bruits parasites reflètent votre sérieux.</p>
+                    <h4 className="text-xl font-bold mb-2 text-white">{t("posture.point3Title")}</h4>
+                    <p className="text-blue-100/80 leading-relaxed">{t("posture.point3Desc")}</p>
                   </div>
                 </li>
               </ul>
@@ -469,15 +435,15 @@ export default function HomePage() {
                 <div className="absolute bottom-8 left-8 right-8 z-20 bg-white/10 backdrop-blur-xl border border-white/20 p-6 rounded-2xl shadow-xl transform transition-transform duration-500 group-hover:translate-y-[-5px]">
                   <div className="flex flex-col gap-3">
                     <div className="flex justify-between items-center mb-1">
-                      <span className="text-white font-bold">Analyse IA d'Expression</span>
+                      <span className="text-white font-bold">{t("posture.aiExpressionAnalysis")}</span>
                       <span className="text-[#F59E0B] font-black text-lg">95%</span>
                     </div>
                     <div className="h-2 w-full bg-white/20 rounded-full overflow-hidden">
                       <div className="h-full bg-[#F59E0B] w-[95%] rounded-full shadow-[0_0_10px_rgba(245,158,11,0.5)]"></div>
                     </div>
                     <div className="flex justify-between text-xs text-blue-100/70 mt-2 font-medium">
-                      <span>Posture: Excellente</span>
-                      <span>Ton: Confiant</span>
+                      <span>{t("posture.postureStatus")}</span>
+                      <span>{t("posture.toneStatus")}</span>
                     </div>
                   </div>
                 </div>
@@ -489,34 +455,6 @@ export default function HomePage() {
       {/* ── LES FONCTIONNALITÉS CLÉS (IA) ── */}
       <section id="pourquoi" className="py-24 bg-[#F8FAFC]">
         <div className="max-w-7xl mx-auto px-6">
-          {/* Full width premium image with darkened overlay & centered text */}
-          <div className="max-w-7xl mx-auto mb-16 rounded-[2rem] overflow-hidden shadow-2xl border border-slate-200/80 relative group">
-            {/* Darkening & Brand Overlay */}
-            <div className="absolute inset-0 bg-slate-950/60 z-10 pointer-events-none transition-colors duration-500 group-hover:bg-slate-950/50" />
-            <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-slate-950/50 z-10 pointer-events-none" />
-            <div className="absolute inset-0 bg-[#1699d2]/20 mix-blend-overlay z-10 pointer-events-none" />
-            
-            <Image
-              src="/Images/african-american-woman-experiencing-vr-simulation.jpg"
-              alt="Femme utilisant la technologie IA"
-              width={1400}
-              height={700}
-              className="w-full h-auto object-cover aspect-video md:aspect-[21/9] group-hover:scale-105 transition-transform duration-700"
-            />
-
-            {/* Centered White Texts Over Image */}
-            <div className="absolute inset-0 z-20 flex flex-col items-center justify-center text-center p-6 md:p-12">
-              <div className="max-w-3xl mx-auto">
-                <h2 className="text-3xl md:text-5xl font-black text-white mb-4 tracking-tight drop-shadow-md">
-                  La puissance de l'IA à votre service
-                </h2>
-                <p className="text-white/90 text-base md:text-xl font-medium max-w-2xl mx-auto leading-relaxed drop-shadow-sm">
-                  Des algorithmes de pointe pour sécuriser vos recrutements et valoriser les compétences réelles.
-                </p>
-              </div>
-            </div>
-          </div>
-
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             {/* Card 1 */}
             <div className="bg-white rounded-[2rem] p-8 md:p-10 shadow-lg shadow-slate-200/50 border border-slate-100 flex flex-col md:flex-row items-center gap-8 hover:-translate-y-1 hover:shadow-xl transition-all">
@@ -524,9 +462,9 @@ export default function HomePage() {
                 <BrainCircuit className="text-[#2BAFE3]" size={48} />
               </div>
               <div>
-                <h3 className="text-2xl font-bold text-[#0F172A] mb-3">Certification Vidéo IA</h3>
+                <h3 className="text-2xl font-bold text-[#0F172A] mb-3">{t("features.card1Title")}</h3>
                 <p className="text-slate-600 leading-relaxed">
-                  L'IA analyse le ton, l'expression orale et la pertinence des réponses pour fournir une note globale objective.
+                  {t("features.card1Desc")}
                 </p>
               </div>
             </div>
@@ -537,9 +475,9 @@ export default function HomePage() {
                 <Search className="text-[#F59E0B]" size={48} />
               </div>
               <div>
-                <h3 className="text-2xl font-bold text-[#0F172A] mb-3">Scoring Automatique</h3>
+                <h3 className="text-2xl font-bold text-[#0F172A] mb-3">{t("features.card2Title")}</h3>
                 <p className="text-slate-600 leading-relaxed">
-                  Notre système analyse votre CV et le classe automatiquement pour recommander les profils à fort potentiel aux entreprises.
+                  {t("features.card2Desc")}
                 </p>
               </div>
             </div>
@@ -550,9 +488,9 @@ export default function HomePage() {
                 <ShieldCheck className="text-green-500" size={48} />
               </div>
               <div>
-                <h3 className="text-2xl font-bold text-[#0F172A] mb-3">Badges de Confiance</h3>
+                <h3 className="text-2xl font-bold text-[#0F172A] mb-3">{t("features.card3Title")}</h3>
                 <p className="text-slate-600 leading-relaxed">
-                  Garantit aux recruteurs la fiabilité des compétences et limite fortement les fausses déclarations sur les CVs.
+                  {t("features.card3Desc")}
                 </p>
               </div>
             </div>
@@ -563,9 +501,9 @@ export default function HomePage() {
                 <Zap className="text-white fill-white" size={48} />
               </div>
               <div>
-                <h3 className="text-2xl font-bold text-white mb-3">Ultra-Accessible</h3>
+                <h3 className="text-2xl font-bold text-white mb-3">{t("features.card4Title")}</h3>
                 <p className="text-blue-50 leading-relaxed">
-                  Des tarifs transparents, simples et sans engagement (700 FCFA pour les Talents, 1 000 FCFA pour les Recruteurs).
+                  {t("features.card4Desc")}
                 </p>
               </div>
             </div>
@@ -578,7 +516,7 @@ export default function HomePage() {
         <div className="max-w-5xl mx-auto px-6">
           <div className="text-center mb-16">
             <h2 className="text-3xl md:text-4xl font-black text-[#0F172A] mb-6">
-              Transparence Totale. Sans engagement.
+              {t("pricing.title")}
             </h2>
             
             {/* Toggle Pricing Tabs */}
@@ -591,7 +529,7 @@ export default function HomePage() {
                     : "text-slate-600 hover:text-[#0F172A]"
                 }`}
               >
-                Offres Talents
+                {t("pricing.tabTalents")}
               </button>
               <button
                 onClick={() => setActivePricingTab("recruteurs")}
@@ -601,7 +539,7 @@ export default function HomePage() {
                     : "text-slate-600 hover:text-[#0F172A]"
                 }`}
               >
-                Offres Recruteurs
+                {t("pricing.tabRecruiters")}
               </button>
             </div>
           </div>
@@ -610,38 +548,38 @@ export default function HomePage() {
             {/* Free Tier */}
             <div className="bg-white rounded-3xl p-8 border border-slate-200 shadow-sm flex flex-col h-full">
               <div className="mb-8">
-                <h3 className="text-xl font-bold text-slate-500 mb-2">Option Gratuite</h3>
+                <h3 className="text-xl font-bold text-slate-500 mb-2">{t("pricing.freeOption")}</h3>
                 <div className="flex items-baseline gap-2">
                   <span className="text-5xl font-black text-[#0F172A]">0</span>
-                  <span className="text-slate-500 font-semibold">FCFA / mois</span>
+                  <span className="text-slate-500 font-semibold">{t("pricing.perMonth")}</span>
                 </div>
-                <p className="text-sm text-slate-500 mt-2">Pour découvrir la plateforme</p>
+                <p className="text-sm text-slate-500 mt-2">{activePricingTab === "talents" ? t("pricing.freeTalentsDesc") : t("pricing.freeRecruitersDesc")}</p>
               </div>
               <ul className="space-y-4 mb-8 flex-1">
                 {activePricingTab === "talents" ? (
                   <>
-                    <li className="flex items-start gap-3"><Check className="text-[#2BAFE3] mt-0.5 flex-shrink-0" size={20} /> <span className="text-slate-600">Communauté WhatsApp exclusive</span></li>
-                    <li className="flex items-start gap-3"><Check className="text-[#2BAFE3] mt-0.5 flex-shrink-0" size={20} /> <span className="text-slate-600">Affiliation <span className="text-xs font-semibold text-green-600 bg-green-50 px-2 py-0.5 rounded-full ml-1 border border-green-200">Gains par parrainage</span></span></li>
-                    <li className="flex items-start gap-3"><Check className="text-[#2BAFE3] mt-0.5 flex-shrink-0" size={20} /> <span className="text-slate-600">Création de profil basique</span></li>
-                    <li className="flex items-start gap-3"><Check className="text-[#2BAFE3] mt-0.5 flex-shrink-0" size={20} /> <span className="text-slate-600">1 candidature gratuite</span></li>
-                    <li className="flex items-start gap-3 opacity-50"><X className="text-slate-400 mt-0.5 flex-shrink-0" size={20} /> <span className="text-slate-500 line-through decoration-slate-300">Candidatures illimitées</span></li>
-                    <li className="flex items-start gap-3 opacity-50"><X className="text-slate-400 mt-0.5 flex-shrink-0" size={20} /> <span className="text-slate-500 line-through decoration-slate-300">Aperçu des profils recruteurs</span></li>
-                    <li className="flex items-start gap-3 opacity-50"><X className="text-slate-400 mt-0.5 flex-shrink-0" size={20} /> <span className="text-slate-500 line-through decoration-slate-300">Obtention de badge</span></li>
-                    <li className="flex items-start gap-3 opacity-50"><X className="text-slate-400 mt-0.5 flex-shrink-0" size={20} /> <span className="text-slate-500 line-through decoration-slate-300">Ajout de CV au format PDF</span></li>
-                    <li className="flex items-start gap-3 opacity-50"><X className="text-slate-400 mt-0.5 flex-shrink-0" size={20} /> <span className="text-slate-500 line-through decoration-slate-300">Entretien vidéo certifié par l'IA</span></li>
-                    <li className="flex items-start gap-3 opacity-50"><X className="text-slate-400 mt-0.5 flex-shrink-0" size={20} /> <span className="text-slate-500 line-through decoration-slate-300">Profil prioritaire auprès des recruteurs</span></li>
+                    <li className="flex items-start gap-3"><Check className="text-[#2BAFE3] mt-0.5 flex-shrink-0" size={20} /> <span className="text-slate-600">{t("pricing.features.whatsapp")}</span></li>
+                    <li className="flex items-start gap-3"><Check className="text-[#2BAFE3] mt-0.5 flex-shrink-0" size={20} /> <span className="text-slate-600">{t("pricing.features.affiliation")} <span className="text-xs font-semibold text-green-600 bg-green-50 px-2 py-0.5 rounded-full ml-1 border border-green-200">{t("pricing.features.affiliationBadge")}</span></span></li>
+                    <li className="flex items-start gap-3"><Check className="text-[#2BAFE3] mt-0.5 flex-shrink-0" size={20} /> <span className="text-slate-600">{t("pricing.features.talentBasicProfile")}</span></li>
+                    <li className="flex items-start gap-3"><Check className="text-[#2BAFE3] mt-0.5 flex-shrink-0" size={20} /> <span className="text-slate-600">{t("pricing.features.talent1FreeApp")}</span></li>
+                    <li className="flex items-start gap-3 opacity-50"><X className="text-slate-400 mt-0.5 flex-shrink-0" size={20} /> <span className="text-slate-500 line-through decoration-slate-300">{t("pricing.features.talentUnlimitedApps")}</span></li>
+                    <li className="flex items-start gap-3 opacity-50"><X className="text-slate-400 mt-0.5 flex-shrink-0" size={20} /> <span className="text-slate-500 line-through decoration-slate-300">{t("pricing.features.talentRecruiterPreview")}</span></li>
+                    <li className="flex items-start gap-3 opacity-50"><X className="text-slate-400 mt-0.5 flex-shrink-0" size={20} /> <span className="text-slate-500 line-through decoration-slate-300">{t("pricing.features.talentBadge")}</span></li>
+                    <li className="flex items-start gap-3 opacity-50"><X className="text-slate-400 mt-0.5 flex-shrink-0" size={20} /> <span className="text-slate-500 line-through decoration-slate-300">{t("pricing.features.talentPdfCv")}</span></li>
+                    <li className="flex items-start gap-3 opacity-50"><X className="text-slate-400 mt-0.5 flex-shrink-0" size={20} /> <span className="text-slate-500 line-through decoration-slate-300">{t("pricing.features.talentAiVideo")}</span></li>
+                    <li className="flex items-start gap-3 opacity-50"><X className="text-slate-400 mt-0.5 flex-shrink-0" size={20} /> <span className="text-slate-500 line-through decoration-slate-300">{t("pricing.features.talentPriority")}</span></li>
                   </>
                 ) : (
                   <>
-                    <li className="flex items-start gap-3"><Check className="text-[#2BAFE3] mt-0.5 flex-shrink-0" size={20} /> <span className="text-slate-600">Création de profil Entreprise</span></li>
-                    <li className="flex items-start gap-3"><Check className="text-[#2BAFE3] mt-0.5 flex-shrink-0" size={20} /> <span className="text-slate-600">1 offre d'emploi gratuite</span></li>
-                    <li className="flex items-start gap-3"><Check className="text-[#2BAFE3] mt-0.5 flex-shrink-0" size={20} /> <span className="text-slate-600">Affiliation <span className="text-xs font-semibold text-green-600 bg-green-50 px-2 py-0.5 rounded-full ml-1 border border-green-200">Gains par parrainage</span></span></li>
-                    <li className="flex items-start gap-3 opacity-50"><X className="text-slate-400 mt-0.5 flex-shrink-0" size={20} /> <span className="text-slate-500 line-through decoration-slate-300">Publication d'offres illimitée</span></li>
-                    <li className="flex items-start gap-3 opacity-50"><X className="text-slate-400 mt-0.5 flex-shrink-0" size={20} /> <span className="text-slate-500 line-through decoration-slate-300">Coordonnées complètes des Talents</span></li>
-                    <li className="flex items-start gap-3 opacity-50"><X className="text-slate-400 mt-0.5 flex-shrink-0" size={20} /> <span className="text-slate-500 line-through decoration-slate-300">Téléchargement illimité des CV PDF</span></li>
-                    <li className="flex items-start gap-3 opacity-50"><X className="text-slate-400 mt-0.5 flex-shrink-0" size={20} /> <span className="text-slate-500 line-through decoration-slate-300">Vidéos complètes des entretiens IA</span></li>
-                    <li className="flex items-start gap-3 opacity-50"><X className="text-slate-400 mt-0.5 flex-shrink-0" size={20} /> <span className="text-slate-500 line-through decoration-slate-300">Priorité sur les profils étoilés et certifiés</span></li>
-                    <li className="flex items-start gap-3 opacity-50"><X className="text-slate-400 mt-0.5 flex-shrink-0" size={20} /> <span className="text-slate-500 line-through decoration-slate-300">Filtres de recherche avancés</span></li>
+                    <li className="flex items-start gap-3"><Check className="text-[#2BAFE3] mt-0.5 flex-shrink-0" size={20} /> <span className="text-slate-600">{t("pricing.features.recruiterCompanyProfile")}</span></li>
+                    <li className="flex items-start gap-3"><Check className="text-[#2BAFE3] mt-0.5 flex-shrink-0" size={20} /> <span className="text-slate-600">{t("pricing.features.recruiter1FreeJob")}</span></li>
+                    <li className="flex items-start gap-3"><Check className="text-[#2BAFE3] mt-0.5 flex-shrink-0" size={20} /> <span className="text-slate-600">{t("pricing.features.affiliation")} <span className="text-xs font-semibold text-green-600 bg-green-50 px-2 py-0.5 rounded-full ml-1 border border-green-200">{t("pricing.features.affiliationBadge")}</span></span></li>
+                    <li className="flex items-start gap-3 opacity-50"><X className="text-slate-400 mt-0.5 flex-shrink-0" size={20} /> <span className="text-slate-500 line-through decoration-slate-300">{t("pricing.features.recruiterUnlimitedJobs")}</span></li>
+                    <li className="flex items-start gap-3 opacity-50"><X className="text-slate-400 mt-0.5 flex-shrink-0" size={20} /> <span className="text-slate-500 line-through decoration-slate-300">{t("pricing.features.recruiterFullContacts")}</span></li>
+                    <li className="flex items-start gap-3 opacity-50"><X className="text-slate-400 mt-0.5 flex-shrink-0" size={20} /> <span className="text-slate-500 line-through decoration-slate-300">{t("pricing.features.recruiterUnlimitedCv")}</span></li>
+                    <li className="flex items-start gap-3 opacity-50"><X className="text-slate-400 mt-0.5 flex-shrink-0" size={20} /> <span className="text-slate-500 line-through decoration-slate-300">{t("pricing.features.recruiterFullVideos")}</span></li>
+                    <li className="flex items-start gap-3 opacity-50"><X className="text-slate-400 mt-0.5 flex-shrink-0" size={20} /> <span className="text-slate-500 line-through decoration-slate-300">{t("pricing.features.recruiterPriority")}</span></li>
+                    <li className="flex items-start gap-3 opacity-50"><X className="text-slate-400 mt-0.5 flex-shrink-0" size={20} /> <span className="text-slate-500 line-through decoration-slate-300">{t("pricing.features.recruiterAdvancedFilters")}</span></li>
                   </>
                 )}
               </ul>
@@ -649,7 +587,7 @@ export default function HomePage() {
                 href={activePricingTab === "talents" ? "/inscription?type=talent" : "/inscription?type=recruteur"}
                 className="w-full py-4 rounded-full font-bold text-[#0F172A] bg-slate-100 hover:bg-slate-200 transition-colors text-center"
               >
-                Commencer gratuitement
+                {t("pricing.startFree")}
               </Link>
             </div>
 
@@ -659,40 +597,40 @@ export default function HomePage() {
               style={{ background: "linear-gradient(180deg, #0076a8 0%, #005a82 100%)" }}
             >
               <div className="absolute top-0 right-6 -translate-y-1/2 bg-[#F59E0B] text-[#0F172A] font-bold text-xs uppercase tracking-wider py-1.5 px-4 rounded-full shadow-lg">
-                Recommandé
+                {t("pricing.recommended")}
               </div>
               <div className="mb-8">
-                <h3 className="text-xl font-bold text-blue-300 mb-2">Option Premium</h3>
+                <h3 className="text-xl font-bold text-blue-300 mb-2">{t("pricing.premiumOption")}</h3>
                 <div className="flex items-baseline gap-2">
                   <span className="text-5xl font-black text-white">
                     {activePricingTab === "talents" ? "700" : "1 000"}
                   </span>
-                  <span className="text-slate-400 font-semibold">FCFA / mois</span>
+                  <span className="text-slate-400 font-semibold">{t("pricing.perMonth")}</span>
                 </div>
-                <p className="text-sm text-slate-400 mt-2">Accès illimité sans engagement</p>
+                <p className="text-sm text-slate-400 mt-2">{t("pricing.unlimitedAccess")}</p>
               </div>
               <ul className="space-y-4 mb-8 flex-1">
                 {activePricingTab === "talents" ? (
                   <>
-                    <li className="flex items-start gap-3"><Check className="text-[#F59E0B] mt-0.5 flex-shrink-0" size={20} /> <span className="text-white font-semibold">Communauté WhatsApp exclusive</span></li>
-                    <li className="flex items-start gap-3"><Check className="text-[#F59E0B] mt-0.5 flex-shrink-0" size={20} /> <span className="text-white font-semibold">Affiliation <span className="text-xs font-bold text-[#0F172A] bg-[#F59E0B] px-2 py-0.5 rounded-full ml-1">Gains par parrainage</span></span></li>
-                    <li className="flex items-start gap-3"><Check className="text-blue-300 mt-0.5 flex-shrink-0" size={20} /> <span className="text-blue-50">Candidatures illimitées</span></li>
-                    <li className="flex items-start gap-3"><Check className="text-blue-300 mt-0.5 flex-shrink-0" size={20} /> <span className="text-blue-50">Aperçu des profils recruteurs</span></li>
-                    <li className="flex items-start gap-3"><Check className="text-blue-300 mt-0.5 flex-shrink-0" size={20} /> <span className="text-blue-50">Obtention de badge</span></li>
-                    <li className="flex items-start gap-3"><Check className="text-blue-300 mt-0.5 flex-shrink-0" size={20} /> <span className="text-blue-50">Ajout de CV au format PDF</span></li>
-                    <li className="flex items-start gap-3"><Check className="text-blue-300 mt-0.5 flex-shrink-0" size={20} /> <span className="text-blue-50">Entretien vidéo certifié par l'IA</span></li>
-                    <li className="flex items-start gap-3"><Check className="text-blue-300 mt-0.5 flex-shrink-0" size={20} /> <span className="text-blue-50">Profil prioritaire auprès des recruteurs</span></li>
+                    <li className="flex items-start gap-3"><Check className="text-[#F59E0B] mt-0.5 flex-shrink-0" size={20} /> <span className="text-white font-semibold">{t("pricing.features.whatsapp")}</span></li>
+                    <li className="flex items-start gap-3"><Check className="text-[#F59E0B] mt-0.5 flex-shrink-0" size={20} /> <span className="text-white font-semibold">{t("pricing.features.affiliation")} <span className="text-xs font-bold text-[#0F172A] bg-[#F59E0B] px-2 py-0.5 rounded-full ml-1">{t("pricing.features.affiliationBadge")}</span></span></li>
+                    <li className="flex items-start gap-3"><Check className="text-blue-300 mt-0.5 flex-shrink-0" size={20} /> <span className="text-blue-50">{t("pricing.features.talentUnlimitedApps")}</span></li>
+                    <li className="flex items-start gap-3"><Check className="text-blue-300 mt-0.5 flex-shrink-0" size={20} /> <span className="text-blue-50">{t("pricing.features.talentRecruiterPreview")}</span></li>
+                    <li className="flex items-start gap-3"><Check className="text-blue-300 mt-0.5 flex-shrink-0" size={20} /> <span className="text-blue-50">{t("pricing.features.talentBadge")}</span></li>
+                    <li className="flex items-start gap-3"><Check className="text-blue-300 mt-0.5 flex-shrink-0" size={20} /> <span className="text-blue-50">{t("pricing.features.talentPdfCv")}</span></li>
+                    <li className="flex items-start gap-3"><Check className="text-blue-300 mt-0.5 flex-shrink-0" size={20} /> <span className="text-blue-50">{t("pricing.features.talentAiVideo")}</span></li>
+                    <li className="flex items-start gap-3"><Check className="text-blue-300 mt-0.5 flex-shrink-0" size={20} /> <span className="text-blue-50">{t("pricing.features.talentPriority")}</span></li>
                   </>
                 ) : (
                   <>
-                    <li className="flex items-start gap-3"><Check className="text-[#F59E0B] mt-0.5 flex-shrink-0" size={20} /> <span className="text-white font-semibold">Création de profil Entreprise</span></li>
-                    <li className="flex items-start gap-3"><Check className="text-[#F59E0B] mt-0.5 flex-shrink-0" size={20} /> <span className="text-white font-semibold">Affiliation <span className="text-xs font-bold text-[#0F172A] bg-[#F59E0B] px-2 py-0.5 rounded-full ml-1">Gains par parrainage</span></span></li>
-                    <li className="flex items-start gap-3"><Check className="text-blue-300 mt-0.5 flex-shrink-0" size={20} /> <span className="text-blue-50">Publication d'offres illimitée</span></li>
-                    <li className="flex items-start gap-3"><Check className="text-blue-300 mt-0.5 flex-shrink-0" size={20} /> <span className="text-blue-50">Coordonnées complètes des Talents</span></li>
-                    <li className="flex items-start gap-3"><Check className="text-blue-300 mt-0.5 flex-shrink-0" size={20} /> <span className="text-blue-50">Téléchargement illimité des CV PDF</span></li>
-                    <li className="flex items-start gap-3"><Check className="text-blue-300 mt-0.5 flex-shrink-0" size={20} /> <span className="text-blue-50">Vidéos complètes des entretiens IA</span></li>
-                    <li className="flex items-start gap-3"><Check className="text-blue-300 mt-0.5 flex-shrink-0" size={20} /> <span className="text-blue-50">Priorité sur les profils étoilés et certifiés</span></li>
-                    <li className="flex items-start gap-3"><Check className="text-blue-300 mt-0.5 flex-shrink-0" size={20} /> <span className="text-blue-50">Filtres de recherche avancés</span></li>
+                    <li className="flex items-start gap-3"><Check className="text-[#F59E0B] mt-0.5 flex-shrink-0" size={20} /> <span className="text-white font-semibold">{t("pricing.features.recruiterCompanyProfile")}</span></li>
+                    <li className="flex items-start gap-3"><Check className="text-[#F59E0B] mt-0.5 flex-shrink-0" size={20} /> <span className="text-white font-semibold">{t("pricing.features.affiliation")} <span className="text-xs font-bold text-[#0F172A] bg-[#F59E0B] px-2 py-0.5 rounded-full ml-1">{t("pricing.features.affiliationBadge")}</span></span></li>
+                    <li className="flex items-start gap-3"><Check className="text-blue-300 mt-0.5 flex-shrink-0" size={20} /> <span className="text-blue-50">{t("pricing.features.recruiterUnlimitedJobs")}</span></li>
+                    <li className="flex items-start gap-3"><Check className="text-blue-300 mt-0.5 flex-shrink-0" size={20} /> <span className="text-blue-50">{t("pricing.features.recruiterFullContacts")}</span></li>
+                    <li className="flex items-start gap-3"><Check className="text-blue-300 mt-0.5 flex-shrink-0" size={20} /> <span className="text-blue-50">{t("pricing.features.recruiterUnlimitedCv")}</span></li>
+                    <li className="flex items-start gap-3"><Check className="text-blue-300 mt-0.5 flex-shrink-0" size={20} /> <span className="text-blue-50">{t("pricing.features.recruiterFullVideos")}</span></li>
+                    <li className="flex items-start gap-3"><Check className="text-blue-300 mt-0.5 flex-shrink-0" size={20} /> <span className="text-blue-50">{t("pricing.features.recruiterPriority")}</span></li>
+                    <li className="flex items-start gap-3"><Check className="text-blue-300 mt-0.5 flex-shrink-0" size={20} /> <span className="text-blue-50">{t("pricing.features.recruiterAdvancedFilters")}</span></li>
                   </>
                 )}
               </ul>
@@ -700,7 +638,7 @@ export default function HomePage() {
                 href={activePricingTab === "talents" ? "/inscription?type=talent" : "/inscription?type=recruteur"}
                 className="w-full py-4 rounded-full font-bold text-white bg-[#2BAFE3] hover:bg-[#1E8CB8] transition-colors text-center shadow-lg shadow-[#2BAFE3]/20"
               >
-                Passer en Premium
+                {t("pricing.upgradePremium")}
               </Link>
             </div>
           </div>
@@ -714,7 +652,7 @@ export default function HomePage() {
       >
         <div className="max-w-3xl mx-auto px-6">
           <h2 className="text-3xl md:text-5xl font-black text-center mb-12 text-white">
-            Questions fréquentes
+            {t("faq.title")}
           </h2>
           <div className="space-y-4">
             {faqs.map((faq, index) => {
@@ -775,23 +713,23 @@ export default function HomePage() {
         
         <div className="max-w-4xl mx-auto px-6 text-center relative z-10">
           <h2 className="text-3xl md:text-5xl font-black text-white mb-6">
-            Prêt à transformer votre carrière ou vos recrutements ?
+            {t("finalCta.title")}
           </h2>
           <p className="text-slate-300 text-lg mb-12 max-w-2xl mx-auto">
-            Rejoignez des milliers de talents et de recruteurs qui utilisent déjà l'IA pour révolutionner leur quotidien.
+            {t("finalCta.desc")}
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link
               href="/talents"
               className="px-8 py-4 rounded-full font-bold text-[#0F172A] bg-[#F59E0B] hover:bg-amber-400 shadow-xl hover:-translate-y-1 transition-all duration-300"
             >
-              Je suis un Talent
+              {t("finalCta.talent")}
             </Link>
             <Link
               href="/recruteurs"
               className="px-8 py-4 rounded-full font-bold text-white bg-[#2BAFE3] hover:bg-[#1E8CB8] shadow-xl shadow-[#2BAFE3]/20 hover:-translate-y-1 transition-all duration-300"
             >
-              Je suis un Recruteur
+              {t("finalCta.recruiter")}
             </Link>
           </div>
         </div>
@@ -808,11 +746,11 @@ export default function HomePage() {
             </div>
             
             <h3 className="text-2xl font-black text-slate-800 mb-3 tracking-tight">
-              C'est un au revoir !
+              {t("deletedModal.title")}
             </h3>
             
             <p className="text-slate-500 text-sm leading-relaxed mb-8 px-2 font-medium">
-              Votre compte a bien été supprimé définitivement. Nous sommes désolés de vous voir partir, mais la porte de Netacuv vous sera toujours grande ouverte. N'hésitez pas à créer un nouveau compte si vous changez d'avis !
+              {t("deletedModal.desc")}
             </p>
             
             <div className="flex flex-col gap-3">
@@ -821,13 +759,13 @@ export default function HomePage() {
                 onClick={() => setShowDeletedModal(false)}
                 className="w-full py-3.5 bg-[#2BAFE3] hover:bg-[#1E8CB8] text-white font-bold rounded-xl shadow-md transition-all active:scale-[0.98]"
               >
-                Créer un nouveau compte
+                {t("deletedModal.createNew")}
               </Link>
               <button
                 onClick={() => setShowDeletedModal(false)}
                 className="w-full py-3.5 bg-white border border-slate-200 hover:bg-slate-50 text-slate-600 font-bold rounded-xl transition-all active:scale-[0.98]"
               >
-                Fermer
+                {t("deletedModal.close")}
               </button>
             </div>
           </div>

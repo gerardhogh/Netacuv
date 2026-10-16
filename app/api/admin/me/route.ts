@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getToken } from "next-auth/jwt";
 import { logger } from "@/lib/logger";
+import bcrypt from "bcrypt";
 
 export const dynamic = 'force-dynamic';
 
@@ -63,7 +64,7 @@ export async function PUT(req: NextRequest) {
     
     const user = await prisma.user.findUnique({
       where: { id: userId },
-      select: { role: true }
+      select: { role: true, passwordHash: true }
     });
 
     const upperRole = user?.role?.name?.toUpperCase() || "";
@@ -74,11 +75,32 @@ export async function PUT(req: NextRequest) {
     }
 
     const data = await req.json();
-    const { name, email } = data;
+    const { name, email, currentPassword, newPassword } = data;
+
+    const dataToUpdate: Record<string, any> = {};
+    if (name !== undefined) dataToUpdate.name = name;
+    if (email !== undefined) dataToUpdate.email = email;
+
+    if (newPassword) {
+      if (!currentPassword) {
+        return NextResponse.json({ error: "Veuillez entrer votre mot de passe actuel." }, { status: 400 });
+      }
+      if (newPassword.length < 8) {
+        return NextResponse.json({ error: "Le mot de passe doit comporter au moins 8 caractères." }, { status: 400 });
+      }
+      if (user?.passwordHash) {
+        const isValid = await bcrypt.compare(currentPassword, user.passwordHash);
+        if (!isValid) {
+          return NextResponse.json({ error: "Le mot de passe actuel est incorrect." }, { status: 400 });
+        }
+      }
+      const newHash = await bcrypt.hash(newPassword, 10);
+      dataToUpdate.passwordHash = newHash;
+    }
 
     const updatedUser = await prisma.user.update({
       where: { id: userId },
-      data: { name, email }
+      data: dataToUpdate
     });
 
     logger.info("Admin profile updated", { userId });
@@ -97,3 +119,4 @@ export async function PUT(req: NextRequest) {
     return NextResponse.json({ error: "Erreur lors de la mise à jour du profil" }, { status: 500 });
   }
 }
+

@@ -31,6 +31,7 @@ model User {
   talentProfile    TalentProfile?
   transactions     Transaction[]
   notifications    Notification[]
+  favorites        Favorite[]
   role             Role?             @relation(fields: [roleId], references: [id])
 }
 
@@ -318,5 +319,23 @@ model NewsletterSubscriber {
 
   @@index([email])
   @@index([status])
+}
+
+model Favorite {
+  id         String   @id @default(cuid())
+  userId     String
+  targetType String   // "JOB_OFFER", "TALENT", "RECRUITER"
+  targetId   String
+  title      String?
+  subtitle   String?
+  location   String?
+  metadata   String?  // JSON string
+  createdAt  DateTime @default(now())
+
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, targetType, targetId])
+  @@index([userId])
+  @@index([targetType])
 }
 

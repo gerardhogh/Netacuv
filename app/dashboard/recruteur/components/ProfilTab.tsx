@@ -3,6 +3,8 @@
 import { useState, useRef, useEffect } from "react";
 import Image from "next/image";
 import { Camera, Save } from "lucide-react";
+import { CustomSelect } from "@/components/ui/CustomSelect";
+import { useTranslations } from "next-intl";
 
 // ─── Social network icons (inline SVGs) ──────────────────────────────────────
 function FacebookIcon() {
@@ -50,6 +52,7 @@ type ProfileTab = "informations" | "reseaux";
 
 // ─── Component ────────────────────────────────────────────────────────────────
 export default function ProfilTab() {
+  const t = useTranslations("recruiter.profile");
   const [activeTab, setActiveTab] = useState<ProfileTab>("informations");
   const [avatarSrc, setAvatarSrc] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -134,27 +137,80 @@ export default function ProfilTab() {
       });
 
       if (res.ok) {
-        showToast("Profil mis à jour avec succès !.success");
+        showToast(t("form.success"), "success");
       } else {
-        showToast("Erreur lors de la mise à jour.error");
+        showToast(t("form.error"), "error");
       }
     } catch (error) {
       console.error(error);
-      showToast("Erreur lors de la mise à jour.error");
+      showToast(t("form.error"), "error");
     } finally {
       setSaving(false);
     }
   };
 
-  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
+
+  const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      const url = URL.createObjectURL(file);
-      setAvatarSrc(url);
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+      showToast("Veuillez sélectionner une image valide.", "error");
+      return;
+    }
+
+    const previewUrl = URL.createObjectURL(file);
+    setAvatarSrc(previewUrl);
+    setUploadingAvatar(true);
+
+    try {
+      const formData = new FormData();
+      formData.append("avatar", file);
+
+      const res = await fetch("/api/recruiters/avatar", {
+        method: "POST",
+        body: formData,
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        if (data.avatarUrl) {
+          setAvatarSrc(data.avatarUrl);
+          if (typeof window !== "undefined") {
+            localStorage.setItem("recruiter_avatar", data.avatarUrl);
+            window.dispatchEvent(new CustomEvent("recruiter_profile_updated", { detail: { avatarUrl: data.avatarUrl } }));
+          }
+        }
+        showToast("Photo de profil mise à jour avec succès !", "success");
+      } else {
+        const err = await res.json().catch(() => ({}));
+        showToast(err.error || "Erreur lors de la mise à jour de la photo.", "error");
+      }
+    } catch (error) {
+      console.error("Avatar upload error:", error);
+      showToast("Erreur lors de l'envoi de la photo.", "error");
+    } finally {
+      setUploadingAvatar(false);
     }
   };
 
   const inputClass = "w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-white text-sm text-slate-800 outline-none focus:border-[#32A8D7] transition-colors placeholder:text-slate-300";
+
+  const industryOptions = [
+    t("industries.tech"),
+    t("industries.finance"),
+    t("industries.health"),
+    t("industries.education"),
+    t("industries.commerce"),
+    t("industries.construction"),
+    t("industries.energy"),
+    t("industries.agriculture"),
+    t("industries.media"),
+    t("industries.transport"),
+    t("industries.tourism"),
+    t("industries.other")
+  ];
 
   if (loading) {
     return <div className="flex justify-center py-10"><div className="w-6 h-6 border-2 border-[#32A8D7] border-t-transparent rounded-full animate-spin"></div></div>;
@@ -177,11 +233,11 @@ export default function ProfilTab() {
           <div
             onClick={() => fileInputRef.current?.click()}
             className="w-28 h-28 rounded-full bg-blue-50 border-4 border-white shadow-md relative cursor-pointer group transition-all"
-            title="Cliquer pour modifier la photo de profil"
+            title={t("clickToEdit")}
           >
             <div className="w-full h-full rounded-full overflow-hidden relative bg-gradient-to-b from-blue-100 to-blue-200 flex items-center justify-center">
               {avatarSrc ? (
-                <Image src={avatarSrc} alt="Avatar" fill className="object-cover object-center w-full h-full group-hover:scale-105 transition-transform duration-300" />
+                <img src={avatarSrc} alt="Avatar" className="object-cover object-center w-full h-full group-hover:scale-105 transition-transform duration-300" />
               ) : (
                 <svg viewBox="0 0 80 80" className="w-20 h-20">
                   <circle cx="40" cy="30" r="16" fill="#94C7EA" />
@@ -196,7 +252,7 @@ export default function ProfilTab() {
             {/* Overlay hover */}
             <div className="absolute inset-0 rounded-full bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center text-white text-[11px] font-bold">
               <Camera size={20} className="mb-0.5" />
-              <span>Modifier</span>
+              <span>{t("edit")}</span>
             </div>
 
             {/* Badge Camera Icon */}
@@ -212,7 +268,7 @@ export default function ProfilTab() {
             className="flex items-center justify-center gap-1.5 px-3 py-2 w-full rounded-lg border border-slate-200 text-xs text-slate-600 font-medium hover:bg-slate-50 transition-colors whitespace-nowrap"
           >
             <Camera size={14} className="shrink-0" />
-            <span className="text-center leading-tight">Enregistrer une photo</span>
+            <span className="text-center leading-tight">{t("savePhoto")}</span>
           </button>
         </div>
       </div>
@@ -231,7 +287,7 @@ export default function ProfilTab() {
                   : "bg-slate-50 text-slate-400 hover:text-slate-600"
               }`}
             >
-              {tab === "informations" ? "Informations" : "Réseaux"}
+              {tab === "informations" ? t("tabs.informations") : t("tabs.reseaux")}
             </button>
           ))}
         </div>
@@ -243,69 +299,56 @@ export default function ProfilTab() {
             <div className="space-y-4">
               {/* Nom entreprise */}
               <div>
-                <label className="block text-sm text-slate-600 mb-1.5">Nom de l&apos;entreprise</label>
-                <input type="text" value={nomEntreprise} onChange={(e) => setNomEntreprise(e.target.value)} className={inputClass} placeholder="Nom de l'entreprise" />
+                <label className="block text-sm text-slate-600 mb-1.5">{t("form.companyName")}</label>
+                <input type="text" value={nomEntreprise} onChange={(e) => setNomEntreprise(e.target.value)} className={inputClass} placeholder={t("form.companyName")} />
               </div>
 
               {/* Secteur */}
               <div>
-                <label className="block text-sm text-slate-600 mb-1.5">Secteur d&apos;activité</label>
-                <div className="relative">
-                  <select value={secteur} onChange={(e) => setSecteur(e.target.value)} className={`${inputClass} appearance-none cursor-pointer`}>
-                    <option value="">Choisissez votre secteur d&apos;activité</option>
-                    <option>Technologie / Numérique</option>
-                    <option>Finance / Banque</option>
-                    <option>Santé / Médical</option>
-                    <option>Éducation / Formation</option>
-                    <option>Commerce / Distribution</option>
-                    <option>BTP / Construction</option>
-                    <option>Energie / Mines</option>
-                    <option>Agriculture / Agroalimentaire</option>
-                    <option>Média / Communication</option>
-                    <option>Transport / Logistique</option>
-                    <option>Tourisme / Hôtellerie</option>
-                    <option>Autre</option>
-                  </select>
-                  <svg className="w-3.5 h-3.5 text-slate-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                  </svg>
-                </div>
+                <label className="block text-sm text-slate-600 mb-1.5">{t("form.industry")}</label>
+                <CustomSelect
+                  value={secteur}
+                  onChange={setSecteur}
+                  placeholder={t("form.chooseIndustry")}
+                  options={industryOptions}
+                  className="w-full"
+                />
               </div>
 
               {/* Email */}
               <div>
-                <label className="block text-sm text-slate-600 mb-1.5">Email de contact</label>
+                <label className="block text-sm text-slate-600 mb-1.5">{t("form.contactEmail")}</label>
                 <input type="email" value={email} disabled className={`${inputClass} bg-slate-50 cursor-not-allowed text-slate-500`} placeholder="contact@enterprise.com" />
               </div>
 
               {/* Téléphone */}
               <div>
-                <label className="block text-sm text-slate-600 mb-1.5">Téléphone</label>
+                <label className="block text-sm text-slate-600 mb-1.5">{t("form.phone")}</label>
                 <input type="tel" value={telephone} onChange={(e) => setTelephone(e.target.value)} className={inputClass} placeholder="+229 01 00 00 00 00" />
               </div>
 
               {/* Site web */}
               <div>
-                <label className="block text-sm text-slate-600 mb-1.5">Site web</label>
+                <label className="block text-sm text-slate-600 mb-1.5">{t("form.website")}</label>
                 <input type="url" value={siteWeb} onChange={(e) => setSiteWeb(e.target.value)} className={inputClass} placeholder="https://www.votreentreprise.com" />
               </div>
 
               {/* Adresse */}
               <div>
-                <label className="block text-sm text-slate-600 mb-1.5">Adresse</label>
+                <label className="block text-sm text-slate-600 mb-1.5">{t("form.address")}</label>
                 <input type="text" value={adresse} onChange={(e) => setAdresse(e.target.value)} className={inputClass} placeholder="Ex : 123 Rue de l'Emploi Cotonou Bénin" />
               </div>
 
               {/* Description */}
               <div>
-                <label className="block text-sm text-slate-600 mb-1.5">Description de l&apos;entreprise</label>
-                <textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={3} className={`${inputClass} resize-none`} placeholder="Parlez brièvement de votre entreprise et de vos valeurs" />
+                <label className="block text-sm text-slate-600 mb-1.5">{t("form.description")}</label>
+                <textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={3} className={`${inputClass} resize-none`} placeholder={t("form.descriptionPlaceholder")} />
               </div>
 
               {/* Compétences */}
               <div>
-                <label className="block text-sm text-slate-600 mb-1.5">Compétences clés</label>
-                <input type="text" value={competences} onChange={(e) => setCompetences(e.target.value)} className={inputClass} placeholder="Ajoutez vos compétences séparé par des virgules" />
+                <label className="block text-sm text-slate-600 mb-1.5">{t("form.skills")}</label>
+                <input type="text" value={competences} onChange={(e) => setCompetences(e.target.value)} className={inputClass} placeholder={t("form.skillsPlaceholder")} />
               </div>
 
               <button
@@ -313,7 +356,7 @@ export default function ProfilTab() {
                 disabled={saving}
                 className="w-full py-3 rounded-xl bg-[#32A8D7] hover:bg-[#2896c2] text-white text-sm font-semibold shadow-sm transition-colors flex items-center justify-center gap-2 mt-2 disabled:opacity-50"
               >
-                <Save size={15} /> {saving ? "Enregistrement..." : "Mettre à jour le profil"}
+                <Save size={15} /> {saving ? t("form.saving") : t("form.saveProfile")}
               </button>
             </div>
           )}
@@ -346,7 +389,7 @@ export default function ProfilTab() {
                 disabled={saving}
                 className="w-full py-3 rounded-xl bg-[#32A8D7] hover:bg-[#2896c2] text-white text-sm font-semibold shadow-sm transition-colors flex items-center justify-center gap-2 mt-2 disabled:opacity-50"
               >
-                <Save size={15} /> {saving ? "Enregistrement..." : "Enregistrer les informations"}
+                <Save size={15} /> {saving ? t("form.saving") : t("form.saveNetworks")}
               </button>
             </div>
           )}

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import useSWR from "swr";
 import {
   Users,
@@ -34,6 +35,7 @@ interface RetraitModalProps {
 }
 
 function RetraitModal({ cagnotte, onClose, onConfirm }: RetraitModalProps) {
+  const t = useTranslations("recruiter.affiliationTab");
   const [montant, setMontant] = useState("");
   const [operateur, setOperateur] = useState("MTN Mobile Money");
   const [numero, setNumero] = useState("");
@@ -48,8 +50,8 @@ function RetraitModal({ cagnotte, onClose, onConfirm }: RetraitModalProps) {
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md">
         <div className="flex items-center justify-between p-6 border-b border-slate-100">
           <div>
-            <h3 className="text-lg font-bold text-slate-900">Retrait Mobile Money</h3>
-            <p className="text-xs text-slate-400 mt-0.5">Solde disponible : <span className="font-bold text-green-600">{cagnotte.toLocaleString()} CFA</span></p>
+            <h3 className="text-lg font-bold text-slate-900">{t("withdrawalModalTitle")}</h3>
+            <p className="text-xs text-slate-400 mt-0.5">{t("availableBalance")} <span className="font-bold text-green-600">{cagnotte.toLocaleString()} CFA</span></p>
           </div>
           <button onClick={onClose} className="p-2 hover:bg-slate-100 rounded-xl text-slate-400 transition-colors">
             <X size={18} />
@@ -57,7 +59,7 @@ function RetraitModal({ cagnotte, onClose, onConfirm }: RetraitModalProps) {
         </div>
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
           <div>
-            <label className="block text-xs font-semibold text-slate-700 mb-1.5">Opérateur</label>
+            <label className="block text-xs font-semibold text-slate-700 mb-1.5">{t("operator")}</label>
             <div className="relative">
               <select
                 value={operateur}
@@ -73,7 +75,7 @@ function RetraitModal({ cagnotte, onClose, onConfirm }: RetraitModalProps) {
             </div>
           </div>
           <div>
-            <label className="block text-xs font-semibold text-slate-700 mb-1.5">Numéro de téléphone</label>
+            <label className="block text-xs font-semibold text-slate-700 mb-1.5">{t("phoneNumber")}</label>
             <input
               required
               type="tel"
@@ -84,7 +86,7 @@ function RetraitModal({ cagnotte, onClose, onConfirm }: RetraitModalProps) {
             />
           </div>
           <div>
-            <label className="block text-xs font-semibold text-slate-700 mb-1.5">Montant à retirer (CFA)</label>
+            <label className="block text-xs font-semibold text-slate-700 mb-1.5">{t("amountToWithdraw")}</label>
             <input
               required
               type="number"
@@ -95,7 +97,7 @@ function RetraitModal({ cagnotte, onClose, onConfirm }: RetraitModalProps) {
               className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-sm text-slate-800 outline-none focus:border-[#32A8D7] focus:bg-white transition-colors"
               placeholder="Ex: 5000"
             />
-            <p className="text-[10px] text-slate-400 mt-1">Minimum : 500 CFA · Maximum : {cagnotte.toLocaleString()} CFA</p>
+            <p className="text-[10px] text-slate-400 mt-1">{t("amountLimits", { max: cagnotte.toLocaleString() })}</p>
           </div>
           <div className="flex gap-3 pt-2">
             <button
@@ -103,13 +105,13 @@ function RetraitModal({ cagnotte, onClose, onConfirm }: RetraitModalProps) {
               onClick={onClose}
               className="flex-1 py-2.5 rounded-xl border border-slate-200 text-sm font-semibold text-slate-600 hover:bg-slate-50 transition-colors"
             >
-              Annuler
+              {t("cancel")}
             </button>
             <button
               type="submit"
               className="flex-1 py-2.5 rounded-xl bg-[#32A8D7] hover:bg-[#2896c2] text-white text-sm font-semibold shadow-sm transition-colors"
             >
-              Confirmer le retrait
+              {t("confirmWithdrawal")}
             </button>
           </div>
         </form>
@@ -119,11 +121,12 @@ function RetraitModal({ cagnotte, onClose, onConfirm }: RetraitModalProps) {
 }
 
 export default function AffiliationTab() {
+  const t = useTranslations("recruiter.affiliationTab");
   const fetcher = (url: string) => fetch(url).then(res => res.json());
   const { data, error, isLoading } = useSWR("/api/affiliation/me", fetcher);
 
   const cagnotte = data?.cagnotte || 0;
-  const referralCode = data?.referralCode || "En attente...";
+  const referralCode = data?.referralCode || t("waiting");
   const referralLink = `https://netacuv.com/inscription?ref=${referralCode}`;
   const affilies: Affilie[] = data?.affilies || [];
 
@@ -140,7 +143,7 @@ export default function AffiliationTab() {
     if (!data?.referralCode) return;
     navigator.clipboard?.writeText(referralLink).catch(() => {});
     setCopied(true);
-    showToast("Lien de parrainage copié !");
+    showToast(t("linkCopied"));
     setTimeout(() => setCopied(false), 2500);
   };
 
@@ -153,13 +156,13 @@ export default function AffiliationTab() {
         body: JSON.stringify({ montant, operateur, numero })
       });
       if (res.ok) {
-        showToast(`Demande de retrait de ${montant.toLocaleString()} CFA via ${operateur} envoyée !`);
+        showToast(t("withdrawalSuccess", { amount: montant.toLocaleString(), operator: operateur }));
       } else {
         const err = await res.json();
-        showToast(err.error || "Erreur lors de la demande de retrait");
+        showToast(err.error || t("withdrawalError"));
       }
     } catch (error) {
-      showToast("Erreur de connexion.");
+      showToast(t("connectionError"));
     }
   };
 
@@ -192,10 +195,10 @@ export default function AffiliationTab() {
             <div className="w-9 h-9 rounded-xl bg-sky-50 flex items-center justify-center">
               <Users size={17} className="text-[#32A8D7]" />
             </div>
-            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Mes affiliés</span>
+            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">{t("myAffiliates")}</span>
           </div>
           <p className="text-3xl font-bold text-slate-900">{affilies.length}</p>
-          <p className="text-xs text-slate-400 mt-1">{inscrits} inscrits · {enAttente} en attente</p>
+          <p className="text-xs text-slate-400 mt-1">{t("affiliatesSub", { inscrits, enAttente })}</p>
         </div>
 
         <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
@@ -203,10 +206,10 @@ export default function AffiliationTab() {
             <div className="w-9 h-9 rounded-xl bg-green-50 flex items-center justify-center">
               <Wallet size={17} className="text-green-600" />
             </div>
-            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Cagnotte</span>
+            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">{t("cagnotte")}</span>
           </div>
           <p className="text-3xl font-bold text-slate-900">{cagnotte.toLocaleString()}</p>
-          <p className="text-xs text-slate-400 mt-1">CFA disponibles</p>
+          <p className="text-xs text-slate-400 mt-1">{t("cfaAvailable")}</p>
         </div>
 
         <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
@@ -214,12 +217,12 @@ export default function AffiliationTab() {
             <div className="w-9 h-9 rounded-xl bg-purple-50 flex items-center justify-center">
               <TrendingUp size={17} className="text-purple-600" />
             </div>
-            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Gains totaux</span>
+            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">{t("totalEarnings")}</span>
           </div>
           <p className="text-3xl font-bold text-slate-900">
             {affilies.reduce((acc, a) => acc + a.gain, 0).toLocaleString()}
           </p>
-          <p className="text-xs text-slate-400 mt-1">CFA générés</p>
+          <p className="text-xs text-slate-400 mt-1">{t("cfaGenerated")}</p>
         </div>
       </div>
 
@@ -229,18 +232,18 @@ export default function AffiliationTab() {
         {/* Left: Affiliates list */}
         <div className="lg:col-span-3 bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
           <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
-            <h3 className="font-bold text-slate-900 text-sm">Liste des affiliés</h3>
+            <h3 className="font-bold text-slate-900 text-sm">{t("affiliatesList")}</h3>
             <span className="text-[10px] font-bold px-2.5 py-1 rounded-full bg-sky-50 text-[#0071a2]">
-              Cagnotte sur invitation : {cagnotte.toLocaleString()} CFA
+              {t("cagnotteInvite", { amount: cagnotte.toLocaleString() })}
             </span>
           </div>
           <div className="divide-y divide-slate-50">
             {affilies.length === 0 ? (
               <div className="px-5 py-8 text-center">
                 <Users size={32} className="text-slate-300 mx-auto mb-3" />
-                <p className="text-sm font-semibold text-slate-600">Aucun affilié</p>
+                <p className="text-sm font-semibold text-slate-600">{t("noAffiliatesTitle")}</p>
                 <p className="text-xs text-slate-400 mt-1">
-                  Vous n'avez parrainé personne pour le moment. Partagez votre lien !
+                  {t("noAffiliatesDesc")}
                 </p>
               </div>
             ) : (
@@ -267,7 +270,7 @@ export default function AffiliationTab() {
                       }`}
                     >
                       {affilie.statut === "Inscrit" ? <CheckCircle size={9} /> : affilie.statut === "En attente" ? <Clock size={9} /> : <AlertCircle size={9} />}
-                      {affilie.statut}
+                      {affilie.statut === "Inscrit" ? t("statusInscrit") : affilie.statut === "En attente" ? t("statusEnAttente") : t("statusInactif")}
                     </span>
                   </div>
                 </div>
@@ -282,7 +285,7 @@ export default function AffiliationTab() {
           <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
             <div className="flex items-center gap-2 mb-3">
               <Gift size={16} className="text-[#32A8D7]" />
-              <h3 className="font-bold text-slate-900 text-sm">Mon lien de parrainage</h3>
+              <h3 className="font-bold text-slate-900 text-sm">{t("myReferralLink")}</h3>
             </div>
             <div className="flex items-center gap-2 bg-slate-50 rounded-xl border border-slate-200 px-3 py-2.5">
               <p className="flex-1 text-[11px] text-slate-600 font-medium truncate">{referralLink}</p>
@@ -291,13 +294,13 @@ export default function AffiliationTab() {
                 className={`p-1.5 rounded-lg transition-all ${
                   copied ? "bg-green-100 text-green-600" : "hover:bg-slate-200 text-slate-500 hover:text-slate-700"
                 }`}
-                title="Copier le lien"
+                title={t("copyLink")}
               >
                 {copied ? <Check size={14} /> : <Copy size={14} />}
               </button>
             </div>
             <p className="text-[10px] text-slate-400 mt-2">
-              Partagez ce lien et gagnez <span className="font-bold text-[#32A8D7]">2 500 CFA</span> par recruteur parrainé inscrit.
+              {t("referralShareText", { amount: "2 500 CFA" })}
             </p>
           </div>
 
@@ -305,28 +308,28 @@ export default function AffiliationTab() {
           <div className="bg-gradient-to-br from-[#08304c] to-[#0d4a73] rounded-2xl p-5 text-white">
             <div className="flex items-center gap-2 mb-4">
               <Wallet size={16} className="text-sky-300" />
-              <h3 className="font-bold text-sm">Retrait Mobile Money</h3>
+              <h3 className="font-bold text-sm">{t("withdrawalModalTitle")}</h3>
             </div>
-            <p className="text-xs text-sky-200 mb-1">Solde disponible</p>
+            <p className="text-xs text-sky-200 mb-1">{t("availableBalance")}</p>
             <p className="text-3xl font-bold mb-4">{cagnotte.toLocaleString()} <span className="text-lg font-normal text-sky-300">CFA</span></p>
             <button
               onClick={() => setShowRetraitModal(true)}
               className="w-full py-2.5 rounded-xl bg-white/15 hover:bg-white/25 border border-white/20 text-white text-sm font-semibold transition-all flex items-center justify-center gap-2"
             >
               <Wallet size={15} />
-              Effectuer un retrait
+              {t("makeWithdrawal")}
             </button>
           </div>
 
           {/* How it works */}
           <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
-            <h4 className="font-bold text-slate-900 text-xs mb-3">Comment ça fonctionne ?</h4>
+            <h4 className="font-bold text-slate-900 text-xs mb-3">{t("howItWorks")}</h4>
             <div className="space-y-2.5">
               {[
-                { step: "1", text: "Copiez votre lien de parrainage unique" },
-                { step: "2", text: "Partagez-le aux recruteurs de votre réseau" },
-                { step: "3", text: "Gagnez 2 500 CFA par recruteur inscrit" },
-                { step: "4", text: "Retirez vos gains via Mobile Money" },
+                { step: "1", text: t("step1") },
+                { step: "2", text: t("step2") },
+                { step: "3", text: t("step3") },
+                { step: "4", text: t("step4") },
               ].map((item) => (
                 <div key={item.step} className="flex items-start gap-2.5">
                   <span className="w-5 h-5 rounded-full bg-[#32A8D7] text-white text-[10px] font-bold flex items-center justify-center shrink-0 mt-px">

@@ -30,9 +30,13 @@ import {
   CreditCard,
   Crown,
   Star,
+  MapPin,
+  Clock,
 } from "lucide-react";
 import { useTranslations, useLocale } from "next-intl";
 import LanguageSwitcher from "@/app/components/LanguageSwitcher";
+import { CustomSelect } from "@/components/ui/CustomSelect";
+import { EmptyState } from "@/components/ui/EmptyState";
 import TalentCard from "@/app/components/TalentCard";
 import CandidaturesTab from "./components/CandidaturesTab";
 import EmploisTab from "./components/EmploisTab";
@@ -74,32 +78,58 @@ export default function RecruteurDashboard() {
   const emplois = Array.isArray(emploisFetched) ? emploisFetched : (emploisFetched.jobs || []);
 
   const [isPremium, setIsPremium] = useState<boolean>(false);
+  const [recruiterAvatar, setRecruiterAvatar] = useState<string | null>(() => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("recruiter_avatar");
+    }
+    return null;
+  });
+  const [filterValues, setFilterValues] = useState<Record<string, string>>({});
 
-  const fetchPremiumStatus = () => {
+  const fetchProfileAndPremium = () => {
     fetch("/api/recruiters/me", { cache: "no-store" })
       .then((res) => res.json())
       .then((data) => {
         if (data && !data.error) {
           if (data.isPremium !== undefined) setIsPremium(data.isPremium);
+          if (data.avatar) {
+            setRecruiterAvatar(data.avatar);
+            if (typeof window !== "undefined") {
+              localStorage.setItem("recruiter_avatar", data.avatar);
+            }
+          }
         }
       })
       .catch((err) => console.error("Erreur chargement profil:", err));
   };
 
   useEffect(() => {
-    fetchPremiumStatus();
+    fetchProfileAndPremium();
 
     // Rafraîchit quand l'utilisateur revient sur l'onglet (sync cross-appareils)
     const handleVisibility = () => {
-      if (document.visibilityState === "visible") fetchPremiumStatus();
+      if (document.visibilityState === "visible") fetchProfileAndPremium();
     };
     document.addEventListener("visibilitychange", handleVisibility);
 
+    const handleProfileUpdated = (e: any) => {
+      if (e?.detail?.avatarUrl) {
+        setRecruiterAvatar(e.detail.avatarUrl);
+      }
+      fetchProfileAndPremium();
+    };
+    if (typeof window !== "undefined") {
+      window.addEventListener("recruiter_profile_updated", handleProfileUpdated);
+    }
+
     // Rafraîchit toutes les 60 secondes
-    const interval = setInterval(fetchPremiumStatus, 60_000);
+    const interval = setInterval(fetchProfileAndPremium, 60_000);
 
     return () => {
       document.removeEventListener("visibilitychange", handleVisibility);
+      if (typeof window !== "undefined") {
+        window.removeEventListener("recruiter_profile_updated", handleProfileUpdated);
+      }
       clearInterval(interval);
     };
   }, []);
@@ -136,6 +166,7 @@ export default function RecruteurDashboard() {
           "affiliation",
           "parametres",
           "premium",
+          "profil",
         ].includes(tab)
       ) {
         setActiveTab(tab);
@@ -146,12 +177,28 @@ export default function RecruteurDashboard() {
   const [favorites, setFavorites] = useState<string[]>([]);
 
   useEffect(() => {
+    // 1. Initial load from localStorage
     const saved = localStorage.getItem("favorites");
     if (saved) {
       try {
         setFavorites(JSON.parse(saved));
       } catch (e) {}
     }
+
+    // 2. Sync from backend API
+    fetch("/api/favorites?type=TALENT")
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (data?.favorites && Array.isArray(data.favorites)) {
+          const apiFavIds = data.favorites.map((f: any) => String(f.targetId));
+          setFavorites((prev) => {
+            const merged = Array.from(new Set([...prev, ...apiFavIds]));
+            localStorage.setItem("favorites", JSON.stringify(merged));
+            return merged;
+          });
+        }
+      })
+      .catch((err) => console.error("Error fetching recruiter favorites:", err));
   }, []);
 
   // Notifications
@@ -169,27 +216,45 @@ export default function RecruteurDashboard() {
   const toggleFavorite = (id?: string | number) => {
     if (!id) return;
     const strId = String(id);
-    let newFavorites;
-    if (favorites.includes(strId)) {
+    let newFavorites: string[];
+    const isFav = favorites.includes(strId);
+
+    if (isFav) {
       newFavorites = favorites.filter((f) => f !== strId);
       showToast("Profil retiré des favoris.");
     } else {
       newFavorites = [...favorites, strId];
       showToast("Profil ajouté aux favoris !");
     }
+
     setFavorites(newFavorites);
     localStorage.setItem("favorites", JSON.stringify(newFavorites));
+
+    // Backend sync
+    const talentObj = talents.find((t: any) => String(t.id) === strId);
+    fetch("/api/favorites", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        targetType: "TALENT",
+        targetId: strId,
+        title: talentObj?.name || "Candidat",
+        subtitle: talentObj?.profession || "Professionnel",
+        location: talentObj?.location,
+      }),
+    }).catch(console.error);
   };
 
   // ─── Sidebar items ───────────────────────────────────────────────────────────
   const sidebarItems = [
-    { key: "dashboard" as RecruiterTab, icon: LayoutDashboard, label: t("nav.home") },
+    { key: "dashboard" as RecruiterTab, icon: LayoutDashboard, label: t("nav.dashboard") },
     { key: "recherche" as RecruiterTab, icon: Search, label: t("nav.searchTalents") },
     { key: "candidatures" as RecruiterTab, icon: Users, label: t("nav.applications") },
     { key: "emplois" as RecruiterTab, icon: Briefcase, label: t("nav.myJobs") },
-    { key: "transactions" as RecruiterTab, icon: CreditCard, label: "Transactions" },
+    { key: "transactions" as RecruiterTab, icon: CreditCard, label: t("recruiter.transactions") },
     { key: "favoris" as RecruiterTab, icon: Bookmark, label: t("nav.favorites") },
     { key: "affiliation" as RecruiterTab, icon: Share2, label: t("nav.affiliation") },
+    { key: "profil" as RecruiterTab, icon: User, label: t("nav.myProfile") },
     { key: "parametres" as RecruiterTab, icon: Settings, label: t("nav.settings") },
     { key: "premium" as RecruiterTab, icon: Crown, label: "Premium" },
   ];
@@ -226,13 +291,11 @@ export default function RecruteurDashboard() {
         {/* Logo */}
         <div className="p-5 border-b border-slate-100 flex items-center justify-between shrink-0">
           <Link href="/" className="block">
-            <div className="relative h-7 w-28">
-              <Image
+            <div className="relative h-7 w-28 flex items-center">
+              <img
                 src="/Logo/PNG/Logo.png"
                 alt="Netacuv Logo"
-                fill
-                priority
-                className="object-contain object-left"
+                className="h-7 w-auto object-contain object-left"
               />
             </div>
           </Link>
@@ -291,47 +354,52 @@ export default function RecruteurDashboard() {
 
             {activeTab === "dashboard" && (
               <h1 className="text-xl sm:text-2xl font-bold text-[#232323] tracking-tight">
-                Tableau de <span className="text-[#32A8D7]">bord</span>
+                {t("recruiter.dashboard")}
               </h1>
             )}
             {activeTab === "recherche" && (
               <h1 className="text-xl sm:text-2xl font-bold text-[#232323] tracking-tight">
-                Recherche <span className="text-[#32A8D7]">profil</span>
+                {t("recruiter.searchTalents")}
               </h1>
             )}
             {activeTab === "candidatures" && (
               <h1 className="text-xl sm:text-2xl font-bold text-[#232323] tracking-tight">
-                Candidatures <span className="text-[#32A8D7]">reçues</span>
+                {t("recruiter.applications")}
               </h1>
             )}
             {activeTab === "emplois" && (
               <h1 className="text-xl sm:text-2xl font-bold text-[#232323] tracking-tight">
-                Offres d&apos;<span className="text-[#32A8D7]">emplois</span>
+                {t("recruiter.myJobs")}
               </h1>
             )}
             {activeTab === "transactions" && (
               <h1 className="text-xl sm:text-2xl font-bold text-[#232323] tracking-tight">
-                Mes <span className="text-[#32A8D7]">transactions</span>
+                {t("recruiter.transactions")}
               </h1>
             )}
             {activeTab === "favoris" && (
               <h1 className="text-xl sm:text-2xl font-bold text-[#232323] tracking-tight">
-                Mes <span className="text-[#32A8D7]">enregistrements</span>
+                {t("recruiter.bookmarks")}
               </h1>
             )}
             {activeTab === "affiliation" && (
               <h1 className="text-xl sm:text-2xl font-bold text-[#232323] tracking-tight">
-                Parrainez et <span className="text-[#32A8D7]">gagnez</span>
+                {t("recruiter.referral")}
               </h1>
             )}
             {activeTab === "parametres" && (
               <h1 className="text-xl sm:text-2xl font-bold text-[#232323] tracking-tight">
-                Paramètres du <span className="text-[#32A8D7]">compte</span>
+                {t("recruiter.accountSettings")}
               </h1>
             )}
             {activeTab === "premium" && (
               <h1 className="text-xl sm:text-2xl font-bold text-[#232323] tracking-tight">
-                Abonnement <span className="text-[#32A8D7]">Premium</span>
+                {t("recruiter.premiumSubscription")}
+              </h1>
+            )}
+            {activeTab === "profil" && (
+              <h1 className="text-xl sm:text-2xl font-bold text-[#232323] tracking-tight">
+                {t("recruiter.myProfile")}
               </h1>
             )}
           </div>
@@ -342,16 +410,16 @@ export default function RecruteurDashboard() {
             {isPremium ? (
               <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-yellow-500/20 to-yellow-600/20 rounded-full border border-yellow-500/30 text-yellow-600 shadow-inner">
                 <Star size={14} className="fill-yellow-500 text-yellow-500" />
-                <span className="text-xs font-bold">Premium - Illimité</span>
+                <span className="text-xs font-bold">{t("recruiter.premiumUnlimited")}</span>
               </div>
             ) : (
               <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-slate-100 rounded-full border border-slate-200">
                 <div className="flex flex-col">
-                  <span className="text-[10px] text-slate-500 font-medium leading-none mb-0.5">Offres créées ce mois</span>
+                  <span className="text-[10px] text-slate-500 font-medium leading-none mb-0.5">{t("recruiter.jobsCreatedThisMonth")}</span>
                   <span className="text-xs font-bold text-slate-800 leading-none">{emplois.length}</span>
                 </div>
                 <button onClick={() => setActiveTab("premium")} className="text-[10px] font-bold text-[#32A8D7] hover:text-[#2896c2] bg-sky-50 hover:bg-sky-100 px-2 py-1 rounded-full transition-colors ml-2">
-                  Passer au Premium
+                  {t("recruiter.upgradeToPremium")}
                 </button>
               </div>
             )}
@@ -373,12 +441,11 @@ export default function RecruteurDashboard() {
                 className="flex items-center gap-2 p-1 pr-2 rounded-full hover:bg-slate-100 transition-colors border border-transparent hover:border-slate-200"
               >
                 <div className="w-8 h-8 rounded-full overflow-hidden bg-slate-200 relative">
-                  <Image
-                    src={user?.avatar || "/assets/avatar_africain.jpg"}
+                  <img
+                    src={recruiterAvatar || user?.avatar || "/assets/avatar_africain.jpg"}
                     alt="Avatar"
                     width={32}
                     height={32}
-                    priority
                     onError={(e) => {
                       (e.target as HTMLImageElement).src = "/assets/avatar_africain.jpg";
                     }}
@@ -430,20 +497,20 @@ export default function RecruteurDashboard() {
                 <div className="bg-white rounded-2xl p-6 border border-slate-100 shadow-sm flex flex-col justify-between">
                   <div>
                     <div className="flex items-center justify-between mb-3">
-                      <h3 className="font-bold text-slate-900 text-base">Candidatures</h3>
+                      <h3 className="font-bold text-slate-900 text-base">{t("recruiter.applicationsCard.title")}</h3>
                       <span className="text-xs font-bold px-3 py-1 rounded-full bg-slate-100 text-slate-700">
                         0
                       </span>
                     </div>
                     <p className="text-xs text-slate-500 mb-6 leading-relaxed">
-                      Aucune candidature reçue pour le moment.
+                      {t("recruiter.applicationsCard.empty")}
                     </p>
                   </div>
                   <button
                     onClick={() => handleTabChange("candidatures")}
                     className="w-full py-2.5 px-4 rounded-xl font-semibold text-xs text-white bg-[#4bb3e6] hover:bg-[#32a8d7] transition-colors flex items-center justify-center gap-2 shadow-xs"
                   >
-                    <FileText size={15} /> Voir les candidatures
+                    <FileText size={15} /> {t("recruiter.applicationsCard.btn")}
                   </button>
                 </div>
 
@@ -451,20 +518,20 @@ export default function RecruteurDashboard() {
                 <div className="bg-white rounded-2xl p-6 border border-slate-100 shadow-sm flex flex-col justify-between">
                   <div>
                     <div className="flex items-center justify-between mb-3">
-                      <h3 className="font-bold text-slate-900 text-base">Favoris</h3>
+                      <h3 className="font-bold text-slate-900 text-base">{t("recruiter.favoritesCard.title")}</h3>
                       <span className="text-xs font-bold px-3 py-1 rounded-full bg-slate-100 text-slate-700">
                         {favorites.length}
                       </span>
                     </div>
                     <p className="text-xs text-slate-500 mb-6 leading-relaxed">
-                      Liste de vos favoris. Profils sauvegardés
+                      {t("recruiter.favoritesCard.desc")}
                     </p>
                   </div>
                   <button
                     onClick={() => handleTabChange("favoris")}
                     className="w-full py-2.5 px-4 rounded-xl font-semibold text-xs text-white bg-[#0088cc] hover:bg-[#0077b3] transition-colors flex items-center justify-center gap-2 shadow-xs"
                   >
-                    <Bookmark size={15} /> Voir les favoris
+                    <Bookmark size={15} /> {t("recruiter.favoritesCard.btn")}
                   </button>
                 </div>
 
@@ -472,17 +539,17 @@ export default function RecruteurDashboard() {
                 <div className="bg-white rounded-2xl p-6 border border-slate-100 shadow-sm flex flex-col justify-between">
                   <div>
                     <div className="flex items-center justify-between mb-3">
-                      <h3 className="font-bold text-slate-900 text-base">Affiliation</h3>
+                      <h3 className="font-bold text-slate-900 text-base">{t("recruiter.affiliationCard.title")}</h3>
                     </div>
                     <p className="text-xs text-slate-500 mb-6 leading-relaxed">
-                      Vous avez parrainé 4 personnes au total
+                      {t("recruiter.affiliationCard.desc", { count: 4 })}
                     </p>
                   </div>
                   <button
                     onClick={() => handleTabChange("affiliation")}
                     className="w-full py-2.5 px-4 rounded-xl font-semibold text-xs text-white bg-[#08304c] hover:bg-[#062439] transition-colors flex items-center justify-center gap-2 shadow-xs"
                   >
-                    <Share2 size={15} /> Voir les détails
+                    <Share2 size={15} /> {t("recruiter.affiliationCard.btn")}
                   </button>
                 </div>
               </div>
@@ -490,23 +557,89 @@ export default function RecruteurDashboard() {
               {/* Row 2 – Emplois créés */}
               <div className="bg-white rounded-2xl p-6 border border-slate-100 shadow-sm">
                 <div className="flex items-center justify-between mb-4">
-                  <h3 className="font-bold text-slate-900 text-base">Emplois créés</h3>
-                  <span className="text-xs font-medium px-3.5 py-1 rounded-full bg-sky-50 text-[#0071a2]">
-                    {emplois.length} emplois
+                  <div>
+                    <h3 className="font-bold text-slate-900 text-base">{t("recruiter.createdJobsCard.title")}</h3>
+                    <p className="text-xs text-slate-400 mt-0.5">
+                      {emplois.length > 3 
+                        ? "Affichage des 3 premières offres d'emploi"
+                        : emplois.length === 1 
+                        ? "1 offre d'emploi créée" 
+                        : `${emplois.length} offre(s) d'emploi au total`}
+                    </p>
+                  </div>
+                  <span className="text-xs font-semibold px-3 py-1 rounded-full bg-sky-50 text-[#0071a2] border border-sky-100">
+                    {t("recruiter.createdJobsCard.badge", { count: emplois.length })}
                   </span>
                 </div>
 
                 <div className="space-y-3 mb-5">
-                  <div className="p-4 rounded-xl border border-slate-100 bg-slate-50 text-center text-sm text-slate-500">
-                    {emplois.length === 0 ? "Vous n'avez pas encore créé d'offre d'emploi." : `Vous avez créé ${emplois.length} offre(s) d'emploi au total.`}
-                  </div>
+                  {emplois.length === 0 ? (
+                    <div className="p-6 rounded-xl border border-dashed border-slate-200 bg-slate-50 text-center text-sm text-slate-500">
+                      {t("recruiter.createdJobsCard.empty")}
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                      {emplois.slice(0, 3).map((job: any) => {
+                        const isClosed = job.status === "CLOSED" || (job.expiresAt && new Date(job.expiresAt) < new Date());
+                        const applicationsCount = job._count?.applications ?? job.candidatures ?? 0;
+                        return (
+                          <div
+                            key={job.id}
+                            onClick={() => handleTabChange("emplois")}
+                            className="p-4 rounded-xl border border-slate-100 bg-slate-50/60 hover:bg-white hover:border-[#32A8D7]/40 hover:shadow-sm transition-all cursor-pointer flex flex-col justify-between group"
+                          >
+                            <div>
+                              <div className="flex items-start justify-between gap-2 mb-2">
+                                <h4 className="font-bold text-sm text-slate-900 group-hover:text-[#32A8D7] transition-colors line-clamp-1">
+                                  {job.title || job.titre}
+                                </h4>
+                                <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0 ${
+                                  !isClosed
+                                    ? "bg-green-50 text-green-700 border border-green-200"
+                                    : "bg-slate-100 text-slate-500 border border-slate-200"
+                                }`}>
+                                  {!isClosed ? "Actif" : "Clôturé"}
+                                </span>
+                              </div>
+
+                              <div className="space-y-1 text-xs text-slate-500 mb-3">
+                                {(job.location || job.lieu) && (
+                                  <div className="flex items-center gap-1.5 truncate">
+                                    <MapPin size={12} className="text-slate-400 shrink-0" />
+                                    <span className="truncate">{job.location || job.lieu}</span>
+                                  </div>
+                                )}
+                                <div className="flex items-center gap-2 pt-0.5">
+                                  <span className="bg-white border border-slate-200 px-2 py-0.5 rounded-md text-[10px] font-semibold text-slate-600">
+                                    {job.contractType || job.typeEmploi || "CDI"}
+                                  </span>
+                                  <span className="text-[11px] font-semibold text-[#0071a2] bg-sky-50 px-2 py-0.5 rounded-md">
+                                    {applicationsCount} candidat{applicationsCount > 1 ? "s" : ""}
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+
+                            <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-400">
+                              <span>
+                                {job.createdAt 
+                                  ? new Date(job.createdAt).toLocaleDateString("fr-FR")
+                                  : "Récemment"}
+                              </span>
+                              <span className="text-[#32A8D7] font-semibold group-hover:underline">Gérer →</span>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
                 </div>
 
                 <button
                   onClick={() => handleTabChange("emplois")}
-                  className="w-full py-3 rounded-xl font-semibold text-xs text-white bg-[#60bbf7] hover:bg-[#4aaef5] transition-colors flex items-center justify-center gap-2 shadow-xs"
+                  className="w-full py-3 rounded-xl font-semibold text-xs text-white bg-[#32A8D7] hover:bg-[#2896c2] transition-colors flex items-center justify-center gap-2 shadow-xs cursor-pointer"
                 >
-                  <Gift size={15} /> Voir toutes les offres d'emplois créés
+                  <Gift size={15} /> {t("recruiter.createdJobsCard.btn")}
                 </button>
               </div>
 
@@ -515,32 +648,32 @@ export default function RecruteurDashboard() {
                 {/* Créer un emploi */}
                 <div className="bg-white rounded-2xl p-6 border border-slate-100 shadow-sm flex flex-col justify-between">
                   <div>
-                    <h3 className="font-bold text-slate-900 text-base mb-1">Créer un emploi</h3>
+                    <h3 className="font-bold text-slate-900 text-base mb-1">{t("recruiter.createJobCard.title")}</h3>
                     <p className="text-xs text-slate-500 mb-6 leading-relaxed">
-                      Créer un emploi, changer des vies certainement.
+                      {t("recruiter.createJobCard.desc")}
                     </p>
                   </div>
                   <button
                     onClick={() => handleTabChange("emplois")}
                     className="w-full py-2.5 px-4 rounded-xl font-semibold text-xs text-white bg-[#0071a2] hover:bg-[#005c84] transition-colors flex items-center justify-center gap-2 shadow-xs"
                   >
-                    <FileText size={15} /> Commencer
+                    <FileText size={15} /> {t("recruiter.createJobCard.btn")}
                   </button>
                 </div>
 
                 {/* Paramètres */}
                 <div className="bg-white rounded-2xl p-6 border border-slate-100 shadow-sm flex flex-col justify-between">
                   <div>
-                    <h3 className="font-bold text-slate-900 text-base mb-1">Paramètres</h3>
+                    <h3 className="font-bold text-slate-900 text-base mb-1">{t("recruiter.settingsCard.title")}</h3>
                     <p className="text-xs text-slate-500 mb-6 leading-relaxed">
-                      Gérez vos préférences et votre compte
+                      {t("recruiter.settingsCard.desc")}
                     </p>
                   </div>
                   <button
                     onClick={() => handleTabChange("parametres")}
                     className="w-full py-2.5 px-4 rounded-xl font-semibold text-xs text-white bg-[#0099e6] hover:bg-[#0088cc] transition-colors flex items-center justify-center gap-2 shadow-xs"
                   >
-                    <Settings size={15} /> Accéder
+                    <Settings size={15} /> {t("recruiter.settingsCard.btn")}
                   </button>
                 </div>
               </div>
@@ -559,7 +692,7 @@ export default function RecruteurDashboard() {
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     className="flex-1 outline-none text-slate-800 bg-transparent text-sm placeholder:text-slate-400 font-medium"
-                    placeholder="Rechercher par compétences, métier..."
+                    placeholder={t("recruiter.search.placeholder")}
                   />
                   {searchQuery && (
                     <button
@@ -576,7 +709,7 @@ export default function RecruteurDashboard() {
                   type="button"
                   className="px-6 py-2.5 bg-[#32A8D7] hover:bg-[#2896c2] text-white rounded-md text-sm font-semibold transition-colors shadow-sm hover:shadow"
                 >
-                  Rechercher
+                  {t("recruiter.search.btn")}
                 </button>
               </div>
 
@@ -590,28 +723,24 @@ export default function RecruteurDashboard() {
                   >
                     <div className="flex items-center gap-2 bg-white px-4 py-2 rounded-full shadow-sm border border-slate-200">
                       <Crown size={16} className="text-yellow-500" />
-                      <span className="text-sm font-bold text-slate-700">Filtres Premium</span>
+                      <span className="text-sm font-bold text-slate-700">{t("recruiter.search.premiumFilters")}</span>
                     </div>
                   </div>
                 )}
                 {[
-                  { label: "Diplôme", options: ["Toutes les licenses", "Licence Pro", "Master / Ingénieur", "Doctorat", "Certifié Netacuv"] },
-                  { label: "Genre", options: ["Tous les genres", "Femme", "Homme"] },
-                  { label: "Pays", options: ["Tous les pays", "Bénin", "Côte d'Ivoire", "Sénégal", "Togo", "Cameroun", "France"] },
-                  { label: "Ville", options: ["Toutes les villes", "Cotonou", "Porto-Novo", "Abidjan", "Dakar", "Lomé", "Douala", "Paris"] },
+                  { label: t("recruiter.search.diploma"), options: ["Toutes les licenses", "Licence Pro", "Master / Ingénieur", "Doctorat", "Certifié Netacuv"] },
+                  { label: t("recruiter.search.gender"), options: ["Tous les genres", "Femme", "Homme"] },
+                  { label: t("recruiter.search.country"), options: ["Tous les pays", "Bénin", "Côte d'Ivoire", "Sénégal", "Togo", "Cameroun", "France"] },
+                  { label: t("recruiter.search.city"), options: ["Toutes les villes", "Cotonou", "Porto-Novo", "Abidjan", "Dakar", "Lomé", "Douala", "Paris"] },
                 ].map((filter) => (
-                  <div key={filter.label} className="relative">
-                    <select 
-                      disabled={!isPremium}
-                      className="w-full appearance-none bg-slate-100 hover:bg-slate-200/70 border border-slate-200/80 rounded-md py-2.5 pl-4 pr-9 text-sm font-medium text-slate-700 outline-none hover:border-slate-300 focus:border-[#32A8D7] focus:bg-white cursor-pointer transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      <option value="">{filter.label}</option>
-                      {filter.options.map((opt) => (
-                        <option key={opt} value={opt}>{opt}</option>
-                      ))}
-                    </select>
-                    <ChevronDown className="w-4 h-4 text-slate-500 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
-                  </div>
+                  <CustomSelect
+                    key={filter.label}
+                    disabled={!isPremium}
+                    value={filterValues[filter.label] || ""}
+                    placeholder={filter.label}
+                    options={filter.options}
+                    onChange={(val) => setFilterValues((prev) => ({ ...prev, [filter.label]: val }))}
+                  />
                 ))}
               </div>
 
@@ -638,10 +767,12 @@ export default function RecruteurDashboard() {
                     );
                   })
                 ) : (
-                  <div className="col-span-full flex flex-col items-center justify-center py-20 text-slate-400 bg-white rounded-xl border border-slate-100 shadow-sm">
-                    <Search className="w-12 h-12 mb-4 text-slate-300" />
-                    <p className="text-lg font-medium text-slate-500 mb-1">Aucun talent trouvé</p>
-                    <p className="text-sm">Nous n'avons pas trouvé de talents correspondant à votre recherche.</p>
+                  <div className="col-span-full">
+                    <EmptyState
+                      type="talents"
+                      title={t("recruiter.search.noTalentTitle")}
+                      description={t("recruiter.search.noTalentDesc")}
+                    />
                   </div>
                 )}
               </div>
@@ -655,18 +786,18 @@ export default function RecruteurDashboard() {
                     className="flex items-center gap-2 px-4 py-2 border border-slate-200 rounded-md text-sm font-medium text-slate-400 bg-slate-50 cursor-not-allowed"
                   >
                     <ArrowLeft className="w-4 h-4" />
-                    Page précédente
+                    {t("recruiter.search.prevPage")}
                   </button>
                   <button
                     type="button"
                     className="flex items-center gap-2 px-5 py-2 bg-[#32A8D7] hover:bg-[#2896c2] text-white rounded-md text-sm font-semibold transition-colors shadow-sm"
                   >
-                    Page suivante
+                    {t("recruiter.search.nextPage")}
                     <ArrowRight className="w-4 h-4" />
                   </button>
                 </div>
                 <div className="text-sm text-slate-500 font-medium">
-                  Page 1 de 26
+                  {t("recruiter.search.pageOf", { current: 1, total: 26 })}
                 </div>
               </div>
             </>

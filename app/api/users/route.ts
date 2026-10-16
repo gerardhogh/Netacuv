@@ -6,7 +6,7 @@ import bcrypt from "bcrypt";
 
 import { hasPermission } from "@/lib/permissions";
 
-export async function GET() {
+export async function GET(req: Request) {
   if (!(await hasPermission('users:read')) && !(await hasPermission('users:moderate'))) {
     return NextResponse.json(
       { error: "Accès refusé. Droits requis." },
@@ -14,29 +14,62 @@ export async function GET() {
     );
   }
 
+  const { searchParams } = new URL(req.url);
+  const page = Math.max(1, parseInt(searchParams.get("page") || "1", 10) || 1);
+  const limit = Math.max(1, parseInt(searchParams.get("limit") || "20", 10) || 20);
+  const skip = (page - 1) * limit;
+
+  const role = searchParams.get("role");
+  const where: any = {};
+  if (role === "recruiter" || role === "recruteur") {
+    where.OR = [
+      { recruiterProfile: { isNot: null } },
+      { role: { name: { in: ["RECRUTEUR", "RECRUITER"] } } }
+    ];
+  } else if (role === "talent") {
+    where.OR = [
+      { talentProfile: { isNot: null } },
+      { role: { name: { in: ["TALENT"] } } }
+    ];
+  }
+
   // Récupération sécurisée (exclusion explicite du champ passwordHash)
-  const users = await prisma.user.findMany({
-    select: {
-      id: true,
-      name: true,
-      email: true,
-      roleId: true,
-      role: true,
-      createdAt: true,
-      updatedAt: true,
-      active: true,
-      isPremium: true,
-      recruiterProfile: {
-        include: {
-          jobOffers: {
-            include: { applications: true }
+  const [users, totalCount] = await Promise.all([
+    prisma.user.findMany({
+      where,
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        roleId: true,
+        role: true,
+        createdAt: true,
+        updatedAt: true,
+        active: true,
+        isPremium: true,
+        recruiterProfile: {
+          include: {
+            jobOffers: {
+              include: { applications: true }
+            }
           }
-        }
+        },
+        talentProfile: true
       },
-      talentProfile: true
-    },
+      orderBy: { createdAt: "desc" },
+      skip,
+      take: limit,
+    }),
+    prisma.user.count({ where }),
+  ]);
+
+  return NextResponse.json({
+    users,
+    totalCount,
+    totalPages: Math.ceil(totalCount / limit),
+    page,
+    limit,
   });
-  return NextResponse.json(users);
 }
 
 export async function POST(request: Request) {

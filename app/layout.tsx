@@ -11,6 +11,9 @@ export const metadata: Metadata = {
     description: "Plateforme intelligente de mise en relation talents & recruteurs",
     siteName: "Netacuv",
   },
+  other: {
+    google: "notranslate",
+  },
 };
 
 import { NextIntlClientProvider } from 'next-intl';
@@ -74,8 +77,9 @@ export default async function RootLayout({
 
   if (isMaintenance && !isAdminSubdomain && !isAdminRoute) {
     return (
-      <html lang={locale} className={`${openSans.variable} bg-[#061527]`} style={{ backgroundColor: "#061527" }}>
+      <html lang={locale} className={`${openSans.variable} notranslate bg-[#061527]`} style={{ backgroundColor: "#061527" }} translate="no">
         <head>
+          <meta name="google" content="notranslate" />
           <title>Site en maintenance - Netacuv</title>
         </head>
         <body 
@@ -159,11 +163,14 @@ export default async function RootLayout({
   }
 
   return (
-    <html lang={locale} className={openSans.className}>
+    <html lang={locale} className={`${openSans.className} notranslate`} translate="no">
+      <head>
+        <meta name="google" content="notranslate" />
+      </head>
       <body>
         <NextTopLoader color="#f97316" showSpinner={false} />
         <VisitorTracker />
-        <NextIntlClientProvider messages={messages}>
+        <NextIntlClientProvider messages={messages} locale={locale}>
           <Providers>{children}</Providers>
         </NextIntlClientProvider>
       </body>

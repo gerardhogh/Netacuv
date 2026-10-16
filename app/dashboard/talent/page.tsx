@@ -37,12 +37,14 @@ import {
   AlertTriangle,
   ChevronRight,
   Lock,
+  Bookmark,
 } from "lucide-react";
 
 import OffresEmplois from "./components/OffresEmplois";
 import TalentPremium from "./components/TalentPremium";
 import ProfilTalent from "./components/ProfilTalent";
 import TransactionsTab from "./components/TransactionsTab";
+import FavorisTalentTab from "./components/FavorisTab";
 import ParametresTab from "./components/ParametresTab";
 import PremiumBanner from "../../components/PremiumBanner";
 import PremiumRequiredModal from "../../components/PremiumRequiredModal";
@@ -54,6 +56,7 @@ type TalentTab =
   | "transactions"
   | "video"
   | "emplois"
+  | "favoris"
   | "premium"
   | "affiliation"
   | "parametres";
@@ -300,28 +303,28 @@ export default function TalentDashboard() {
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!isPremium) {
-      showToast("L'upload de CV est réservé aux talents Premium.");
+      showToast(t("talent.uploadCvPremiumOnly"));
       e.target.value = '';
       return;
     }
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
       setCvFileName(file.name);
-      setCvUploadedAt("Mis à jour à l'instant");
-      showToast(`CV "${file.name}" importé et analysé avec succès !`);
+      setCvUploadedAt(t("talent.updatedJustNow"));
+      showToast(t("talent.cvImportSuccess", { name: file.name }));
     }
   };
 
   const handleApplyJob = (jobId: string, title: string) => {
     if (appliedJobs.includes(jobId)) return;
     setAppliedJobs([...appliedJobs, jobId]);
-    showToast(`Candidature envoyée pour le poste "${title}" !`);
+    showToast(t("talent.applySuccess", { title }));
   };
 
   const handleCompleteVideoInterview = () => {
     setVideoStep("done");
     setHasValidVideo(true);
-    showToast("Félicitations ! Entretien vidéo validé avec succès");
+    showToast(t("talent.videoValidatedSuccess"));
     setTimeout(() => {
       setVideoModalOpen(false);
       setVideoStep("intro");
@@ -356,19 +359,20 @@ export default function TalentDashboard() {
     const link = `https://netacuv.com/inscription?ref=${(user?.name || "CANDIDAT").toUpperCase().replace(/\s+/g, "")}-750`;
     navigator.clipboard.writeText(link);
     setCopiedLink(true);
-    showToast("Lien de parrainage copié dans le presse-papier !");
+    showToast(t("talent.linkCopied"));
     setTimeout(() => setCopiedLink(false), 2500);
   };
 
   const sidebarItems = [
-    { key: "dashboard" as TalentTab, icon: Home, label: "Tableau de bord" },
-    { key: "profil" as TalentTab, icon: FileText, label: "Mon profil" },
-    { key: "transactions" as TalentTab, icon: History, label: "Mes transactions" },
-    { key: "video" as TalentTab, icon: Video, label: "Entretien vidéo" },
-    { key: "emplois" as TalentTab, icon: Briefcase, label: "Offres d'emploi" },
-    { key: "premium" as TalentTab, icon: Star, label: "Talents Premium" },
-    { key: "affiliation" as TalentTab, icon: Share2, label: "Affiliation" },
-    { key: "parametres" as TalentTab, icon: Settings, label: "Paramètres" },
+    { key: "dashboard" as TalentTab, icon: Home, label: t("nav.dashboard") },
+    { key: "profil" as TalentTab, icon: FileText, label: t("nav.myProfile") },
+    { key: "transactions" as TalentTab, icon: History, label: t("nav.transactions") },
+    { key: "video" as TalentTab, icon: Video, label: t("nav.videoInterview") },
+    { key: "emplois" as TalentTab, icon: Briefcase, label: t("nav.jobOffers") },
+    { key: "favoris" as TalentTab, icon: Bookmark, label: t("nav.favorites") },
+    { key: "premium" as TalentTab, icon: Star, label: t("nav.premiumTalents") },
+    { key: "affiliation" as TalentTab, icon: Share2, label: t("nav.affiliation") },
+    { key: "parametres" as TalentTab, icon: Settings, label: t("nav.settings") },
   ];
 
   const unreadCount = notifications.filter((n) => !n.read).length;
@@ -413,13 +417,11 @@ export default function TalentDashboard() {
           {/* Brand Header */}
           <div className="p-5 border-b border-slate-100 flex items-center justify-between shrink-0">
             <Link href="/" className="block">
-              <div className="relative h-7 w-28">
-                <Image
+              <div className="relative h-7 w-28 flex items-center">
+                <img
                   src="/Logo/PNG/Logo.png"
                   alt="Netacuv Logo"
-                  fill
-                  priority
-                  className="object-contain object-left"
+                  className="h-7 w-auto object-contain object-left"
                 />
               </div>
             </Link>
@@ -480,13 +482,13 @@ export default function TalentDashboard() {
             </button>
             <div>
               <h1 className="text-xl font-normal text-slate-700 leading-tight">
-                Bienvenue,{" "}
+                {t("talent.welcome")}{" "}
                 <span className="font-extrabold text-slate-900">
                   {userName.split(" ")[0]}
                 </span>
               </h1>
               <p className="text-[11px] text-slate-400 font-medium">
-                Espace Candidat Certifié Netacuv
+                {t("talent.candidateArea")}
               </p>
             </div>
           </div>
@@ -496,16 +498,16 @@ export default function TalentDashboard() {
             {isPremium ? (
               <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-yellow-500/20 to-yellow-600/20 rounded-full border border-yellow-500/30 text-yellow-600 shadow-inner">
                 <Star size={14} className="fill-yellow-500 text-yellow-500" />
-                <span className="text-xs font-bold">Premium - Illimité</span>
+                <span className="text-xs font-bold">{t("talent.premiumUnlimited")}</span>
               </div>
             ) : (
               <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-slate-100 rounded-full border border-slate-200">
                 <div className="flex flex-col">
-                  <span className="text-[10px] text-slate-500 font-medium leading-none mb-0.5">Candidatures ce mois</span>
+                  <span className="text-[10px] text-slate-500 font-medium leading-none mb-0.5">{t("talent.applicationsThisMonth")}</span>
                   <span className="text-xs font-bold text-slate-800 leading-none">{applicationsCount} / 1</span>
                 </div>
                 <button onClick={() => setActiveTab("premium")} className="text-[10px] font-bold text-blue-600 hover:text-blue-800 bg-blue-50 hover:bg-blue-100 px-2 py-1 rounded-full transition-colors ml-2">
-                  Passer au Premium
+                  {t("talent.upgradeToPremium")}
                 </button>
               </div>
             )}
@@ -530,7 +532,7 @@ export default function TalentDashboard() {
                 className="flex items-center gap-2 p-1 rounded-full hover:bg-slate-100 transition-colors"
               >
                 <div className="w-9 h-9 rounded-full overflow-hidden relative border border-slate-200 bg-slate-100">
-                  <Image
+                  <img
                     src={userAvatar || "/assets/avatar_africain.jpg"}
                     alt="Avatar"
                     width={36}
@@ -561,7 +563,7 @@ export default function TalentDashboard() {
                     }}
                     className="w-full text-left px-4 py-2 text-xs text-slate-600 hover:bg-slate-50 font-medium flex items-center gap-2"
                   >
-                    <FileText size={14} /> Mon Profil
+                    <FileText size={14} /> {t("nav.myProfile")}
                   </button>
                   <button
                     onClick={() => {
@@ -570,13 +572,13 @@ export default function TalentDashboard() {
                     }}
                     className="w-full text-left px-4 py-2 text-xs text-slate-600 hover:bg-slate-50 font-medium flex items-center gap-2"
                   >
-                    <Settings size={14} /> Paramètres
+                    <Settings size={14} /> {t("nav.settings")}
                   </button>
                   <LogoutButton
                     onCancelClick={() => setProfileMenuOpen(false)}
                     className="w-full text-left px-4 py-2 text-xs text-red-600 hover:bg-red-50 font-semibold border-t border-slate-100 mt-1 flex items-center gap-2"
                   >
-                    <LogOut size={14} /> Déconnexion
+                    <LogOut size={14} /> {t("nav.logout")}
                   </LogoutButton>
                 </div>
               )}
@@ -620,7 +622,7 @@ export default function TalentDashboard() {
 
                   <div className="flex items-center justify-between mb-3">
                     <h3 className="font-bold text-slate-800 text-sm">
-                      Complétion du profil
+                      {t("talent.profileCompletion")}
                     </h3>
                     <div className="flex items-center gap-2">
                       <span className={`text-xs font-bold px-2.5 py-1 rounded-full ${
@@ -628,13 +630,13 @@ export default function TalentDashboard() {
                         profilePct === 0 ? "text-red-600 bg-red-50" :
                         "text-blue-600 bg-blue-50"
                       }`}>
-                        {profilePct}% complété
+                        {t("talent.pctCompleted", { pct: profilePct })}
                       </span>
                       <button
                         onClick={() => setProfileGuideOpen(!profileGuideOpen)}
                         className="text-xs text-slate-400 hover:text-blue-600 underline transition-colors"
                       >
-                        Guide
+                        {t("talent.guide")}
                       </button>
                     </div>
                   </div>
@@ -656,19 +658,19 @@ export default function TalentDashboard() {
                     "text-slate-400"
                   }`}>
                     {profilePct === 100
-                      ? "🌟 Félicitations ! Profil 100% — Certification 5 étoiles obtenue !"
+                      ? t("talent.congrats100")
                       : profilePct === 0
-                      ? "Aucune étape complétée. Commencez par renseigner vos informations."
-                      : "Complétez les étapes ci-dessous pour atteindre 100% et décrocher la certification 5 étoiles !"}
+                      ? t("talent.zeroPctMsg")
+                      : t("talent.completeStepsMsg")}
                   </p>
                   {/* Profile completion guide */}
                   {profileGuideOpen && (
                     <div className="mt-4 pt-4 border-t border-slate-100 space-y-2 animate-fade-in">
                       {[
-                        { label: "Informations personnelles", done: hasPersonalInfo, pct: 25, tab: "profil" },
-                        { label: "Photo de profil", done: !!userAvatar && userAvatar !== "/assets/avatar_africain.jpg", pct: 10, tab: "profil" },
-                        { label: "CV uploadé", done: cvFileName !== "Aucun CV ajouté" && cvFileName !== "Pas de CV", pct: 25, tab: "profil" },
-                        { label: "Entretien vidéo validé", done: hasValidVideo, pct: 40, tab: "video" },
+                        { label: t("talent.stepPersonalInfo"), done: hasPersonalInfo, pct: 25, tab: "profil" },
+                        { label: t("talent.stepProfilePhoto"), done: !!userAvatar && userAvatar !== "/assets/avatar_africain.jpg", pct: 10, tab: "profil" },
+                        { label: t("talent.stepCvUploaded"), done: cvFileName !== "Aucun CV ajouté" && cvFileName !== "Pas de CV", pct: 25, tab: "profil" },
+                        { label: t("talent.stepVideoValidated"), done: hasValidVideo, pct: 40, tab: "video" },
                       ].map((item) => (
                         <div key={item.label} className="flex items-center justify-between gap-3">
                           <div className="flex items-center gap-2 min-w-0">
@@ -683,7 +685,7 @@ export default function TalentDashboard() {
                                 onClick={() => setActiveTab(item.tab as TalentTab)}
                                 className="text-[10px] font-bold text-blue-600 hover:text-blue-800 bg-blue-50 hover:bg-blue-100 px-2 py-0.5 rounded-full transition-colors whitespace-nowrap"
                               >
-                                Compléter →
+                                {t("talent.completeStepBtn")}
                               </button>
                             )}
                             <span className={`text-xs font-bold ${item.done ? "text-green-600" : "text-blue-600"}`}>+{item.pct}%</span>
@@ -697,7 +699,7 @@ export default function TalentDashboard() {
                 {/* Certification level */}
                 <div className="bg-white rounded-3xl p-6 border border-slate-100 shadow-xl shadow-slate-200/50 flex flex-col justify-between">
                   <h3 className="font-bold text-slate-800 text-sm mb-2">
-                    Niveau de certification
+                    {t("talent.certificationLevel")}
                   </h3>
                   <div className="flex gap-1.5 my-2">
                     {[1, 2, 3, 4, 5].map((s) => (
@@ -711,7 +713,7 @@ export default function TalentDashboard() {
                     ))}
                   </div>
                   <p className="text-xs font-semibold text-slate-500">
-                    {stars} étoiles obtenues {hasValidVideo ? "• Badge Vidéo IA" : ""}
+                    {t("talent.starsObtained", { stars })} {hasValidVideo ? t("talent.badgeAiVideo") : ""}
                   </p>
                 </div>
               </div>
@@ -722,13 +724,17 @@ export default function TalentDashboard() {
                 <div className="bg-white rounded-3xl p-6 border border-slate-100 shadow-xl shadow-slate-200/50 flex flex-col justify-between">
                   <div>
                     <h3 className="font-bold text-slate-800 text-sm mb-2 flex items-center gap-2">
-                      CV (Curriculum Vitae)
+                      {t("talent.cvTitle")}
                       {!isPremium && <Lock size={14} className="text-amber-500" />}
                     </h3>
                     <div className="w-full px-4 py-3 border border-slate-200 rounded-2xl text-xs text-slate-600 bg-slate-50 mb-2 truncate flex items-center justify-between">
-                      <span className="truncate font-medium">{cvFileName}</span>
+                      <span className="truncate font-medium">
+                        {cvFileName === "Aucun CV ajouté" ? t("talent.noCvAdded") : cvFileName}
+                      </span>
                     </div>
-                    <p className="text-[11px] text-slate-400 mb-5">{cvUploadedAt}</p>
+                    <p className="text-[11px] text-slate-400 mb-5">
+                      {cvUploadedAt === "Pas de CV" ? t("talent.noCv") : cvUploadedAt === "Mis à jour à l'instant" ? t("talent.updatedJustNow") : cvUploadedAt === "Mis à jour récemment" ? t("talent.updatedRecently") : cvUploadedAt}
+                    </p>
                   </div>
                   
                   {isPremium ? (
@@ -737,14 +743,14 @@ export default function TalentDashboard() {
                       className="w-full py-3 rounded-2xl font-bold text-xs text-white bg-blue-600 hover:bg-blue-700 shadow-lg shadow-blue-500/25 transition-all flex items-center justify-center gap-2"
                       id="btn-upload-cv"
                     >
-                      <Upload size={15} /> Mettre à jour mon CV
+                      <Upload size={15} /> {t("talent.updateCv")}
                     </button>
                   ) : (
                     <button
                       onClick={() => setActiveTab("premium")}
                       className="w-full py-3 rounded-2xl font-bold text-xs text-white bg-gradient-to-r from-amber-400 to-orange-500 hover:from-amber-500 hover:to-orange-600 shadow-lg shadow-orange-500/25 transition-all flex items-center justify-center gap-2"
                     >
-                      <Lock size={15} /> Débloquer avec Premium
+                      <Lock size={15} /> {t("talent.unlockWithPremium")}
                     </button>
                   )}
                 </div>
@@ -754,20 +760,20 @@ export default function TalentDashboard() {
                   <div>
                     <div className="flex items-center justify-between mb-2">
                       <h3 className="font-bold text-slate-800 text-sm flex items-center gap-2">
-                        Entretien vidéo
+                        {t("talent.videoInterview")}
                         {!isPremium && <Lock size={14} className="text-amber-500" />}
                       </h3>
                       <span
                         className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full text-white ${hasValidVideo ? "bg-green-500" : "bg-red-500"
                           }`}
                       >
-                        {hasValidVideo ? "Validé" : "Non validé"}
+                        {hasValidVideo ? t("talent.validated") : t("talent.notValidated")}
                       </span>
                     </div>
                     <p className="text-xs text-slate-500 mb-5 leading-relaxed">
                       {hasValidVideo
-                        ? "Votre test vidéo a été évalué avec succès par l'IA."
-                        : "Tu n'as pas encore passé l'entretien vidéo"}
+                        ? t("talent.videoPassedDesc")
+                        : t("talent.videoNotPassedDesc")}
                     </p>
                   </div>
                   {isPremium ? (
@@ -777,14 +783,14 @@ export default function TalentDashboard() {
                       id="btn-launch-video"
                     >
                       <Video size={15} />{" "}
-                      {hasValidVideo ? "Voir l'entretien vidéo" : "Lancer l'entretien vidéo"}
+                      {hasValidVideo ? t("talent.viewVideo") : t("talent.startVideo")}
                     </button>
                   ) : (
                     <button
                       onClick={() => setShowVideoPremiumModal(true)}
                       className="w-full py-3 rounded-2xl font-bold text-xs text-white bg-gradient-to-r from-amber-400 to-orange-500 hover:from-amber-500 hover:to-orange-600 shadow-lg shadow-orange-500/25 transition-all flex items-center justify-center gap-2"
                     >
-                      <Lock size={15} /> Débloquer l'Entretien IA
+                      <Lock size={15} /> {t("talent.unlockAiInterview")}
                     </button>
                   )}
                 </div>
@@ -793,15 +799,13 @@ export default function TalentDashboard() {
                 <div className="bg-white rounded-3xl p-6 border border-slate-100 shadow-xl shadow-slate-200/50 flex flex-col justify-between">
                   <div>
                     <h3 className="font-bold text-slate-800 text-sm mb-2">
-                      Affiliation
+                      {t("talent.affiliation")}
                     </h3>
                     <p className="text-xs text-slate-500 mb-1 leading-relaxed">
-                      Tu as parrainé{" "}
-                      <strong className="text-slate-900 font-bold">{affiliationCount} personnes</strong> au
-                      total
+                      {t("talent.sponsoredCount", { count: affiliationCount })}
                     </p>
                     <p className="text-[11px] font-bold text-green-600 mb-5">
-                      Gains disponibles : {affiliationBalance.toLocaleString("fr-FR")} FCFA
+                      {t("talent.availableEarnings", { amount: affiliationBalance.toLocaleString(lang === "en" ? "en-US" : "fr-FR") })}
                     </p>
                   </div>
                   <button
@@ -809,7 +813,7 @@ export default function TalentDashboard() {
                     className="w-full py-3 rounded-2xl font-bold text-xs text-white bg-[#0071a2] hover:bg-[#005f88] shadow-lg shadow-blue-900/15 transition-all flex items-center justify-center gap-2"
                     id="btn-affiliation"
                   >
-                    <Share2 size={15} /> Voir les détails
+                    <Share2 size={15} /> {t("talent.viewDetails")}
                   </button>
                 </div>
               </div>
@@ -818,17 +822,17 @@ export default function TalentDashboard() {
               <div className="bg-white rounded-3xl p-6 border border-slate-100 shadow-xl shadow-slate-200/50">
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="font-bold text-slate-800 text-sm">
-                    Emplois disponibles recommandés
+                    {t("talent.recommendedJobs")}
                   </h3>
                   <span className="text-xs font-bold text-slate-400">
-                    {allJobs.length} offres actives
+                    {t("talent.activeJobsCount", { count: allJobs.length })}
                   </span>
                 </div>
                 <div className="space-y-3 mb-5">
                   {allJobs.length === 0 ? (
                     <div className="p-8 text-center text-slate-400 text-xs border border-dashed border-slate-200 rounded-2xl bg-slate-50">
                       <Briefcase size={24} className="mx-auto text-slate-300 mb-2" />
-                      Aucune offre recommandée pour le moment
+                      {t("talent.noRecommendedJobs")}
                     </div>
                   ) : (
                     allJobs.slice(0, 3).map((job) => {
@@ -855,7 +859,7 @@ export default function TalentDashboard() {
                               : "bg-blue-600 text-white hover:bg-blue-700 shadow-sm"
                               }`}
                           >
-                            {isApplied ? "✓ Postulé" : "Postuler"}
+                            {isApplied ? t("talent.applied") : t("talent.apply")}
                           </button>
                         </div>
                       );
@@ -867,7 +871,7 @@ export default function TalentDashboard() {
                   className="w-full py-3.5 rounded-2xl font-bold text-xs text-white bg-blue-600 hover:bg-blue-700 shadow-lg shadow-blue-500/20 transition-all flex items-center justify-center gap-2"
                   id="btn-voir-emplois"
                 >
-                  <Briefcase size={16} /> Voir toutes les offres d'emplois
+                  <Briefcase size={16} /> {t("talent.viewAllJobs")}
                 </button>
               </div>
 
@@ -876,10 +880,10 @@ export default function TalentDashboard() {
                 <div className="bg-white rounded-3xl p-6 border border-slate-100 shadow-xl shadow-slate-200/50 flex flex-col justify-between">
                   <div>
                     <h3 className="font-bold text-slate-800 text-sm mb-1">
-                      Créer un CV
+                      {t("talent.createCv")}
                     </h3>
                     <p className="text-xs text-slate-400 mb-5 leading-relaxed">
-                      Utilise un outil de création de CV professionnel
+                      {t("talent.createCvDesc")}
                     </p>
                   </div>
                   <a
@@ -889,17 +893,17 @@ export default function TalentDashboard() {
                     className="w-full py-3 rounded-2xl font-bold text-xs text-white bg-blue-600 hover:bg-blue-700 shadow-md transition-all flex items-center justify-center gap-2 text-center"
                     id="btn-creer-cv"
                   >
-                    <FileText size={15} /> Commencer
+                    <FileText size={15} /> {t("talent.startBtn")}
                   </a>
                 </div>
 
                 <div className="bg-white rounded-3xl p-6 border border-slate-100 shadow-xl shadow-slate-200/50 flex flex-col justify-between">
                   <div>
                     <h3 className="font-bold text-slate-800 text-sm mb-1">
-                      Paramètres
+                      {t("talent.settingsCard")}
                     </h3>
                     <p className="text-xs text-slate-400 mb-5 leading-relaxed">
-                      Gère tes préférences et ton compte personnel
+                      {t("talent.settingsCardDesc")}
                     </p>
                   </div>
                   <button
@@ -907,17 +911,17 @@ export default function TalentDashboard() {
                     className="w-full py-3 rounded-2xl font-bold text-xs text-white bg-blue-600 hover:bg-blue-700 shadow-md transition-all flex items-center justify-center gap-2"
                     id="btn-parametres-talent"
                   >
-                    <Settings size={15} /> Accéder
+                    <Settings size={15} /> {t("talent.accessBtn")}
                   </button>
                 </div>
 
                 <div className="bg-white rounded-3xl p-6 border border-slate-100 shadow-xl shadow-slate-200/50 flex flex-col justify-between">
                   <div>
                     <h3 className="font-bold text-slate-800 text-sm mb-1">
-                      Rejoindre la communauté
+                      {t("talent.joinCommunity")}
                     </h3>
                     <p className="text-xs text-slate-400 mb-5 leading-relaxed">
-                      Échange avec d'autres talents sur notre groupe WhatsApp exclusif
+                      {t("talent.joinCommunityDesc")}
                     </p>
                   </div>
                   <a
@@ -927,7 +931,7 @@ export default function TalentDashboard() {
                     className="w-full py-3 rounded-2xl font-bold text-xs text-white bg-emerald-600 hover:bg-emerald-700 shadow-md transition-all flex items-center justify-center gap-2 text-center"
                     id="btn-rejoindre-whatsapp"
                   >
-                    <MessageCircle size={15} /> Rejoindre sur WhatsApp
+                    <MessageCircle size={15} /> {t("talent.joinWhatsapp")}
                   </a>
                 </div>
               </div>
@@ -953,6 +957,11 @@ export default function TalentDashboard() {
             />
           )}
 
+          {/* TAB: FAVORIS */}
+          {activeTab === "favoris" && (
+            <FavorisTalentTab onNavigateToJobs={() => setActiveTab("emplois")} />
+          )}
+
           {/* TAB: PREMIUM */}
           {activeTab === "premium" && <TalentPremium isPremium={isPremium} />}
 
@@ -962,21 +971,21 @@ export default function TalentDashboard() {
               <div className="flex items-center justify-between pb-4 border-b border-slate-100">
                 <div>
                   <h2 className="text-xl font-bold text-slate-900">
-                    Programme d'Affiliation
+                    {t("affiliation.title")}
                   </h2>
                   <p className="text-xs text-slate-400">
-                    Parrainez d'autres talents et gagnez des récompenses en espèces
+                    {t("affiliation.subtitle")}
                   </p>
                 </div>
                 <div className="flex items-center gap-3">
                   <span className="text-xs font-bold text-green-700 bg-green-50 px-3 py-1 rounded-full border border-green-200">
-                    Solde : {affiliationBalance.toLocaleString("fr-FR")} FCFA
+                    {t("affiliation.balance", { amount: affiliationBalance.toLocaleString(lang === "en" ? "en-US" : "fr-FR") })}
                   </span>
                   <button
                     onClick={() => { setAffiliationCount(0); setAffiliationBalance(0); showToast("Compteur remis à zéro."); }}
                     className="text-xs text-slate-400 hover:text-red-500 border border-slate-200 hover:border-red-200 px-3 py-1 rounded-full transition-colors"
                   >
-                    Réinitialiser
+                    {t("affiliation.reset")}
                   </button>
                 </div>
               </div>
@@ -984,10 +993,10 @@ export default function TalentDashboard() {
               <div className="p-6 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white flex flex-col md:flex-row items-center justify-between gap-6 shadow-xl">
                 <div>
                   <h3 className="font-extrabold text-lg mb-1">
-                    Votre lien de parrainage unique
+                    {t("affiliation.uniqueLink")}
                   </h3>
                   <p className="text-xs text-blue-100">
-                    Chaque inscription réussie vous rapporte 1 500 FCFA directement.
+                    {t("affiliation.linkDesc")}
                   </p>
                 </div>
                 <button
@@ -995,13 +1004,13 @@ export default function TalentDashboard() {
                   className="px-6 py-3 rounded-full font-bold text-xs bg-white text-blue-700 hover:bg-blue-50 transition-all shadow-lg flex items-center gap-2"
                 >
                   {copiedLink ? <Check size={16} /> : <Copy size={16} />}
-                  {copiedLink ? "Lien copié !" : "Copier mon lien"}
+                  {copiedLink ? t("affiliation.linkCopied") : t("affiliation.copyLink")}
                 </button>
               </div>
 
               {/* Referral list */}
               <div>
-                <h4 className="text-sm font-bold text-slate-800 mb-3">Mes filleuls ({affiliationCount})</h4>
+                <h4 className="text-sm font-bold text-slate-800 mb-3">{t("affiliation.myReferrals", { count: affiliationCount })}</h4>
                 <div className="space-y-2">
                   {affiliations.slice(0, affiliationCount).map((f) => (
                     <div key={f.name} className="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-100">
@@ -1009,27 +1018,27 @@ export default function TalentDashboard() {
                         <p className="text-sm font-bold text-slate-800">{f.name}</p>
                         <p className="text-xs text-slate-400">{f.date}</p>
                       </div>
-                      <span className="text-xs font-bold text-green-600">+{f.gain.toLocaleString("fr-FR")} FCFA</span>
+                      <span className="text-xs font-bold text-green-600">+{f.gain.toLocaleString(lang === "en" ? "en-US" : "fr-FR")} FCFA</span>
                     </div>
                   ))}
                   {affiliationCount === 0 && (
-                    <p className="text-xs text-slate-400 text-center py-4">Aucun filleul pour le moment.</p>
+                    <p className="text-xs text-slate-400 text-center py-4">{t("affiliation.noReferrals")}</p>
                   )}
                 </div>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-5 pt-2">
                 <div className="p-4 rounded-2xl bg-slate-50 border border-slate-100">
-                  <p className="text-xs text-slate-400">Filleuls inscrits</p>
+                  <p className="text-xs text-slate-400">{t("affiliation.registeredReferrals")}</p>
                   <p className="text-2xl font-black text-slate-900 mt-1">{affiliationCount}</p>
                 </div>
                 <div className="p-4 rounded-2xl bg-slate-50 border border-slate-100">
-                  <p className="text-xs text-slate-400">Gains totaux générés</p>
-                  <p className="text-2xl font-black text-green-600 mt-1">{affiliationBalance.toLocaleString("fr-FR")} FCFA</p>
+                  <p className="text-xs text-slate-400">{t("affiliation.totalGains")}</p>
+                  <p className="text-2xl font-black text-green-600 mt-1">{affiliationBalance.toLocaleString(lang === "en" ? "en-US" : "fr-FR")} FCFA</p>
                 </div>
                 <div className="p-4 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-between">
                   <div>
-                    <p className="text-xs text-slate-400">Retrait disponible</p>
+                    <p className="text-xs text-slate-400">{t("affiliation.availableWithdrawal")}</p>
                     <p className="text-sm font-bold text-slate-800 mt-1">Mobile Money</p>
                   </div>
                   <button
@@ -1037,7 +1046,7 @@ export default function TalentDashboard() {
                     disabled={affiliationBalance < 1000}
                     className="bg-blue-600 hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed text-white text-xs font-bold px-4 py-2 rounded-xl transition-colors"
                   >
-                    Retirer
+                    {t("affiliation.withdraw")}
                   </button>
                 </div>
               </div>
@@ -1188,10 +1197,9 @@ export default function TalentDashboard() {
             <div className="w-16 h-16 rounded-2xl bg-amber-100 flex items-center justify-center mb-6 text-amber-500">
               <Star size={32} />
             </div>
-            <h2 className="text-2xl font-bold text-slate-800 mb-2">Passez en Premium</h2>
+            <h2 className="text-2xl font-bold text-slate-800 mb-2">{t("talent.upgradeModal.title")}</h2>
             <p className="text-slate-600 mb-6 leading-relaxed">
-              Vous avez atteint votre limite de 1 candidature gratuite par mois.
-              Passez à la version Premium pour postuler de manière illimitée et débloquer toutes les fonctionnalités avancées.
+              {t("talent.upgradeModal.desc")}
             </p>
             <div className="flex flex-col gap-3">
               <button
@@ -1201,13 +1209,13 @@ export default function TalentDashboard() {
                 }}
                 className="w-full py-3.5 bg-gradient-to-r from-yellow-500 to-amber-600 hover:from-yellow-600 hover:to-amber-700 text-white font-bold rounded-xl shadow-lg transition-transform hover:scale-[1.02]"
               >
-                Découvrir les offres Premium
+                {t("talent.upgradeModal.discoverOffers")}
               </button>
               <button
                 onClick={() => setUpgradeModalOpen(false)}
                 className="w-full py-3.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl transition-colors"
               >
-                Plus tard
+                {t("talent.upgradeModal.later")}
               </button>
             </div>
           </div>
@@ -1220,8 +1228,8 @@ export default function TalentDashboard() {
           <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md p-6 relative animate-scale-up">
             <div className="flex items-center justify-between mb-6">
               <div>
-                <h3 className="text-xl font-bold text-slate-900">Demande de retrait</h3>
-                <p className="text-sm text-slate-500">Solde : <span className="font-bold text-green-600">{affiliationBalance.toLocaleString()} FCFA</span></p>
+                <h3 className="text-xl font-bold text-slate-900">{t("talent.withdrawalModal.title")}</h3>
+                <p className="text-sm text-slate-500">{t("talent.withdrawalModal.balance")} <span className="font-bold text-green-600">{affiliationBalance.toLocaleString()} FCFA</span></p>
               </div>
               <button onClick={() => setWithdrawalModalOpen(false)} className="p-2 text-slate-400 hover:bg-slate-100 rounded-full">
                 <X size={20} />
@@ -1229,7 +1237,7 @@ export default function TalentDashboard() {
             </div>
             <form onSubmit={handleWithdrawalRequest} className="space-y-4">
               <div>
-                <label className="block text-sm font-semibold text-slate-700 mb-1.5">Opérateur Mobile Money</label>
+                <label className="block text-sm font-semibold text-slate-700 mb-1.5">{t("talent.withdrawalModal.operator")}</label>
                 <div className="relative">
                   <select
                     value={withdrawMethod}
@@ -1245,7 +1253,7 @@ export default function TalentDashboard() {
                 </div>
               </div>
               <div>
-                <label className="block text-sm font-semibold text-slate-700 mb-1.5">Numéro de téléphone</label>
+                <label className="block text-sm font-semibold text-slate-700 mb-1.5">{t("talent.withdrawalModal.phone")}</label>
                 <input
                   type="tel"
                   required
@@ -1256,7 +1264,7 @@ export default function TalentDashboard() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-semibold text-slate-700 mb-1.5">Montant à retirer (FCFA)</label>
+                <label className="block text-sm font-semibold text-slate-700 mb-1.5">{t("talent.withdrawalModal.amount")}</label>
                 <input
                   type="number"
                   required
@@ -1270,10 +1278,10 @@ export default function TalentDashboard() {
               </div>
               <div className="flex gap-3 pt-2">
                 <button type="button" onClick={() => setWithdrawalModalOpen(false)} className="flex-1 py-3 border border-slate-200 text-slate-600 rounded-xl font-semibold hover:bg-slate-50">
-                  Annuler
+                  {t("talent.withdrawalModal.cancel")}
                 </button>
                 <button type="submit" className="flex-1 py-3 bg-[#32A8D7] text-white rounded-xl font-semibold hover:bg-[#2896c2]">
-                  Retirer
+                  {t("talent.withdrawalModal.withdraw")}
                 </button>
               </div>
             </form>
@@ -1284,8 +1292,8 @@ export default function TalentDashboard() {
       {showVideoPremiumModal && (
         <PremiumRequiredModal
           onClose={() => setShowVideoPremiumModal(false)}
-          title="Entretien Vidéo IA réservé au Premium"
-          message="L'entretien vidéo certifié par l'IA et l'obtention des badges de compétences sont réservés aux talents membres Premium. Souscrivez pour seulement 700 FCFA/mois sans engagement."
+          title={lang === "en" ? "AI Video Interview reserved for Premium" : "Entretien Vidéo IA réservé au Premium"}
+          message={lang === "en" ? "AI-certified video interview and skills badges are reserved for Premium members. Subscribe for only 700 FCFA/month with no commitment." : "L'entretien vidéo certifié par l'IA et l'obtention des badges de compétences sont réservés aux talents membres Premium. Souscrivez pour seulement 700 FCFA/mois sans engagement."}
           onUpgrade={() => setActiveTab("premium")}
         />
       )}

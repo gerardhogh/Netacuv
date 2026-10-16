@@ -1,10 +1,14 @@
 "use client";
 
-import { ReactNode, useEffect, useState } from "react";
-import { createPortal } from "react-dom";
+import React, { ReactNode, useState } from "react";
+import { useTranslations } from "next-intl";
+import { Modal, ConfirmModal as CentralConfirmModal } from "@/app/components/ui/Modal";
+import { CustomSelect } from "@/components/ui/CustomSelect";
+import { CheckCircle2, AlertTriangle } from "lucide-react";
+import SharedLogoutModal from "@/app/components/LogoutModal";
 
 // ─── Generic Confirmation Modal ───────────────────────────────────────────────
-interface ConfirmModalProps {
+export interface ConfirmModalProps {
   title: string;
   message: string;
   confirmLabel: string;
@@ -25,45 +29,24 @@ export function ConfirmModal({
   onCancel,
   children,
 }: ConfirmModalProps) {
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => setMounted(true), []);
-
-  if (!mounted) return null;
-
-  return createPortal(
-    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
-      <div className="bg-white rounded-2xl shadow-2xl border border-slate-100 w-full max-w-sm p-7 flex flex-col gap-5 text-center mx-auto relative">
-        <div>
-          <h2 className="text-lg font-extrabold text-slate-900 mb-2">{title}</h2>
-          <p className="text-sm text-slate-500 leading-relaxed">{message}</p>
-        </div>
-        {children}
-        <div className="flex gap-3 mt-1">
-          <button
-            onClick={onCancel}
-            className="flex-1 py-2.5 rounded-xl border border-slate-200 text-sm font-semibold text-slate-600 hover:bg-slate-50 transition-colors"
-          >
-            {cancelLabel}
-          </button>
-          <button
-            onClick={onConfirm}
-            className={`flex-1 py-2.5 rounded-xl text-white text-sm font-semibold shadow-sm transition-colors ${
-              isDanger
-                ? "bg-red-500 hover:bg-red-600"
-                : "bg-[#32A8D7] hover:bg-[#2896c2]"
-            }`}
-          >
-            {confirmLabel}
-          </button>
-        </div>
-      </div>
-    </div>,
-    document.body
+  return (
+    <CentralConfirmModal
+      isOpen={true}
+      onClose={onCancel}
+      onConfirm={onConfirm}
+      title={title}
+      message={message}
+      confirmLabel={confirmLabel}
+      cancelLabel={cancelLabel}
+      variant={isDanger ? "danger" : "primary"}
+    >
+      {children}
+    </CentralConfirmModal>
   );
 }
 
 // ─── Success Modal ("Offre publiée") ─────────────────────────────────────────
-interface SuccessModalProps {
+export interface SuccessModalProps {
   title: string;
   message: string;
   primaryLabel: string;
@@ -80,127 +63,137 @@ export function SuccessModal({
   onPrimary,
   onSecondary,
 }: SuccessModalProps) {
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => setMounted(true), []);
-
-  if (!mounted) return null;
-
-  return createPortal(
-    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
-      <div className="bg-white rounded-2xl shadow-2xl border border-slate-100 w-full max-w-sm p-7 flex flex-col gap-5 items-center text-center mx-auto relative">
-        {/* Green check circle */}
-        <div className="w-16 h-16 rounded-full bg-green-500 flex items-center justify-center">
-          <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth={3} className="w-8 h-8">
-            <polyline points="20 6 9 17 4 12" />
-          </svg>
-        </div>
-        <div>
-          <h2 className="text-lg font-extrabold text-slate-900 mb-2">{title}</h2>
-          <p className="text-sm text-slate-500">{message}</p>
-        </div>
-        <div className="flex gap-3 w-full mt-1">
-          {onSecondary && (
-            <button
-              onClick={onSecondary}
-              className="flex-1 py-2.5 rounded-xl border border-slate-200 text-sm font-semibold text-slate-600 hover:bg-slate-50 transition-colors"
-            >
-              {secondaryLabel}
-            </button>
-          )}
+  return (
+    <Modal
+      isOpen={true}
+      onClose={onSecondary || onPrimary}
+      title={title}
+      description={message}
+      icon={<CheckCircle2 size={24} className="text-emerald-600" />}
+      iconColor="success"
+      maxWidth="max-w-md"
+    >
+      <div className="flex gap-3 w-full mt-6">
+        {onSecondary && (
           <button
-            onClick={onPrimary}
-            className="flex-1 py-2.5 rounded-xl bg-[#32A8D7] hover:bg-[#2896c2] text-white text-sm font-semibold shadow-sm transition-colors"
+            type="button"
+            onClick={onSecondary}
+            className="flex-1 py-2.5 px-4 rounded-xl border border-slate-200 text-sm font-semibold text-slate-600 hover:bg-slate-50 transition-colors cursor-pointer"
           >
-            {primaryLabel}
+            {secondaryLabel}
           </button>
-        </div>
+        )}
+        <button
+          type="button"
+          onClick={onPrimary}
+          className="flex-1 py-2.5 px-4 rounded-xl bg-gradient-to-r from-[#1e8ae9] to-[#32A8D7] hover:from-[#1877c9] hover:to-[#2896c2] text-white text-sm font-bold shadow-md shadow-blue-500/20 transition-all cursor-pointer"
+        >
+          {primaryLabel}
+        </button>
       </div>
-    </div>,
-    document.body
+    </Modal>
   );
 }
 
-// ─── Suppression Modal (with reason selector) ───────────────────────────────
-interface DeleteAccountModalProps {
+// ─── Suppression Modal (with CustomSelect dropdown) ───────────────────────────
+export interface DeleteAccountModalProps {
   onCancel: () => void;
   onConfirm: (reason: string) => void;
 }
 
 export function DeleteAccountModal({ onCancel, onConfirm }: DeleteAccountModalProps) {
-  const [mounted, setMounted] = useState(false);
+  const t = useTranslations("recruiter.modals");
   const [reason, setReason] = useState("");
   const [customReason, setCustomReason] = useState("");
 
-  useEffect(() => setMounted(true), []);
-
-  if (!mounted) return null;
-
   const handleConfirm = () => {
-    const finalReason = reason === "Autre raison" ? customReason : reason;
+    const finalReason = reason === "other" ? customReason : reason;
     if (!finalReason.trim()) {
-      alert("Veuillez fournir une raison.");
+      alert(t("pleaseProvideReason"));
       return;
     }
     onConfirm(finalReason);
   };
 
-  return createPortal(
-    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
-      <div className="bg-white rounded-2xl shadow-2xl border border-slate-100 w-full max-w-sm p-7 flex flex-col gap-5 text-center mx-auto relative">
-        <div>
-          <h2 className="text-lg font-extrabold text-slate-900 mb-2">Confirmer la suppression</h2>
-          <p className="text-sm text-slate-500 mb-4">Veuillez sélectionner la raison de la suppression de votre compte :</p>
-          <div className="relative text-left mb-3">
-            <select 
-              value={reason} 
-              onChange={(e) => setReason(e.target.value)}
-              className="w-full appearance-none px-3.5 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-sm text-slate-700 outline-none focus:border-[#32A8D7] focus:bg-white transition-colors cursor-pointer"
+  const REASONS = [
+    { label: t("reasonNotNeeded"), value: t("reasonNotNeeded") },
+    { label: t("reasonOtherSolution"), value: t("reasonOtherSolution") },
+    { label: t("reasonNotMatching"), value: t("reasonNotMatching") },
+    { label: t("reasonTechnicalIssue"), value: t("reasonTechnicalIssue") },
+    { label: t("reasonOther"), value: "other" },
+  ];
+
+  return (
+    <Modal
+      isOpen={true}
+      onClose={onCancel}
+      title={t("confirmDelete")}
+      description={t("deleteAccountDesc")}
+      icon={<AlertTriangle size={24} className="text-rose-600" />}
+      iconColor="danger"
+      maxWidth="max-w-lg"
+    >
+      <div className="space-y-3 my-3">
+        <label className="text-xs font-semibold text-slate-700 block">
+          {t("reasonPlaceholder") || "Veuillez sélectionner un motif de départ :"}
+        </label>
+        
+        <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
+          {REASONS.map((r) => (
+            <label
+              key={r.value}
+              onClick={() => setReason(r.value)}
+              className={`flex items-start gap-3 p-3 rounded-xl border text-xs cursor-pointer transition-all ${
+                reason === r.value
+                  ? "border-red-400 bg-red-50/50 text-slate-900 font-medium"
+                  : "border-slate-200 hover:border-slate-300 text-slate-600 bg-white"
+              }`}
             >
-              <option value="">Choisis la raison</option>
-              <option>Je n'ai plus besoin du service</option>
-              <option>J'ai trouvé une autre solution</option>
-              <option>Le service ne correspond pas à mes besoins</option>
-              <option>Problème technique</option>
-              <option>Autre raison</option>
-            </select>
-            <svg className="w-3.5 h-3.5 text-slate-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-            </svg>
-          </div>
-          {reason === "Autre raison" && (
-            <textarea
-              placeholder="Précisez votre raison..."
-              value={customReason}
-              onChange={(e) => setCustomReason(e.target.value)}
-              className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-sm outline-none focus:border-[#32A8D7]"
-              rows={3}
-            />
-          )}
+              <input
+                type="radio"
+                name="deleteReason"
+                checked={reason === r.value}
+                onChange={() => setReason(r.value)}
+                className="mt-0.5 text-red-600 focus:ring-red-500 border-slate-300 shrink-0 cursor-pointer"
+              />
+              <span className="leading-snug">{r.label}</span>
+            </label>
+          ))}
         </div>
-        <div className="flex gap-3">
-          <button
-            onClick={onCancel}
-            className="flex-1 py-2.5 rounded-xl border border-slate-200 text-sm font-semibold text-slate-600 hover:bg-slate-50 transition-colors"
-          >
-            Annuler
-          </button>
-          <button
-            onClick={handleConfirm}
-            disabled={!reason || (reason === "Autre raison" && !customReason.trim())}
-            className="flex-1 py-2.5 rounded-xl bg-red-500 hover:bg-red-600 disabled:opacity-50 text-white text-sm font-semibold shadow-sm transition-colors"
-          >
-            Supprimer mon compte
-          </button>
-        </div>
+
+        {reason === "other" && (
+          <textarea
+            placeholder={t("specifyReason")}
+            value={customReason}
+            onChange={(e) => setCustomReason(e.target.value)}
+            className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-xs outline-none focus:border-red-400 focus:bg-white transition-colors mt-2"
+            rows={3}
+          />
+        )}
       </div>
-    </div>,
-    document.body
+
+      <div className="flex items-center gap-3 mt-6 pt-3 border-t border-slate-100">
+        <button
+          type="button"
+          onClick={onCancel}
+          className="flex-1 py-3 px-4 rounded-xl border border-slate-200 text-xs font-semibold text-slate-600 hover:bg-slate-50 transition-colors cursor-pointer text-center whitespace-nowrap"
+        >
+          {t("cancel")}
+        </button>
+        <button
+          type="button"
+          onClick={handleConfirm}
+          disabled={!reason || (reason === "other" && !customReason.trim())}
+          className="flex-1 py-3 px-4 rounded-xl bg-red-600 hover:bg-red-700 disabled:opacity-50 text-white text-xs font-bold shadow-md shadow-red-500/20 transition-all cursor-pointer text-center whitespace-nowrap"
+        >
+          {t("deleteAccountBtn")}
+        </button>
+      </div>
+    </Modal>
   );
 }
 
 // ─── Logout Modal ─────────────────────────────────────────────────────────────
-import SharedLogoutModal from "@/app/components/LogoutModal";
-
-export function LogoutModal({ onCancel, onConfirm }: { onCancel: () => void, onConfirm: () => void }) {
+export function LogoutModal({ onCancel, onConfirm }: { onCancel: () => void; onConfirm: () => void }) {
   return <SharedLogoutModal onCancel={onCancel} onConfirm={onConfirm} />;
 }

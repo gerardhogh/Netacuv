@@ -87,7 +87,9 @@ export async function GET(request: Request) {
 
     const formattedTalents = talents.map((t: any, index: number) => {
       const profile = t.talentProfile;
+      const hasCompletedSession = !!(profile?.interviewSessions?.some((s: any) => s.status === "COMPLETED" || (s.aiScore !== null && s.aiScore !== undefined) || !!s.videoRecordings));
       const resolvedVideo = profile?.videoUrl || profile?.interviewSessions?.[0]?.videoRecordings || null;
+      const hasVideo = !!resolvedVideo || hasCompletedSession;
       let skillsArray = [];
       if (profile?.skills) {
         try {
@@ -108,7 +110,7 @@ export async function GET(request: Request) {
         contact: shouldHideSensitive ? "Premium requis" : (profile?.phone || "Non spécifié"),
         date: new Date(t.createdAt).toLocaleDateString('fr-FR'),
         status: t.active ? "Actif" : "Suspendu",
-        videoOk: !!resolvedVideo,
+        videoOk: hasVideo,
         videoUrl: resolvedVideo,
         domaine: profile?.degree || "Général",
         location: profile?.city ? `${profile.city}, ${profile.country || ''}` : (profile?.country || "Non spécifié"),

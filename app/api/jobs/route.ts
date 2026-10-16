@@ -66,8 +66,8 @@ export async function GET(req: Request) {
       }
     }
 
-    const page = parseInt(searchParams.get("page") || "1");
-    const limit = parseInt(searchParams.get("limit") || "50");
+    const page = Math.max(1, parseInt(searchParams.get("page") || "1", 10) || 1);
+    const limit = Math.max(1, parseInt(searchParams.get("limit") || "20", 10) || 20);
     const skip = (page - 1) * limit;
 
     const [jobs, total] = await Promise.all([
@@ -85,6 +85,7 @@ export async function GET(req: Request) {
           contractType: true,
           status: true,
           createdAt: true,
+          expiresAt: true,
           recruiter: {
             select: {
               id: true,
@@ -100,7 +101,14 @@ export async function GET(req: Request) {
       prisma.jobOffer.count({ where: whereClause })
     ]);
 
-    return NextResponse.json({ jobs, total, page, totalPages: Math.ceil(total / limit) });
+    return NextResponse.json({
+      jobs,
+      total,
+      totalCount: total,
+      page,
+      totalPages: Math.ceil(total / limit),
+      limit,
+    });
   } catch (error) {
     logger.error("Failed to fetch jobs", { error: error instanceof Error ? error.message : "Unknown", context: "api/jobs/GET" });
     return NextResponse.json(
@@ -124,7 +132,14 @@ export async function POST(req: Request) {
 
   try {
     const body = await req.json();
-    const { title, description, location, salary, contractType } = body;
+    const { title, description, location, salary, contractType, expiresAt, validityDays } = body;
+
+    let computedExpiresAt: Date | null = null;
+    if (expiresAt) {
+      computedExpiresAt = new Date(expiresAt);
+    } else if (validityDays && parseInt(validityDays) > 0) {
+      computedExpiresAt = new Date(Date.now() + parseInt(validityDays) * 24 * 60 * 60 * 1000);
+    }
 
     if (!title || !description) {
       return NextResponse.json(
@@ -180,6 +195,7 @@ export async function POST(req: Request) {
         salary,
         contractType,
         status: "PUBLISHED",
+        expiresAt: computedExpiresAt,
         recruiterId: recruiterProfile.id,
       },
       include: {

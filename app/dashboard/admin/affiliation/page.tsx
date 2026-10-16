@@ -4,6 +4,7 @@ import { authOptions } from '@/lib/auth';
 import { redirect } from 'next/navigation';
 import { prisma } from '@/lib/prisma';
 import AffiliationClient from './AffiliationClient';
+import { getTranslations } from 'next-intl/server';
 
 export const metadata = {
   title: "Gestion de l'affiliation | Netacuv",
@@ -11,10 +12,14 @@ export const metadata = {
 };
 
 export default async function AffiliationPage() {
+  const t = await getTranslations("admin.affiliationPage");
   const session = await getServerSession(authOptions);
 
-  if (!session || (session.user.role !== "SUPER ADMIN" && session.user.role !== "ADMIN" && !session.user.role?.includes("FINANCIER"))) {
-    redirect("/dashboard");
+  const upperRole = (session?.user?.role || "").toUpperCase();
+  const isAllowed = upperRole.includes("ADMIN") || upperRole.includes("FINANCIER");
+
+  if (!session || !isAllowed) {
+    redirect("/dashboard/admin");
   }
 
   // Retrieve global settings
@@ -66,8 +71,8 @@ export default async function AffiliationPage() {
   return (
     <div className="p-6 md:p-8 max-w-7xl mx-auto space-y-8 animate-fadeIn">
       <div>
-        <h1 className="text-3xl font-extrabold text-slate-800 tracking-tight">Gestion de l'affiliation</h1>
-        <p className="text-slate-500 mt-2">Paramétrez les bonus de parrainage et gérez les codes des utilisateurs.</p>
+        <h1 className="text-3xl font-extrabold text-slate-800 tracking-tight">{t("pageTitle")}</h1>
+        <p className="text-slate-500 mt-2">{t("pageSubtitle")}</p>
       </div>
 
       <AffiliationClient 

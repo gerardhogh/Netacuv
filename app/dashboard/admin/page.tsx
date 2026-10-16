@@ -63,13 +63,23 @@ const popularOffers = [
   { name: "DevOps Engineer", value: 64 },
 ];
 
+import { useTranslations } from "next-intl";
 import useSWR from "swr";
 
 const fetcher = (url: string) => fetch(url).then(res => res.json());
 
 export default function AdminDashboard() {
+  const t = useTranslations("admin.home");
   const { data: jobsFetched = [], mutate } = useSWR("/api/admin/jobs", fetcher);
   const { data: stats = {} } = useSWR("/api/admin/stats", fetcher);
+
+  const globalStatsTemplate = [
+    { label: t("registeredTalents"), key: "talentsCount", icon: Users, color: "text-blue-600", bg: "bg-blue-50/50 hover:bg-blue-50", border: "border-blue-100", href: "/dashboard/admin/talents" },
+    { label: t("registeredRecruiters"), key: "recruteursCount", icon: Briefcase, color: "text-emerald-600", bg: "bg-emerald-50/50 hover:bg-emerald-50", border: "border-emerald-100", href: "/dashboard/admin/recruteurs" },
+    { label: t("publishedJobs"), key: "jobsCount", icon: CheckCircle, color: "text-pink-600", bg: "bg-pink-50/50 hover:bg-pink-50", border: "border-pink-100", href: "/dashboard/admin/emplois" },
+    { label: t("submittedVideos"), key: "videosCount", icon: Eye, color: "text-amber-600", bg: "bg-amber-50/50 hover:bg-amber-50", border: "border-amber-100", href: "/dashboard/admin/talents" },
+    { label: t("applications"), key: "applicationsCount", icon: TrendingUp, color: "text-indigo-600", bg: "bg-indigo-50/50 hover:bg-indigo-50", border: "border-indigo-100", href: "/dashboard/admin/emplois" },
+  ];
 
   const globalStats = globalStatsTemplate.map(stat => ({
     ...stat,
@@ -83,8 +93,8 @@ export default function AdminDashboard() {
     location: j.location,
     category: j.contractType,
     candidatures: j.applications?.length || 0,
-    date: new Date(j.createdAt).toLocaleDateString("fr-FR"),
-    status: j.status === "PUBLISHED" ? "Actif" : "Inactif",
+    date: new Date(j.createdAt).toLocaleDateString(),
+    status: j.status === "PUBLISHED" ? t("statusActive") : t("statusInactive"),
     rawStatus: j.status
   })) : [];
 
@@ -108,7 +118,7 @@ export default function AdminDashboard() {
 
           {/* Global stats */}
           <div className="card p-5">
-            <h2 className="font-bold text-slate-800 text-base mb-4">Statistiques globales</h2>
+            <h2 className="font-bold text-slate-800 text-base mb-4">{t("globalStats")}</h2>
             <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
               {globalStats.map((stat, i) => {
                 const Icon = stat.icon;
@@ -132,21 +142,21 @@ export default function AdminDashboard() {
           {/* Jobs table */}
           <div className="card p-5 overflow-x-auto">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="font-bold text-slate-800">Offres d&apos;emploi récentes</h2>
-              <Link href="/dashboard/admin/emplois" className="btn-primary text-sm px-4 py-2" id="btn-tout-voir-emplois">Tout voir</Link>
+              <h2 className="font-bold text-slate-800">{t("recentJobs")}</h2>
+              <Link href="/dashboard/admin/emplois" className="btn-primary text-sm px-4 py-2" id="btn-tout-voir-emplois">{t("viewAll")}</Link>
             </div>
             {jobs.length > 0 ? (
               <table className="table-custom w-full">
                 <thead>
                   <tr>
-                    <th>Titre du poste</th>
-                    <th>Recruteurs</th>
-                    <th>Lieu</th>
-                    <th>Catégorie</th>
-                    <th>Candidatures</th>
-                    <th>Date de publication</th>
-                    <th>Statut</th>
-                    <th>Actions admin</th>
+                    <th>{t("thJobTitle")}</th>
+                    <th>{t("thRecruiters")}</th>
+                    <th>{t("thLocation")}</th>
+                    <th>{t("thCategory")}</th>
+                    <th>{t("thApplications")}</th>
+                    <th>{t("thPublishedDate")}</th>
+                    <th>{t("thStatus")}</th>
+                    <th>{t("thAdminActions")}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -160,23 +170,23 @@ export default function AdminDashboard() {
                       <td className="text-slate-400">{job.date}</td>
                       <td>
                         <span
-                          className={`badge ${job.status === "Actif" ? "badge-green" : "badge-yellow"}`}
+                          className={`badge ${job.status === t("statusActive") ? "badge-green" : "badge-yellow"}`}
                         >
-                          <span className={`w-1.5 h-1.5 rounded-full mr-1 inline-block ${job.status === "Actif" ? "bg-green-500" : "bg-yellow-500"}`}></span>
+                          <span className={`w-1.5 h-1.5 rounded-full mr-1 inline-block ${job.status === t("statusActive") ? "bg-green-500" : "bg-yellow-500"}`}></span>
                           {job.status}
                         </span>
                       </td>
                       <td>
                         <div className="flex flex-col gap-0.5">
-                          {job.status === "Actif" ? (
+                          {job.status === t("statusActive") ? (
                             <>
-                              <button onClick={() => toggleStatus(job.id, job.rawStatus)} className="text-xs text-left text-orange-500 hover:underline">Suspendre</button>
-                              <button onClick={() => deleteJob(job.id)} className="text-xs text-left text-red-500 hover:underline">Supprimer</button>
+                              <button onClick={() => toggleStatus(job.id, job.rawStatus)} className="text-xs text-left text-orange-500 hover:underline">{t("suspend")}</button>
+                              <button onClick={() => deleteJob(job.id)} className="text-xs text-left text-red-500 hover:underline">{t("delete")}</button>
                             </>
                           ) : (
                             <>
-                              <button onClick={() => toggleStatus(job.id, job.rawStatus)} className="text-xs text-left text-blue-600 hover:underline">Activer</button>
-                              <button onClick={() => deleteJob(job.id)} className="text-xs text-left text-red-500 hover:underline">Supprimer</button>
+                              <button onClick={() => toggleStatus(job.id, job.rawStatus)} className="text-xs text-left text-blue-600 hover:underline">{t("activate")}</button>
+                              <button onClick={() => deleteJob(job.id)} className="text-xs text-left text-red-500 hover:underline">{t("delete")}</button>
                             </>
                           )}
                         </div>
@@ -188,7 +198,7 @@ export default function AdminDashboard() {
             ) : (
               <div className="flex flex-col items-center justify-center py-10 text-slate-400">
                 <Briefcase size={48} className="mb-3 text-slate-300" />
-                <p>Aucune offre publiée pour le moment.</p>
+                <p>{t("noJobs")}</p>
               </div>
             )}
           </div>
@@ -197,13 +207,13 @@ export default function AdminDashboard() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
             {/* Line chart */}
             <div className="card p-5">
-              <h3 className="font-bold text-slate-800 mb-4">Inscriptions mensuelles</h3>
+              <h3 className="font-bold text-slate-800 mb-4">{t("monthlySignups")}</h3>
               <div className="flex items-center gap-4 mb-3">
                 <span className="flex items-center gap-1.5 text-xs text-slate-500">
-                  <span className="w-3 h-1 rounded-full bg-blue-500 inline-block"></span> Talents
+                  <span className="w-3 h-1 rounded-full bg-blue-500 inline-block"></span> {t("talents")}
                 </span>
                 <span className="flex items-center gap-1.5 text-xs text-slate-500">
-                  <span className="w-3 h-1 rounded-full bg-pink-400 inline-block"></span> Recruteurs
+                  <span className="w-3 h-1 rounded-full bg-pink-400 inline-block"></span> {t("recruiters")}
                 </span>
               </div>
               {lineData.length > 0 ? (
@@ -219,14 +229,14 @@ export default function AdminDashboard() {
                 </ResponsiveContainer>
               ) : (
                 <div className="flex items-center justify-center h-[200px] text-sm text-slate-400 border-2 border-dashed border-slate-100 rounded-xl">
-                  Pas de données d&apos;inscription
+                  {t("noSignupData")}
                 </div>
               )}
             </div>
 
             {/* Pie chart */}
             <div className="card p-5">
-              <h3 className="font-bold text-slate-800 mb-4">Répartition des contrats</h3>
+              <h3 className="font-bold text-slate-800 mb-4">{t("contractDistribution")}</h3>
               {pieData.length > 0 ? (
                 <div className="flex items-center gap-8">
                   <ResponsiveContainer width="55%" height={200}>
@@ -250,7 +260,7 @@ export default function AdminDashboard() {
                 </div>
               ) : (
                 <div className="flex items-center justify-center h-[200px] text-sm text-slate-400 border-2 border-dashed border-slate-100 rounded-xl mt-2">
-                  Aucun contrat répertorié
+                  {t("noContractData")}
                 </div>
               )}
             </div>
@@ -260,7 +270,7 @@ export default function AdminDashboard() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
             {/* Bar chart */}
             <div className="card p-5">
-              <h3 className="font-bold text-slate-800 mb-4">Taux d&apos;activité mensuelle</h3>
+              <h3 className="font-bold text-slate-800 mb-4">{t("monthlyActivity")}</h3>
               {barData.length > 0 ? (
                 <ResponsiveContainer width="100%" height={180}>
                   <BarChart data={barData}>
@@ -273,14 +283,14 @@ export default function AdminDashboard() {
                 </ResponsiveContainer>
               ) : (
                 <div className="flex items-center justify-center h-[180px] text-sm text-slate-400 border-2 border-dashed border-slate-100 rounded-xl">
-                  Pas de données d&apos;activité
+                  {t("noActivityData")}
                 </div>
               )}
             </div>
 
             {/* Popular offers */}
             <div className="card p-5">
-              <h3 className="font-bold text-slate-800 mb-4">Offres populaires</h3>
+              <h3 className="font-bold text-slate-800 mb-4">{t("popularOffers")}</h3>
               {popularOffers.length > 0 ? (
                 <div className="space-y-3">
                   {popularOffers.map((offer) => (
@@ -298,7 +308,7 @@ export default function AdminDashboard() {
                 </div>
               ) : (
                 <div className="flex items-center justify-center h-[180px] text-sm text-slate-400 border-2 border-dashed border-slate-100 rounded-xl">
-                  Pas d&apos;offres populaires
+                  {t("noPopularOffers")}
                 </div>
               )}
             </div>
@@ -308,18 +318,18 @@ export default function AdminDashboard() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
             <div className="card p-5">
               <PlusCircle size={22} className="mb-3" style={{ color: "#1e8ae9" }} />
-              <h3 className="font-bold text-slate-800 mb-1">Créer un emploi</h3>
-              <p className="text-sm text-slate-400 mb-4">Créer un emploi, changer des vies certainement.</p>
+              <h3 className="font-bold text-slate-800 mb-1">{t("createJob")}</h3>
+              <p className="text-sm text-slate-400 mb-4">{t("createJobDesc")}</p>
               <Link href="/dashboard/admin/emplois" className="btn-primary w-full justify-center flex items-center gap-2" id="btn-admin-creer-emploi">
-                <PlusCircle size={16} /> Commencer
+                <PlusCircle size={16} /> {t("start")}
               </Link>
             </div>
             <div className="card p-5">
               <Settings size={22} className="mb-3" style={{ color: "#1e8ae9" }} />
-              <h3 className="font-bold text-slate-800 mb-1">Paramètres</h3>
-              <p className="text-sm text-slate-400 mb-4">Gérez vos préférences et votre compte</p>
+              <h3 className="font-bold text-slate-800 mb-1">{t("settingsCard")}</h3>
+              <p className="text-sm text-slate-400 mb-4">{t("settingsCardDesc")}</p>
               <Link href="/dashboard/admin/parametres" className="btn-primary w-full justify-center flex items-center gap-2" id="btn-admin-parametres">
-                <Settings size={16} /> Accéder
+                <Settings size={16} /> {t("access")}
               </Link>
             </div>
           </div>

@@ -18,6 +18,7 @@ export async function GET(
         talentProfile: {
           include: {
             interviewSessions: {
+              orderBy: { createdAt: "desc" },
               include: {
                 interview: true,
               },
@@ -34,8 +35,26 @@ export async function GET(
     // Format the data to send to the frontend
     const profile = talentUser.talentProfile;
     
-    // Check if we have an interview session
-    const interviewSession = profile?.interviewSessions?.[0]; // Taking the first one if it exists
+    // Check if we have an interview session (the latest one)
+    const interviewSession = profile?.interviewSessions?.[0];
+
+    // Extract exact clean video URL
+    let cleanVideoUrl = profile?.videoUrl || "";
+    if (interviewSession?.videoRecordings) {
+      const raw = interviewSession.videoRecordings.trim();
+      if (raw.startsWith("[")) {
+        try {
+          const parsed = JSON.parse(raw);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            cleanVideoUrl = parsed[parsed.length - 1] || parsed[0];
+          }
+        } catch (e) {
+          cleanVideoUrl = raw;
+        }
+      } else {
+        cleanVideoUrl = raw;
+      }
+    }
 
     let skills = [];
     if (profile?.skills) {
@@ -79,7 +98,7 @@ export async function GET(
       date: new Date(talentUser.createdAt).toLocaleDateString('fr-FR'),
       updatedAt: profile?.updatedAt ? new Date(profile.updatedAt).toLocaleDateString('fr-FR') : "Récemment",
       status: talentUser.active ? "Actif" : "Suspendu",
-      videoUrl: profile?.videoUrl || "",
+      videoUrl: cleanVideoUrl,
       domaine: profile?.degree || "Général",
       location: (profile?.city && profile?.country) 
         ? `${profile.city}, ${profile.country}` 
@@ -115,7 +134,7 @@ export async function GET(
       interviewSession: interviewSession ? {
         id: interviewSession.id,
         status: interviewSession.status,
-        videoRecordings: interviewSession.videoRecordings || profile?.videoUrl || "",
+        videoRecordings: cleanVideoUrl,
         aiScore: interviewSession.aiScore,
         aiFeedback: interviewSession.aiFeedback,
       } : null,

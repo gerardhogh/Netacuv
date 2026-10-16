@@ -6,6 +6,8 @@ import { useTranslations, useLocale } from "next-intl";
 import LanguageSwitcher, { LOCALES, Locale } from "@/app/components/LanguageSwitcher";
 import { useRouter, usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
+import { CustomSelect } from "@/components/ui/CustomSelect";
+import { DeleteAccountModal } from "@/app/dashboard/recruteur/components/Modals";
 
 export default function ParametresTab() {
   const [emailNotif, setEmailNotif] = useState(true);
@@ -27,8 +29,8 @@ export default function ParametresTab() {
 
   const handlePasswordUpdate = (e: React.FormEvent) => {
     e.preventDefault();
-    if (newPwd !== confirmPwd) { alert("Les mots de passe ne correspondent pas."); return; }
-    if (newPwd.length < 8) { alert("Le mot de passe doit comporter au moins 8 caractères."); return; }
+    if (newPwd !== confirmPwd) { alert(t("settings.pwdMismatch")); return; }
+    if (newPwd.length < 8) { alert(t("settings.pwdMinLength")); return; }
     setPwdSuccess(true);
     setCurrentPwd(""); setNewPwd(""); setConfirmPwd("");
     setTimeout(() => setPwdSuccess(false), 3500);
@@ -38,20 +40,20 @@ export default function ParametresTab() {
     <div className="space-y-6">
       {/* Breadcrumb */}
       <div className="text-[13px] text-slate-500 font-medium flex items-center gap-2">
-        <span>Accueil</span>
+        <span>{t("settings.breadcrumbHome")}</span>
         <span>&rsaquo;</span>
-        <span className="text-slate-700">Paramètre</span>
+        <span className="text-slate-700">{t("settings.breadcrumbSettings")}</span>
       </div>
 
       <h2 className="text-2xl font-bold text-slate-900">
-        Paramètre du <span className="font-normal">compte</span>
+        {t("settings.accountSettings")}
       </h2>
 
       {/* Toast success */}
       {pwdSuccess && (
         <div className="flex items-center gap-3 bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-xl text-sm font-medium animate-fade-in">
           <Shield size={16} />
-          Mot de passe mis à jour avec succès !
+          {t("settings.pwdSuccess")}
         </div>
       )}
 
@@ -59,15 +61,15 @@ export default function ParametresTab() {
       <section className="bg-white rounded-2xl p-6 border border-slate-100 shadow-sm">
         <div className="flex items-center gap-2 mb-5">
           <Bell size={18} className="text-[#008de4]" />
-          <h3 className="text-base font-bold text-slate-800">Préférences de notification</h3>
+          <h3 className="text-base font-bold text-slate-800">{t("settings.notifications")}</h3>
         </div>
         <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <span className="text-sm text-slate-700">Notifications par email</span>
+            <span className="text-sm text-slate-700">{t("settings.emailNotif")}</span>
             <Toggle checked={emailNotif} onChange={setEmailNotif} />
           </div>
           <div className="flex items-center justify-between">
-            <span className="text-sm text-slate-700">Notifications par SMS</span>
+            <span className="text-sm text-slate-700">{t("settings.smsNotif")}</span>
             <Toggle checked={smsNotif} onChange={setSmsNotif} />
           </div>
         </div>
@@ -77,11 +79,11 @@ export default function ParametresTab() {
       <section className="bg-white rounded-2xl p-6 border border-slate-100 shadow-sm">
         <div className="flex items-center gap-2 mb-5">
           <Shield size={18} className="text-[#008de4]" />
-          <h3 className="text-base font-bold text-slate-800">Changer le mot de passe</h3>
+          <h3 className="text-base font-bold text-slate-800">{t("settings.changePassword")}</h3>
         </div>
         <form onSubmit={handlePasswordUpdate} className="space-y-4">
           <PasswordField
-            label="Mot de passe actuel"
+            label={t("settings.currentPassword")}
             value={currentPwd}
             onChange={setCurrentPwd}
             show={showCurrent}
@@ -89,16 +91,16 @@ export default function ParametresTab() {
             placeholder="••••••••••••"
           />
           <PasswordField
-            label="Nouveau mot de passe"
+            label={t("settings.newPassword")}
             value={newPwd}
             onChange={setNewPwd}
             show={showNew}
             onToggle={() => setShowNew(!showNew)}
             placeholder="••••••••••••"
-            hint="Au moins 8 caractères avec des lettres et des chiffres"
+            hint={t("settings.pwdHint")}
           />
           <PasswordField
-            label="Retapez le nouveau mot de passe"
+            label={t("settings.confirmPassword")}
             value={confirmPwd}
             onChange={setConfirmPwd}
             show={showConfirm}
@@ -109,7 +111,7 @@ export default function ParametresTab() {
             type="submit"
             className="bg-[#008de4] hover:bg-blue-600 text-white font-bold py-2.5 px-6 rounded-lg text-sm transition-colors shadow-md shadow-blue-500/20"
           >
-            Mettre à jour le mot de passe
+            {t("settings.updatePassword")}
           </button>
         </form>
       </section>
@@ -118,36 +120,37 @@ export default function ParametresTab() {
       <section className="bg-white rounded-2xl p-6 border border-slate-100 shadow-sm">
         <div className="flex items-center gap-2 mb-5">
           <Globe2 size={18} className="text-[#008de4]" />
-          <h3 className="text-base font-bold text-slate-800">Langue de la plateforme</h3>
+          <h3 className="text-base font-bold text-slate-800">{t("settings.language")}</h3>
         </div>
         <div>
-          <div className="relative">
-            <select
-              value={lang}
-              onChange={(e) => {
-                const newLocale = e.target.value as Locale;
-                const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-                const domainPart = isLocalhost ? '' : '; domain=.netacuv.com';
-                document.cookie = `NEXT_LOCALE=${newLocale}; path=/; max-age=31536000${domainPart}; SameSite=Lax`;
+          <CustomSelect
+            value={lang}
+            onChange={(newLocale) => {
+              const isNetacuv = typeof window !== "undefined" && window.location.hostname.endsWith("netacuv.com");
+              const domainPart = isNetacuv ? "; domain=.netacuv.com" : "";
+              document.cookie = `NEXT_LOCALE=${newLocale}; path=/; max-age=31536000${domainPart}; SameSite=Lax`;
 
-                let newPath = pathname;
-                if (pathname.startsWith('/fr/') || pathname === '/fr') {
-                  newPath = pathname.replace(/^\/fr(\/|$)/, `/${newLocale}$1`);
-                } else if (pathname.startsWith('/en/') || pathname === '/en') {
-                  newPath = pathname.replace(/^\/en(\/|$)/, `/${newLocale}$1`);
-                } else {
-                  newPath = `/${newLocale}${pathname === '/' ? '' : pathname}`;
-                }
+              let newPath = pathname;
+              if (pathname.startsWith('/fr/') || pathname === '/fr') {
+                newPath = pathname.replace(/^\/fr(\/|$)/, `/${newLocale}$1`);
+              } else if (pathname.startsWith('/en/') || pathname === '/en') {
+                newPath = pathname.replace(/^\/en(\/|$)/, `/${newLocale}$1`);
+              } else {
+                newPath = `/${newLocale}${pathname === '/' ? '' : pathname}`;
+              }
+              if (typeof window !== "undefined") {
+                window.location.href = newPath;
+              } else {
                 router.push(newPath);
                 router.refresh();
-              }}
-              className="w-full bg-[#f8fafc] border border-slate-200 rounded-lg px-4 py-3 text-sm text-slate-800 outline-none focus:ring-2 focus:ring-blue-100 appearance-none cursor-pointer font-medium"
-            >
-              {LOCALES.map(({ code, label, flag, countryCode }) => (
-                <option key={code} value={code}>{flag} {label} ({countryCode})</option>
-              ))}
-            </select>
-          </div>
+              }
+            }}
+            options={LOCALES.map(({ code, label, flag }) => ({
+              value: code,
+              label: `${flag} ${label}`,
+            }))}
+            className="w-full"
+          />
         </div>
       </section>
 
@@ -155,95 +158,45 @@ export default function ParametresTab() {
       <section className="bg-white rounded-2xl p-6 border border-red-100 shadow-sm">
         <div className="flex items-center gap-2 mb-2">
           <AlertTriangle size={18} className="text-red-500" />
-          <h3 className="text-base font-bold text-red-600">Supprimer mon compte</h3>
+          <h3 className="text-base font-bold text-red-600">{t("settings.deleteMyAccount")}</h3>
         </div>
         <p className="text-sm text-slate-500 mb-4">
-          La suppression de votre compte est définitive. Toutes vos données seront effacées et vous devrez créer un nouveau compte si vous souhaitez revenir.
+          {t("settings.deactivateDesc")}
         </p>
         <button
           onClick={() => setDeleteModal(true)}
-          className="bg-red-500 hover:bg-red-600 text-white font-bold py-2.5 px-6 rounded-lg text-sm transition-colors"
+          className="bg-red-500 hover:bg-red-600 text-white font-bold py-2.5 px-6 rounded-lg text-sm transition-colors cursor-pointer"
         >
-          Supprimer mon compte
+          {t("settings.deleteMyAccount")}
         </button>
       </section>
 
-      {/* Delete Confirmation Modal */}
+      {/* Delete Confirmation Modal (Unified) */}
       {deleteModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-          <div className="w-full max-w-sm bg-white rounded-2xl p-6 shadow-2xl text-center space-y-4">
-            <div className="w-14 h-14 bg-red-50 rounded-full flex items-center justify-center mx-auto">
-              <AlertTriangle size={28} className="text-red-500" />
-            </div>
-            <h4 className="text-lg font-bold text-slate-900">Confirmer la suppression</h4>
-            <p className="text-sm text-slate-500">
-              Veuillez sélectionner la raison de la suppression de votre compte :
-            </p>
-            <div className="relative text-left mb-3">
-              <select 
-                value={reason} 
-                onChange={(e) => setReason(e.target.value)}
-                className="w-full appearance-none px-3.5 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-sm text-slate-700 outline-none focus:border-[#32A8D7] focus:bg-white transition-colors cursor-pointer"
-              >
-                <option value="">Choisis la raison</option>
-                <option>Je n'ai plus besoin du service</option>
-                <option>J'ai trouvé un emploi</option>
-                <option>Le service ne correspond pas à mes besoins</option>
-                <option>Problème technique</option>
-                <option>Autre raison</option>
-              </select>
-            </div>
-            {reason === "Autre raison" && (
-              <textarea
-                placeholder="Précisez votre raison..."
-                value={customReason}
-                onChange={(e) => setCustomReason(e.target.value)}
-                className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-sm outline-none focus:border-[#32A8D7]"
-                rows={3}
-              />
-            )}
-            <div className="flex gap-3 pt-2">
-              <button
-                onClick={() => setDeleteModal(false)}
-                className="flex-1 py-2.5 rounded-xl border border-slate-200 text-sm font-semibold text-slate-600 hover:bg-slate-50"
-              >
-                Annuler
-              </button>
-              <button
-                onClick={async () => {
-                  const finalReason = reason === "Autre raison" ? customReason : reason;
-                  if (!finalReason.trim()) {
-                    alert("Veuillez fournir une raison.");
-                    return;
-                  }
-                  try {
-                    const res = await fetch("/api/users/me/delete", {
-                      method: "POST",
-                      headers: { "Content-Type": "application/json" },
-                      body: JSON.stringify({ reason: finalReason }),
-                    });
-                    if (res.ok) {
-                      setDeleteModal(false);
-                      localStorage.removeItem("check_cv_name");
-                      localStorage.removeItem("check_cv_date");
-                      localStorage.removeItem("check_cv_has_pdf");
-                      localStorage.removeItem("confetti_shown");
-                      await signOut({ callbackUrl: "/?account_deleted=true" });
-                    } else {
-                      alert("Erreur lors de la suppression.");
-                    }
-                  } catch (error) {
-                    alert("Erreur serveur.");
-                  }
-                }}
-                disabled={!reason || (reason === "Autre raison" && !customReason.trim())}
-                className="flex-1 py-2.5 rounded-xl bg-red-500 hover:bg-red-600 disabled:opacity-50 text-white text-sm font-bold"
-              >
-                Supprimer
-              </button>
-            </div>
-          </div>
-        </div>
+        <DeleteAccountModal
+          onCancel={() => setDeleteModal(false)}
+          onConfirm={async (finalReason) => {
+            try {
+              const res = await fetch("/api/users/me/delete", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ reason: finalReason }),
+              });
+              if (res.ok) {
+                setDeleteModal(false);
+                localStorage.removeItem("check_cv_name");
+                localStorage.removeItem("check_cv_date");
+                localStorage.removeItem("check_cv_has_pdf");
+                localStorage.removeItem("confetti_shown");
+                await signOut({ callbackUrl: "/?account_deleted=true" });
+              } else {
+                alert("Erreur lors de la suppression.");
+              }
+            } catch (error) {
+              alert("Erreur serveur.");
+            }
+          }}
+        />
       )}
     </div>
   );

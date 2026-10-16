@@ -22,11 +22,13 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
+import { useTranslations, useLocale } from "next-intl";
 import { getVideoFromDB, deleteVideoFromDB, saveCvToDB, getCvFromDB } from "../../../../lib/indexedDB";
 import { QRCodeSVG } from "qrcode.react";
 import PremiumRequiredModal from "../../../components/PremiumRequiredModal";
 import { compressImage } from "@/lib/compressImage";
 import NetacuvVideoPlayer from "@/components/NetacuvVideoPlayer";
+import { CustomSelect } from "@/components/ui/CustomSelect";
 
 type SubTab = "informations" | "reseaux" | "video";
 
@@ -52,6 +54,9 @@ function getTalentMeCached(force = false) {
 function ProfilTalentContent({ initialTab = "informations" }: { initialTab?: SubTab }) {
   const { user, updateUser } = useAuth();
   const searchParams = useSearchParams();
+  const t = useTranslations("talentProfile");
+  const locale = useLocale();
+  const dateLocale = locale === "en" ? "en-US" : "fr-FR";
   
   const [activeTab, setActiveTab] = useState<SubTab>(initialTab);
   
@@ -62,7 +67,7 @@ function ProfilTalentContent({ initialTab = "informations" }: { initialTab?: Sub
   const cvInputRef = useRef<HTMLInputElement>(null);
   const [selectedCvFile, setSelectedCvFile] = useState<File | null>(null);
   const [selectedCvName, setSelectedCvName] = useState<string>("");
-  const [cvName, setCvName] = useState<string>("Aucun CV ajouté");
+  const [cvName, setCvName] = useState<string>(t("noCvAvailable"));
   const [cvDate, setCvDate] = useState<string>("");
   const [cvBlobUrl, setCvBlobUrl] = useState<string>("");
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
@@ -71,8 +76,8 @@ function ProfilTalentContent({ initialTab = "informations" }: { initialTab?: Sub
   const [completionPercent, setCompletionPercent] = useState(0);
   const [stars, setStars] = useState(0);
   const [userAvatar, setUserAvatar] = useState<string>(user?.avatar || "/assets/avatar_africain.jpg");
-  const [userName, setUserName] = useState<string>(user?.name || "Candidat");
-  const [userTitle, setUserTitle] = useState<string>("Aucun profil");
+  const [userName, setUserName] = useState<string>(user?.name || (locale === "en" ? "Candidate" : "Candidat"));
+  const [userTitle, setUserTitle] = useState<string>(locale === "en" ? "Talent" : "Aucun profil");
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
@@ -98,17 +103,17 @@ function ProfilTalentContent({ initialTab = "informations" }: { initialTab?: Sub
               const timestamp = parseInt(nameParts[1], 10);
               if (!isNaN(timestamp) && timestamp > 1000000000000) {
                 const date = new Date(timestamp);
-                setCvDate(date.toLocaleDateString("fr-FR", {
+                setCvDate(date.toLocaleDateString(dateLocale, {
                   day: "numeric", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit"
                 }).replace(':', 'h'));
               } else {
-                setCvDate(new Date(data.talentProfile.updatedAt || Date.now()).toLocaleDateString("fr-FR", {
+                setCvDate(new Date(data.talentProfile.updatedAt || Date.now()).toLocaleDateString(dateLocale, {
                   day: "numeric", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit"
                 }).replace(':', 'h'));
               }
             } else {
               setCvName(decodedName.replace(/_/g, ' '));
-              setCvDate(new Date(data.talentProfile.updatedAt || Date.now()).toLocaleDateString("fr-FR", {
+              setCvDate(new Date(data.talentProfile.updatedAt || Date.now()).toLocaleDateString(dateLocale, {
                 day: "numeric", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit"
               }).replace(':', 'h'));
             }
@@ -208,7 +213,7 @@ function ProfilTalentContent({ initialTab = "informations" }: { initialTab?: Sub
   // Handle CV Selection
   const handleCvFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!user?.isPremium) {
-      showToast("L'upload de CV est réservé aux talents Premium.");
+      showToast(t("premiumFeatureDesc"));
       e.target.value = '';
       return;
     }
@@ -226,7 +231,7 @@ function ProfilTalentContent({ initialTab = "informations" }: { initialTab?: Sub
     }
 
     const now = new Date();
-    const formattedDate = now.toLocaleDateString("fr-FR", {
+    const formattedDate = now.toLocaleDateString(dateLocale, {
       day: "numeric",
       month: "long",
       year: "numeric",
@@ -245,7 +250,7 @@ function ProfilTalentContent({ initialTab = "informations" }: { initialTab?: Sub
 
       const data = await res.json();
 
-      if (!res.ok) throw new Error(data.error || "Erreur lors de l'upload");
+      if (!res.ok) throw new Error(data.error || (locale === "en" ? "Upload error" : "Erreur lors de l'upload"));
 
       setCvBlobUrl(data.cvUrl);
       setCvName(data.fileName);
@@ -257,11 +262,11 @@ function ProfilTalentContent({ initialTab = "informations" }: { initialTab?: Sub
 
       setSelectedCvFile(null);
       setSelectedCvName("");
-      showToast("CV mis à jour avec succès !");
+      showToast(locale === "en" ? "CV updated successfully!" : "CV mis à jour avec succès !");
       fetchProfile();
     } catch (err: any) {
       console.error("Erreur sauvegarde CV", err);
-      showToast(err.message || "Une erreur s'est produite lors de la sauvegarde du CV.");
+      showToast(err.message || (locale === "en" ? "An error occurred while saving the CV." : "Une erreur s'est produite lors de la sauvegarde du CV."));
     }
   };
 
@@ -273,7 +278,7 @@ function ProfilTalentContent({ initialTab = "informations" }: { initialTab?: Sub
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-    showToast("Téléchargement du CV démarré.");
+    showToast(locale === "en" ? "CV download started." : "Téléchargement du CV démarré.");
   };
 
   return (
@@ -304,60 +309,20 @@ function ProfilTalentContent({ initialTab = "informations" }: { initialTab?: Sub
 
       {/* Breadcrumbs */}
       <div className="text-[13px] text-slate-500 font-medium flex items-center gap-2">
-        <span>Accueil</span>
+        <span>{t("home")}</span>
         <span>&rsaquo;</span>
-        <span>Profil</span>
+        <span>{t("profile")}</span>
         <span>&rsaquo;</span>
         <span className="text-slate-700">
           {activeTab === "informations"
-            ? "Informations personnelles"
+            ? t("personalInfo")
             : activeTab === "reseaux"
-            ? "Réseaux sociaux"
-            : "Video Entretien"}
+            ? t("socialNetworks")
+            : t("videoInterview")}
         </span>
       </div>
 
-      {/* Top Cards */}
-      <div className="grid grid-cols-1 lg:grid-cols-[1fr_340px] gap-6">
-        <div className="bg-white rounded-lg p-6 border border-slate-100 shadow-sm flex flex-col justify-center">
-          <h3 className="text-lg font-bold text-[#08304c] mb-4">
-            Complétion du profil
-          </h3>
-          <div className="w-full bg-[#e2e8f0] rounded-full h-[14px] mb-2 overflow-hidden">
-            <div
-              className={`h-full rounded-full transition-all duration-700 ease-out ${
-                completionPercent === 0
-                  ? "bg-red-400"
-                  : completionPercent === 100
-                  ? "bg-green-500"
-                  : "bg-[#007cc0]"
-              }`}
-              style={{ width: `${Math.max(completionPercent, 2)}%` }}
-            />
-          </div>
-          <p className={`text-sm font-medium ${
-            completionPercent === 100 ? "text-green-600" : completionPercent === 0 ? "text-red-500" : "text-[#007cc0]"
-          }`}>{completionPercent}% complété</p>
-        </div>
 
-        <div className="bg-white rounded-lg p-6 border border-slate-100 shadow-sm flex flex-col justify-center">
-          <h3 className="text-lg font-bold text-[#08304c] mb-4">
-            Niveau de certification
-          </h3>
-          <div className="flex items-center gap-1.5 mb-3">
-            {[1, 2, 3, 4, 5].map((s) => (
-              <Star
-                key={s}
-                size={26}
-                className={s <= stars ? "text-amber-400 fill-amber-400" : "text-amber-200 fill-amber-100"}
-              />
-            ))}
-          </div>
-          <p className="text-sm text-[#007cc0] font-medium">
-            {stars === 0 ? "Aucune étoile" : stars === 1 ? "1 étoile obtenue" : `${stars} étoiles obtenues`}
-          </p>
-        </div>
-      </div>
 
       {/* Main Content Area */}
       <div className="grid grid-cols-1 lg:grid-cols-[300px_1fr] gap-6 items-start">
@@ -368,15 +333,12 @@ function ProfilTalentContent({ initialTab = "informations" }: { initialTab?: Sub
             <div
               onClick={() => avatarInputRef.current?.click()}
               className="w-28 h-28 rounded-full bg-blue-50 border-4 border-white shadow-md mb-4 relative cursor-pointer group transition-all"
-              title="Cliquer pour modifier la photo de profil"
+              title="Avatar"
             >
               <div className="w-full h-full rounded-full overflow-hidden relative">
-                <Image
+                <img
                   src={userAvatar || "/assets/avatar_africain.jpg"}
                   alt="Avatar"
-                  fill
-                  sizes="112px"
-                  priority
                   onError={(e) => {
                     (e.target as HTMLImageElement).src = "/assets/avatar_africain.jpg";
                   }}
@@ -387,7 +349,7 @@ function ProfilTalentContent({ initialTab = "informations" }: { initialTab?: Sub
               {/* Overlay hover */}
               <div className="absolute inset-0 rounded-full bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center text-white text-[11px] font-bold">
                 <Camera size={20} className="mb-0.5" />
-                <span>Modifier</span>
+                <span>{t("editPhoto")}</span>
               </div>
 
               {/* Badge Camera Icon */}
@@ -400,22 +362,22 @@ function ProfilTalentContent({ initialTab = "informations" }: { initialTab?: Sub
               {userName}
             </h2>
             <p className="text-sm text-slate-600 font-medium mb-4">
-              {userTitle || "Talent"}
+              {userTitle || (locale === "en" ? "Talent" : "Candidat")}
             </p>
 
             <div className="flex items-center gap-3 mb-8">
               <span className="bg-[#22c55e] text-white text-xs font-bold px-4 py-1.5 rounded-full">
-                Actif
+                {t("active")}
               </span>
               <span className="bg-[#e0f2fe] text-[#0284c7] text-xs font-bold px-4 py-1.5 rounded-full">
-                Certifié
+                {t("certified")}
               </span>
             </div>
 
             {/* CV Upload */}
             <div className="w-full text-left">
               <h4 className="text-[15px] font-bold text-[#08304c] mb-3 flex items-center gap-2">
-                CV (Curriculum Vitae)
+                {t("cvTitle")}
                 {!user?.isPremium && <Lock size={14} className="text-amber-500" />}
               </h4>
               
@@ -426,18 +388,18 @@ function ProfilTalentContent({ initialTab = "informations" }: { initialTab?: Sub
                     className="flex items-center border border-slate-200 rounded-md bg-white overflow-hidden mb-4 cursor-pointer hover:border-blue-400 transition-colors"
                   >
                     <div className="bg-slate-50 px-3 py-2 text-sm text-slate-600 border-r border-slate-200 hover:bg-slate-100 whitespace-nowrap font-medium">
-                      Parcourir...
+                      {t("browse")}
                     </div>
                     <div className="px-3 py-2 text-sm text-slate-500 truncate flex-1">
-                      {selectedCvName || "Aucun fichier sélectionné."}
+                      {selectedCvName || t("noFileSelected")}
                     </div>
                   </div>
                   <button
                     onClick={handleCvUpdate}
-                    className="w-full flex items-center justify-center gap-2 bg-[#008de4] hover:bg-blue-600 text-white font-bold py-2.5 rounded-md text-sm transition-colors shadow-sm"
+                    className="w-full flex items-center justify-center gap-2 bg-[#008de4] hover:bg-blue-600 text-white font-bold py-2.5 rounded-md text-sm transition-colors shadow-sm cursor-pointer"
                   >
                     <FileText size={16} />
-                    Mettre à jour
+                    {t("updateCv")}
                   </button>
                 </>
               ) : (
@@ -445,15 +407,15 @@ function ProfilTalentContent({ initialTab = "informations" }: { initialTab?: Sub
                   <div className="bg-amber-100 p-3 rounded-full mb-3">
                     <Lock size={24} className="text-amber-600" />
                   </div>
-                  <h5 className="text-sm font-bold text-slate-800 mb-2">Fonctionnalité Premium</h5>
+                  <h5 className="text-sm font-bold text-slate-800 mb-2">{t("premiumFeature")}</h5>
                   <p className="text-xs text-slate-500 font-medium mb-4">
-                    L'ajout et la modification du CV sont réservés aux membres Premium.
+                    {t("premiumFeatureDesc")}
                   </p>
                   <button
                     onClick={() => {/* Rediriger vers l'upgrade */ window.location.href = "/dashboard/talent?tab=abonnement"}}
-                    className="px-4 py-2 bg-gradient-to-r from-amber-400 to-orange-500 text-white text-xs font-bold rounded-lg shadow-sm hover:from-amber-500 hover:to-orange-600 transition-all"
+                    className="px-4 py-2 bg-gradient-to-r from-amber-400 to-orange-500 text-white text-xs font-bold rounded-lg shadow-sm hover:from-amber-500 hover:to-orange-600 transition-all cursor-pointer"
                   >
-                    Passer Premium
+                    {t("upgradePremium")}
                   </button>
                 </div>
               )}
@@ -464,7 +426,7 @@ function ProfilTalentContent({ initialTab = "informations" }: { initialTab?: Sub
           <div className="bg-white rounded-lg p-5 border border-slate-100 shadow-sm relative">
             <div className="flex items-center justify-between mb-4">
               <h4 className="text-[13px] text-slate-800 font-bold flex items-center gap-2">
-                CV actualisé le {cvDate}
+                {t("cvUpdatedOn", { date: cvDate || (locale === "en" ? "recently" : "récemment") })}
                 {!user?.isPremium && user?.role !== "admin" && <Lock size={13} className="text-amber-500" />}
               </h4>
               {!user?.isPremium && user?.role !== "admin" && (
@@ -479,13 +441,13 @@ function ProfilTalentContent({ initialTab = "informations" }: { initialTab?: Sub
               <div 
                 onClick={() => setIsPreviewOpen(true)}
                 className="border border-slate-200 rounded-lg mb-4 shadow-sm bg-white p-1 h-[350px] overflow-hidden flex items-center justify-center relative cursor-pointer group hover:border-[#008de4] transition-all"
-                title="Cliquer pour prévisualiser le document complet"
+                title={t("clickToPreview")}
               >
                 {cvBlobUrl ? (
                   <iframe
                     src={`${cvBlobUrl}#toolbar=0&navpanes=0&scrollbar=0&view=FitH`}
                     className="w-full h-full rounded border-0 bg-white pointer-events-none"
-                    title="Aperçu du CV"
+                    title={t("cvTitle")}
                   />
                 ) : (
                   <div className="w-full h-full flex flex-col items-center justify-center bg-slate-50 border border-dashed border-slate-300 rounded p-4">
@@ -496,15 +458,15 @@ function ProfilTalentContent({ initialTab = "informations" }: { initialTab?: Sub
                       <div className="w-full h-1 bg-slate-100 rounded-full"></div>
                       <div className="w-2/3 h-1 bg-slate-100 rounded-full"></div>
                     </div>
-                    <p className="text-xs font-semibold text-slate-500">Aucun CV disponible</p>
-                    <p className="text-[10px] text-slate-400 mt-1 text-center px-4">Uploadez votre CV pour qu'il s'affiche ici</p>
+                    <p className="text-xs font-semibold text-slate-500">{t("noCvAvailable")}</p>
+                    <p className="text-[10px] text-slate-400 mt-1 text-center px-4">{t("uploadCvToDisplay")}</p>
                   </div>
                 )}
 
                 {/* Overlay hover */}
                 <div className="absolute inset-0 bg-blue-900/15 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center backdrop-blur-[0.5px]">
                   <span className="bg-white text-[#008de4] px-4 py-2 rounded-full text-xs font-bold shadow-lg flex items-center gap-2 transform group-hover:scale-105 transition-transform">
-                    <Eye size={14} /> Prévisualiser le CV
+                    <Eye size={14} /> {t("previewCv")}
                   </span>
                 </div>
               </div>
@@ -517,10 +479,10 @@ function ProfilTalentContent({ initialTab = "informations" }: { initialTab?: Sub
                   <Lock size={28} />
                 </div>
                 <h5 className="text-sm font-bold text-slate-800 mb-1">
-                  Aperçu du CV masqué
+                  {t("cvPreviewHidden")}
                 </h5>
                 <p className="text-xs text-slate-500 max-w-[220px] mb-4 leading-relaxed">
-                  L'aperçu, la prévisualisation et le téléchargement de votre CV sont réservés aux membres Premium.
+                  {t("cvPreviewHiddenDesc")}
                 </p>
                 <button
                   type="button"
@@ -531,7 +493,7 @@ function ProfilTalentContent({ initialTab = "informations" }: { initialTab?: Sub
                   className="px-4 py-2 bg-gradient-to-r from-amber-400 to-orange-500 hover:from-amber-500 hover:to-orange-600 text-white font-bold text-xs rounded-xl shadow-md shadow-orange-500/20 transition-all flex items-center gap-1.5 cursor-pointer"
                 >
                   <Lock size={13} />
-                  Débloquer avec Premium
+                  {t("unlockWithPremium")}
                 </button>
               </div>
             )}
@@ -542,18 +504,18 @@ function ProfilTalentContent({ initialTab = "informations" }: { initialTab?: Sub
                 <button 
                   onClick={handleDownloadPdf}
                   className="flex items-center justify-center gap-1.5 border border-slate-300 hover:bg-slate-50 text-slate-700 font-bold py-2 rounded-md text-[11px] transition-colors cursor-pointer"
-                  title="Télécharger le fichier PDF"
+                  title={t("downloadPdf")}
                 >
                   <FileDown size={14} className="text-red-500" />
-                  Télécharger le pdf
+                  {t("downloadPdf")}
                 </button>
                 <button 
                   onClick={() => setIsPreviewOpen(true)}
                   className="flex items-center justify-center gap-1.5 bg-[#008de4] hover:bg-blue-600 text-white font-bold py-2 rounded-md text-[11px] transition-colors shadow-sm cursor-pointer"
-                  title="Prévisualiser le document"
+                  title={t("preview")}
                 >
                   <Eye size={14} />
-                  Prévisualiser
+                  {t("preview")}
                 </button>
               </div>
             ) : (
@@ -561,18 +523,18 @@ function ProfilTalentContent({ initialTab = "informations" }: { initialTab?: Sub
                 <button 
                   onClick={() => setShowCvPremiumModal(true)}
                   className="flex items-center justify-center gap-1.5 border border-slate-200 bg-slate-50 text-slate-400 font-medium py-2 rounded-md text-[11px] cursor-not-allowed hover:bg-amber-50 hover:text-amber-700 hover:border-amber-200 transition-colors"
-                  title="Fonctionnalité Premium"
+                  title={t("premiumFeature")}
                 >
                   <Lock size={12} className="text-amber-500" />
-                  Télécharger le pdf
+                  {t("downloadPdf")}
                 </button>
                 <button 
                   onClick={() => setShowCvPremiumModal(true)}
                   className="flex items-center justify-center gap-1.5 border border-slate-200 bg-slate-50 text-slate-400 font-medium py-2 rounded-md text-[11px] cursor-not-allowed hover:bg-amber-50 hover:text-amber-700 hover:border-amber-200 transition-colors"
-                  title="Fonctionnalité Premium"
+                  title={t("premiumFeature")}
                 >
                   <Lock size={12} className="text-amber-500" />
-                  Prévisualiser
+                  {t("preview")}
                 </button>
               </div>
             )}
@@ -591,32 +553,32 @@ function ProfilTalentContent({ initialTab = "informations" }: { initialTab?: Sub
                 </div>
                 <div>
                   <h3 className="text-base font-bold text-slate-800">
-                    Prévisualisation du CV - {user?.name || "Candidat"}
+                    {t("previewModalTitle", { name: user?.name || (locale === "en" ? "Candidate" : "Candidat") })}
                   </h3>
                   <p className="text-xs text-slate-400">
-                    {cvName} • Actualisé le {cvDate}
+                    {cvName} • {t("updatedOn")} {cvDate}
                   </p>
                 </div>
               </div>
               <div className="flex items-center gap-3">
                 <button
                   onClick={handleDownloadPdf}
-                  className="flex items-center gap-2 px-4 py-2 bg-[#008de4] hover:bg-blue-600 text-white text-xs font-bold rounded-lg transition-colors shadow-sm"
+                  className="flex items-center gap-2 px-4 py-2 bg-[#008de4] hover:bg-blue-600 text-white text-xs font-bold rounded-lg transition-colors shadow-sm cursor-pointer"
                 >
-                  <FileDown size={15} /> Télécharger
+                  <FileDown size={15} /> {t("download")}
                 </button>
                 <a
                   href={cvBlobUrl}
                   target="_blank"
                   rel="noreferrer"
                   className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-200 rounded-lg transition-colors"
-                  title="Ouvrir dans un nouvel onglet"
+                  title={t("openNewTab")}
                 >
                   <ExternalLink size={18} />
                 </a>
                 <button
                   onClick={() => setIsPreviewOpen(false)}
-                  className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-200 rounded-lg transition-colors"
+                  className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-200 rounded-lg transition-colors cursor-pointer"
                 >
                   <X size={20} />
                 </button>
@@ -628,29 +590,13 @@ function ProfilTalentContent({ initialTab = "informations" }: { initialTab?: Sub
                 <iframe
                   src={`${cvBlobUrl}#toolbar=0`}
                   className="w-full h-full bg-white rounded-lg shadow-inner border border-slate-300"
-                  title="Prévisualisation PDF"
+                  title="PDF Preview"
                 />
               ) : (
                 <div className="w-full max-w-2xl h-full bg-white rounded-lg shadow-inner border border-slate-300 flex flex-col items-center justify-center text-slate-400 relative overflow-hidden">
-                  <div className="absolute inset-0 flex flex-col p-12 gap-6 opacity-10">
-                    <div className="flex items-center gap-6 mb-8">
-                      <div className="w-24 h-24 bg-slate-400 rounded-full"></div>
-                      <div className="space-y-4 flex-1">
-                        <div className="h-6 bg-slate-400 rounded w-1/3"></div>
-                        <div className="h-4 bg-slate-400 rounded w-1/4"></div>
-                      </div>
-                    </div>
-                    <div className="h-4 bg-slate-400 rounded w-full"></div>
-                    <div className="h-4 bg-slate-400 rounded w-5/6"></div>
-                    <div className="h-4 bg-slate-400 rounded w-full"></div>
-                    <div className="h-4 bg-slate-400 rounded w-4/5"></div>
-                    <div className="h-4 bg-slate-400 rounded w-full mt-8"></div>
-                    <div className="h-4 bg-slate-400 rounded w-2/3"></div>
-                    <div className="h-4 bg-slate-400 rounded w-3/4"></div>
-                  </div>
                   <FileText size={64} className="text-slate-300 mb-4 z-10" />
-                  <h3 className="text-xl font-bold text-slate-600 z-10">Aucun CV disponible</h3>
-                  <p className="text-sm text-slate-500 z-10">Veuillez d'abord uploader un document PDF.</p>
+                  <h3 className="text-xl font-bold text-slate-600 z-10">{t("noCvAvailable")}</h3>
+                  <p className="text-sm text-slate-500 z-10">{t("pleaseUploadFirst")}</p>
                 </div>
               )}
             </div>
@@ -665,33 +611,33 @@ function ProfilTalentContent({ initialTab = "informations" }: { initialTab?: Sub
             <div className="flex bg-[#f4f8fb] rounded-lg p-1 w-full max-w-[500px]">
               <button
                 onClick={() => setActiveTab("informations")}
-                className={`flex-1 text-[13px] font-bold py-2 rounded-md text-center transition-colors ${
+                className={`flex-1 text-[13px] font-bold py-2 rounded-md text-center transition-colors cursor-pointer ${
                   activeTab === "informations"
                     ? "bg-white text-slate-800 shadow-sm"
                     : "text-slate-500 hover:text-slate-700"
                 }`}
               >
-                Informations
+                {t("tabs.information")}
               </button>
               <button
                 onClick={() => setActiveTab("reseaux")}
-                className={`flex-1 text-[13px] font-bold py-2 rounded-md text-center transition-colors ${
+                className={`flex-1 text-[13px] font-bold py-2 rounded-md text-center transition-colors cursor-pointer ${
                   activeTab === "reseaux"
                     ? "bg-white text-slate-800 shadow-sm"
                     : "text-slate-500 hover:text-slate-700"
                 }`}
               >
-                Réseaux
+                {t("tabs.networks")}
               </button>
               <button
                 onClick={() => setActiveTab("video")}
-                className={`flex-1 text-[13px] font-bold py-2 rounded-md text-center transition-colors ${
+                className={`flex-1 text-[13px] font-bold py-2 rounded-md text-center transition-colors cursor-pointer ${
                   activeTab === "video"
                     ? "bg-white text-slate-800 shadow-sm"
                     : "text-slate-500 hover:text-slate-700"
                 }`}
               >
-                Vidéo Entretien
+                {t("tabs.videoInterview")}
               </button>
             </div>
           </div>
@@ -708,8 +654,8 @@ function ProfilTalentContent({ initialTab = "informations" }: { initialTab?: Sub
       {showCvPremiumModal && (
         <PremiumRequiredModal
           onClose={() => setShowCvPremiumModal(false)}
-          title="CV Complet réservé au Premium"
-          message="L'aperçu, la prévisualisation et le téléchargement de votre CV en PDF sont réservés aux talents membres Premium. Souscrivez pour seulement 700 FCFA/mois sans engagement."
+          title={t("cvPremiumModalTitle")}
+          message={t("cvPremiumModalDesc")}
           upgradeHref="/dashboard/talent?tab=premium"
         />
       )}
@@ -727,6 +673,8 @@ export default function ProfilTalent({ initialTab = "informations" }: { initialT
 
 /* ─── Onglet: Informations ─── */
 function InformationsTab({ onUpdate }: { onUpdate: () => void }) {
+  const t = useTranslations("talentProfile");
+  const locale = useLocale();
   const [formData, setFormData] = useState({
     name: "",
     bio: "",
@@ -807,14 +755,14 @@ function InformationsTab({ onUpdate }: { onUpdate: () => void }) {
         body: JSON.stringify(payload)
       });
       if (res.ok) {
-        showTabToast("Informations mises à jour avec succès ✓.success");
+        showTabToast(t("form.updateSuccess"));
         if (onUpdate) onUpdate();
       } else {
-        showTabToast("Erreur lors de la mise à jour.error");
+        showTabToast(t("form.updateError"), "error");
       }
     } catch (e) {
       console.error(e);
-      showTabToast("Erreur lors de la mise à jour.error");
+      showTabToast(t("form.updateError"), "error");
     } finally {
       setIsSaving(false);
     }
@@ -826,7 +774,7 @@ function InformationsTab({ onUpdate }: { onUpdate: () => void }) {
   const handleCopyLink = () => {
     if (!profileLink) return;
     navigator.clipboard.writeText(profileLink);
-    showTabToast("Lien de profil copié !");
+    showTabToast(t("form.linkCopied"));
   };
 
   const handleDownloadQR = () => {
@@ -844,7 +792,7 @@ function InformationsTab({ onUpdate }: { onUpdate: () => void }) {
     URL.revokeObjectURL(url);
   };
 
-  if (isLoading) return <div className="p-4 text-center text-slate-500">Chargement...</div>;
+  if (isLoading) return <div className="p-4 text-center text-slate-500">{locale === "en" ? "Loading..." : "Chargement..."}</div>;
 
   return (
     <div className="space-y-6 relative">
@@ -860,7 +808,7 @@ function InformationsTab({ onUpdate }: { onUpdate: () => void }) {
       <div className="space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="space-y-1.5">
-          <label className="text-[13px] text-[#475569] font-semibold">Nom Complet</label>
+          <label className="text-[13px] text-[#475569] font-semibold">{t("form.fullName")}</label>
           <input
             type="text"
             name="name"
@@ -871,20 +819,20 @@ function InformationsTab({ onUpdate }: { onUpdate: () => void }) {
         </div>
         <div className="space-y-1.5">
           <label className="text-[13px] text-[#475569] font-semibold">
-            Titre professionnel
+            {t("form.jobTitle")}
           </label>
           <input
             type="text"
             name="degree"
             value={formData.degree}
             onChange={handleChange}
-            placeholder="ex: Développeur Frontend"
+            placeholder={t("form.jobTitlePlaceholder")}
             className="w-full bg-[#f8fafc] border-none rounded-md px-4 py-3 text-[14px] text-slate-800 outline-none focus:ring-2 focus:ring-blue-100"
           />
         </div>
         <div className="space-y-1.5">
           <label className="text-[13px] text-[#475569] font-semibold">
-            Nom d'utilisateur
+            {t("form.username")}
           </label>
           <input
             type="text"
@@ -896,23 +844,24 @@ function InformationsTab({ onUpdate }: { onUpdate: () => void }) {
         </div>
         <div className="space-y-1.5">
           <label className="text-[13px] text-[#475569] font-semibold">
-            Sexe H/F
+            {t("form.gender")}
           </label>
-          <select
-            name="gender"
+          <CustomSelect
             value={formData.gender}
-            onChange={handleChange}
-            className="w-full bg-[#f8fafc] border-none rounded-md px-4 py-3 text-[14px] text-slate-800 outline-none focus:ring-2 focus:ring-blue-100"
-          >
-            <option value="">Sélectionnez</option>
-            <option value="Homme">Homme</option>
-            <option value="Femme">Femme</option>
-            <option value="Autre">Autre</option>
-          </select>
+            onChange={(val) => setFormData((prev) => ({ ...prev, gender: val }))}
+            placeholder={t("form.genderPlaceholder")}
+            options={[
+              { label: t("form.genderPlaceholder"), value: "" },
+              { label: t("form.genderMale"), value: "Homme" },
+              { label: t("form.genderFemale"), value: "Femme" },
+              { label: t("form.genderOther"), value: "Autre" },
+            ]}
+            className="w-full"
+          />
         </div>
         <div className="space-y-1.5">
           <label className="text-[13px] text-[#475569] font-semibold">
-            Types d'opportunités recherchées
+            {locale === "en" ? "Types of opportunities sought" : "Types d'opportunités recherchées"}
           </label>
           <input
             type="text"
@@ -924,54 +873,51 @@ function InformationsTab({ onUpdate }: { onUpdate: () => void }) {
         </div>
         <div className="space-y-1.5">
           <label className="text-[13px] text-[#475569] font-semibold">
-            Pays/Nationalité
+            {t("form.country")}
           </label>
-          <select
-            name="country"
+          <CustomSelect
             value={formData.country}
-            onChange={handleChange}
-            className="w-full bg-[#f8fafc] border-none rounded-md px-4 py-3 text-[14px] text-slate-800 outline-none focus:ring-2 focus:ring-blue-100"
-          >
-            <option value="">Sélectionnez un pays</option>
-            {countriesList.map((c) => (
-              <option key={c.isoCode} value={c.isoCode}>
-                {c.name}
-              </option>
-            ))}
-          </select>
+            onChange={(val) => setFormData((prev) => ({ ...prev, country: val, city: "" }))}
+            placeholder={t("form.selectCountry")}
+            options={[
+              { label: t("form.selectCountry"), value: "" },
+              ...countriesList.map((c) => ({ label: c.name, value: c.isoCode })),
+            ]}
+            className="w-full"
+          />
         </div>
         <div className="space-y-1.5">
-          <label className="text-[13px] text-[#475569] font-semibold">Ville</label>
-          <select
-            name="city"
+          <label className="text-[13px] text-[#475569] font-semibold">{t("form.city")}</label>
+          <CustomSelect
             value={formData.city}
-            onChange={handleChange}
+            onChange={(val) => setFormData((prev) => ({ ...prev, city: val }))}
             disabled={!formData.country}
-            className={`w-full bg-[#f8fafc] border-none rounded-md px-4 py-3 text-[14px] outline-none focus:ring-2 focus:ring-blue-100 ${!formData.country ? 'opacity-50 cursor-not-allowed text-slate-400' : 'text-slate-800'}`}
-          >
-            <option value="">Sélectionnez une ville</option>
-            {citiesList?.map((city, index) => (
-              <option key={`${city.name}-${index}`} value={city.name}>
-                {city.name}
-              </option>
-            ))}
-          </select>
+            placeholder={t("form.selectCity")}
+            options={[
+              { label: t("form.selectCity"), value: "" },
+              ...(citiesList?.map((city, index) => ({
+                label: city.name,
+                value: city.name,
+              })) || []),
+            ]}
+            className="w-full"
+          />
         </div>
         <div className="space-y-1.5">
           <label className="text-[13px] text-[#475569] font-semibold">
-            Numéro de téléphone
+            {t("form.phone")}
           </label>
           <input
             type="text"
             name="phone"
             value={formData.phone}
             onChange={handleChange}
-            placeholder="ex: +229 01 02 03 04"
+            placeholder={t("form.phonePlaceholder")}
             className="w-full bg-[#f8fafc] border-none rounded-md px-4 py-3 text-[14px] text-slate-800 outline-none focus:ring-2 focus:ring-blue-100"
           />
         </div>
         <div className="space-y-1.5">
-          <label className="text-[13px] text-[#475569] font-semibold">Email</label>
+          <label className="text-[13px] text-[#475569] font-semibold">{t("form.email")}</label>
           <input
             type="email"
             name="email"
@@ -984,28 +930,28 @@ function InformationsTab({ onUpdate }: { onUpdate: () => void }) {
 
       <div className="space-y-1.5">
         <label className="text-[13px] text-[#475569] font-semibold">
-          Biographie
+          {t("form.bio")}
         </label>
         <textarea
           rows={3}
           name="bio"
           value={formData.bio}
           onChange={handleChange}
-          placeholder="Parlez-nous de vous..."
+          placeholder={t("form.bioPlaceholder")}
           className="w-full bg-[#f8fafc] border-none rounded-md px-4 py-3 text-[14px] text-slate-800 outline-none focus:ring-2 focus:ring-blue-100 resize-none"
         />
       </div>
 
       <div className="space-y-1.5">
         <label className="text-[13px] text-[#475569] font-semibold">
-          Compétences clés
+          {t("form.skills")}
         </label>
         <input
           type="text"
           name="skills"
           value={formData.skills}
           onChange={handleChange}
-          placeholder="Ajoutez vos compétences séparées par des virgules (ex: React, Node, SQL)"
+          placeholder={t("form.skillsPlaceholder")}
           className="w-full bg-[#f8fafc] border-none rounded-md px-4 py-3 text-[14px] text-slate-800 outline-none focus:ring-2 focus:ring-blue-100"
         />
       </div>
@@ -1013,28 +959,28 @@ function InformationsTab({ onUpdate }: { onUpdate: () => void }) {
       <button 
         onClick={handleSave}
         disabled={isSaving}
-        className="w-full bg-[#008de4] hover:bg-blue-600 disabled:opacity-50 text-white font-bold py-3 rounded-md text-[14px] transition-colors mt-2"
+        className="w-full bg-[#008de4] hover:bg-blue-600 disabled:opacity-50 text-white font-bold py-3 rounded-md text-[14px] transition-colors mt-2 cursor-pointer"
       >
-        {isSaving ? "Enregistrement..." : "Modifier les informations"}
+        {isSaving ? t("form.saving") : t("form.saveBtn")}
       </button>
 
       {/* Section Lien de Profil & QR Code */}
       <div className="mt-8 p-5 bg-blue-50 border border-blue-100 rounded-lg flex flex-col md:flex-row items-center gap-6">
         <div className="flex-1 space-y-3">
           <h4 className="text-[15px] font-bold text-[#08304c]">
-            Partagez votre profil public
+            {t("form.shareTitle")}
           </h4>
           <p className="text-[13px] text-slate-600">
-            Augmentez votre visibilité en partageant ce lien et ce code QR sur vos réseaux sociaux ou directement avec des recruteurs.
+            {t("form.shareDesc")}
           </p>
           <div className="flex items-center gap-2 mt-2">
             <div className="bg-white border border-slate-200 rounded-md px-3 py-2 text-[13px] text-slate-500 font-medium flex-1 truncate select-all" title={profileLink}>
-              {profileLink || "Génération du lien..."}
+              {profileLink || (locale === "en" ? "Generating link..." : "Génération du lien...")}
             </div>
             <button
               onClick={handleCopyLink}
-              className="bg-white border border-slate-200 p-2 rounded-md hover:bg-slate-50 transition-colors flex items-center justify-center text-slate-600 shadow-sm"
-              title="Copier le lien"
+              className="bg-white border border-slate-200 p-2 rounded-md hover:bg-slate-50 transition-colors flex items-center justify-center text-slate-600 shadow-sm cursor-pointer"
+              title={t("form.copyLink")}
             >
               <Copy size={16} />
             </button>
@@ -1054,10 +1000,10 @@ function InformationsTab({ onUpdate }: { onUpdate: () => void }) {
           )}
           <button
             onClick={handleDownloadQR}
-            className="flex items-center gap-1.5 text-[11px] font-bold text-[#008de4] hover:text-blue-600 transition-colors"
+            className="flex items-center gap-1.5 text-[11px] font-bold text-[#008de4] hover:text-blue-600 transition-colors cursor-pointer"
           >
             <Download size={14} />
-            Télécharger QR
+            {t("form.downloadQr")}
           </button>
         </div>
       </div>
@@ -1068,6 +1014,8 @@ function InformationsTab({ onUpdate }: { onUpdate: () => void }) {
 
 /* ─── Onglet: Réseaux ─── */
 function ReseauxTab() {
+  const t = useTranslations("talentProfile");
+  const locale = useLocale();
   const [formData, setFormData] = useState({
     facebook: "",
     linkedin: "",
@@ -1119,19 +1067,19 @@ function ReseauxTab() {
         body: JSON.stringify(formData)
       });
       if (res.ok) {
-        showTabToast("Réseaux sociaux mis à jour avec succès ✓.success");
+        showTabToast(t("social.success"));
       } else {
-        showTabToast("Erreur lors de la mise à jour.error");
+        showTabToast(t("social.error"), "error");
       }
     } catch (e) {
       console.error(e);
-      showTabToast("Erreur lors de la mise à jour.error");
+      showTabToast(t("social.error"), "error");
     } finally {
       setIsSaving(false);
     }
   };
 
-  if (isLoading) return <div className="p-4 text-center text-slate-500">Chargement...</div>;
+  if (isLoading) return <div className="p-4 text-center text-slate-500">{locale === "en" ? "Loading..." : "Chargement..."}</div>;
 
   return (
     <div className="space-y-5 relative">
@@ -1168,13 +1116,13 @@ function ReseauxTab() {
             icon: (<svg viewBox="0 0 24 24" fill="currentColor" className="w-[18px] h-[18px]"><path d="M22 7h-7v-2h7v2zm1.726 10c-.442 1.297-2.029 3-5.101 3-3.074 0-5.564-1.729-5.564-5.675 0-3.91 2.325-5.92 5.466-5.92 3.082 0 4.964 1.782 5.375 4.426.078.506.109 1.188.095 2.14h-8.027c.13 3.211 3.483 3.312 4.588 2.029h3.168zm-7.686-4h4.965c-.105-1.547-1.136-2.219-2.477-2.219-1.466 0-2.277.768-2.488 2.219zm-9.574 6.988H0V3.98h7.366c3.121 0 5.028 1.074 5.028 3.411 0 1.76-1.073 2.537-2.074 2.924 1.343.344 2.457 1.332 2.457 3.344 0 2.92-2.348 3.329-5.11 3.329zm-1.898-10.999H2.82v4h1.748c1.375 0 2.234-.355 2.234-1.921 0-1.493-.848-2.079-2.234-2.079zm.344 6h-2.091v4.394h2.091c1.554 0 2.65-.453 2.65-2.221 0-1.767-1.157-2.173-2.65-2.173z" /></svg>)
           },
           {
-            name: "other1", label: "Autres",
-            customPlaceholder: "Lien portfolio ou autre",
+            name: "other1", label: locale === "en" ? "Other link 1" : "Autres",
+            customPlaceholder: locale === "en" ? "Portfolio link or other" : "Lien portfolio ou autre",
             icon: (<svg viewBox="0 0 24 24" fill="currentColor" className="w-[18px] h-[18px] text-slate-500"><path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z"/></svg>)
           },
           {
-            name: "other2", label: "Autres",
-            customPlaceholder: "Lien portfolio ou autre",
+            name: "other2", label: locale === "en" ? "Other link 2" : "Autres",
+            customPlaceholder: locale === "en" ? "Portfolio link or other" : "Lien portfolio ou autre",
             icon: (<svg viewBox="0 0 24 24" fill="currentColor" className="w-[18px] h-[18px] text-slate-500"><path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z"/></svg>)
           },
         ].map((net) => (
@@ -1201,9 +1149,9 @@ function ReseauxTab() {
           <button
             onClick={handleSave}
             disabled={isSaving}
-            className="w-full bg-[#008de4] hover:bg-blue-600 disabled:opacity-50 text-white font-bold py-3 rounded-md text-[14px] transition-colors"
+            className="w-full bg-[#008de4] hover:bg-blue-600 disabled:opacity-50 text-white font-bold py-3 rounded-md text-[14px] transition-colors cursor-pointer"
           >
-            {isSaving ? "Enregistrement..." : "Enregistrer les informations"}
+            {isSaving ? t("social.saving") : t("social.saveBtn")}
           </button>
         </div>
       </div>
@@ -1215,6 +1163,8 @@ function ReseauxTab() {
 import { DeleteVideoModal, ReplaceVideoModal } from "../../../components/modals/InterviewModals";
 
 function VideoTab() {
+  const t = useTranslations("talentProfile");
+  const locale = useLocale();
   const { user } = useAuth();
   const router = useRouter();
   const [hasVideo, setHasVideo] = useState(false);
@@ -1249,10 +1199,10 @@ function VideoTab() {
         console.warn("Could not fetch profile videoUrl from API", e);
       }
 
-      // 2. Check localStorage video url if cached
+      // 2. Check localStorage video url if cached and already persisted on server
       if (typeof window !== "undefined") {
         const storedUrl = localStorage.getItem("interview_video_url");
-        if (storedUrl && isMounted) {
+        if (storedUrl && !storedUrl.startsWith("blob:") && isMounted) {
           setVideoUrl(storedUrl);
           setHasVideo(true);
           setIsLoading(false);
@@ -1356,10 +1306,10 @@ function VideoTab() {
 
       // 4. Émettre l'événement pour recalculer immédiatement le % du profil
       window.dispatchEvent(new Event("dashboardProfileUpdated"));
-      showToast("Vidéo supprimée avec succès !");
+      showToast(t("video.videoDeletedSuccess"));
     } catch (err) {
       console.error("Erreur suppression vidéo:", err);
-      showToast("Erreur lors de la suppression de la vidéo.");
+      showToast(t("video.videoDeletedError"));
     }
   };
 
@@ -1401,74 +1351,71 @@ function VideoTab() {
       <div className="flex items-center gap-2 mb-3 sm:mb-4">
         <Video className="text-[#008de4] w-5 h-5 sm:w-6 sm:h-6" />
         <h3 className="text-base sm:text-[18px] font-bold text-[#008de4]">
-          Lancer l'entretien vidéo
+          {t("video.launchTitle")}
         </h3>
       </div>
 
       <p className="text-xs sm:text-[14px] text-slate-700 font-medium">
-        Passe chaque étape d'entretien pour certifier ton profil :
+        {t("video.stepsIntro")}
       </p>
 
       <ol className="list-decimal pl-4 sm:pl-5 space-y-1 text-xs sm:text-[14px] text-slate-700">
-        <li>Lire la question affichée à l'écran.</li>
-        <li>Se préparer en 20 secondes maximum.</li>
-        <li>Enregistrer une réponse vidéo de 1 min ou plus maximum.</li>
-        <li>Choisir entre continuer ou recommencer (max 3 tentatives).</li>
-        <li>Envoyer la réponse finale pour validation Netacuv.</li>
-        <li>Une fois validée, la vidéo apparaîtra ici sous forme de vignette.</li>
+        <li>{t("video.step1")}</li>
+        <li>{t("video.step2")}</li>
+        <li>{t("video.step3")}</li>
+        <li>{t("video.step4")}</li>
+        <li>{t("video.step5")}</li>
+        <li>{t("video.step6")}</li>
       </ol>
 
       <h3 className="text-base sm:text-[18px] font-bold text-[#008de4] pt-1 sm:pt-2">
-        Conseils pour réussir votre entretien vidéo
+        {t("video.tipsTitle")}
       </h3>
 
       <ul className="list-disc pl-4 sm:pl-5 space-y-1.5 sm:space-y-2 text-xs sm:text-[14px] text-slate-700 marker:text-[#008de4]">
         <li>
-          <span className="font-bold text-[#008de4]">Préparation : </span>
-          Assurez-vous d'avoir un environnement calme et bien éclairé.
+          <span className="font-bold text-[#008de4]">{t("video.tipPrepLabel")}</span>
+          {t("video.tipPrepText")}
         </li>
         <li>
-          <span className="font-bold text-[#008de4]">Technique : </span>
-          Testez votre caméra et votre microphone avant l'enregistrement.
+          <span className="font-bold text-[#008de4]">{t("video.tipTechLabel")}</span>
+          {t("video.tipTechText")}
         </li>
         <li>
-          <span className="font-bold text-[#008de4]">Présentation : </span>
-          Habillez-vous de manière professionnelle et regardez la caméra pour établir un contact visuel.
+          <span className="font-bold text-[#008de4]">{t("video.tipPresLabel")}</span>
+          {t("video.tipPresText")}
         </li>
         <li>
-          <span className="font-bold text-[#008de4]">Clarté : </span>
-          Parlez distinctement et structurez vos réponses pour être compris facilement.
+          <span className="font-bold text-[#008de4]">{t("video.tipClarityLabel")}</span>
+          {t("video.tipClarityText")}
         </li>
       </ul>
 
       <div className="bg-[#f0f9ff] rounded-lg p-3.5 sm:p-5 my-4 sm:my-6 text-xs sm:text-[14px] text-slate-700 leading-relaxed border border-blue-50">
         <p className="mb-2 sm:mb-4">
-          Ce test est constitué de 20 questions. Vous aurez une variation de temps pour
-          répondre. Vous disposez de 3 tentatives. En cas d'annulation, l'entretien recommence
-          depuis le début.
+          {t("video.testNotice1")}
         </p>
         <p className="mb-2 sm:mb-4">
-          Si vous utilisez vos 3 tentatives sans succès, vous devrez attendre 3 jours avant de
-          pouvoir réessayer.
+          {t("video.testNotice2")}
         </p>
-        <p className="font-bold italic text-xs sm:text-[15px]">Êtes-vous prêt à commencer ?</p>
+        <p className="font-bold italic text-xs sm:text-[15px]">{t("video.readyToStart")}</p>
       </div>
 
       <button
         onClick={handleStartOrRestartClick}
         className="flex items-center justify-center w-full bg-[#008de4] hover:bg-blue-600 text-white font-bold py-2.5 sm:py-3.5 rounded-md text-xs sm:text-[14px] transition-colors cursor-pointer shadow-sm"
       >
-        Commencer mon entretien vidéo maintenant
+        {t("video.startBtn")}
       </button>
 
       <div className="pt-4 sm:pt-6">
         <p className="text-xs sm:text-[14px] text-slate-700 font-medium mb-3 sm:mb-4">
-          Votre vidéo enregistrée :
+          {t("video.yourVideo")}
         </p>
         {isLoading ? (
           <div className="bg-slate-900/90 rounded-xl aspect-[16/9] flex flex-col items-center justify-center gap-3 border border-slate-800 shadow-inner">
             <div className="w-8 h-8 border-3 border-blue-400/30 border-t-[#008de4] rounded-full animate-spin" />
-            <p className="text-xs text-slate-400 font-medium">Chargement de votre vidéo enregistrée...</p>
+            <p className="text-xs text-slate-400 font-medium">{t("video.loadingVideo")}</p>
           </div>
         ) : hasVideo && videoUrl ? (
           <div className="space-y-4">
@@ -1479,18 +1426,18 @@ function VideoTab() {
             <div className="flex flex-wrap gap-3">
               <button 
                 onClick={() => setIsDeleteModalOpen(true)} 
-                className="flex items-center gap-2 px-5 py-2.5 bg-red-50 text-red-600 rounded-md text-[13px] font-bold hover:bg-red-100 transition-colors border border-red-100"
+                className="flex items-center gap-2 px-5 py-2.5 bg-red-50 text-red-600 rounded-md text-[13px] font-bold hover:bg-red-100 transition-colors border border-red-100 cursor-pointer"
               >
                 <Trash2 size={16} />
-                Supprimer la vidéo
+                {t("video.deleteVideo")}
               </button>
               {videoUrl && (
                 <button 
                   onClick={handleDownloadVideo}
-                  className="flex items-center gap-2 px-5 py-2.5 bg-slate-100 text-slate-700 rounded-md text-[13px] font-bold hover:bg-slate-200 transition-colors border border-slate-200"
+                  className="flex items-center gap-2 px-5 py-2.5 bg-slate-100 text-slate-700 rounded-md text-[13px] font-bold hover:bg-slate-200 transition-colors border border-slate-200 cursor-pointer"
                 >
                   <Download size={16} />
-                  Télécharger la vidéo
+                  {t("video.downloadVideo")}
                 </button>
               )}
             </div>
@@ -1500,8 +1447,8 @@ function VideoTab() {
             <div className="w-12 h-12 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-3">
               <Video className="text-[#008de4]" size={20} />
             </div>
-            <p className="text-[14px] text-slate-600 font-medium">Aucune vidéo enregistrée</p>
-            <p className="text-[13px] text-slate-400 mt-1">Commencez l'entretien pour enregistrer votre vidéo.</p>
+            <p className="text-[14px] text-slate-600 font-medium">{t("video.noVideo")}</p>
+            <p className="text-[13px] text-slate-400 mt-1">{t("video.noVideoDesc")}</p>
           </div>
         )}
       </div>
@@ -1524,8 +1471,8 @@ function VideoTab() {
       {showPremiumModal && (
         <PremiumRequiredModal
           onClose={() => setShowPremiumModal(false)}
-          title="Entretien Vidéo IA réservé au Premium"
-          message="L'entretien vidéo certifié par l'IA et l'obtention des badges de compétences sont réservés aux talents membres Premium. Souscrivez pour seulement 700 FCFA/mois sans engagement."
+          title={t("video.premiumModalTitle")}
+          message={t("video.premiumModalDesc")}
           upgradeHref="/dashboard/talent?tab=premium"
         />
       )}

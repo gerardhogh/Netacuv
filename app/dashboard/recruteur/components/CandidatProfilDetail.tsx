@@ -17,6 +17,7 @@ import {
   CheckCircle,
 } from "lucide-react";
 import { useAuth } from "@/app/context/AuthContext";
+import { useTranslations } from "next-intl";
 import PremiumRequiredModal from "@/app/components/PremiumRequiredModal";
 import NetacuvVideoPlayer from "@/components/NetacuvVideoPlayer";
 
@@ -71,6 +72,7 @@ export default function CandidatProfilDetail({
   onSendEmail,
 }: CandidatProfilDetailProps) {
   const { user } = useAuth();
+  const t = useTranslations("recruiter.candidateDetail");
   const [activeSubTab, setActiveSubTab] = useState<"informations" | "reseaux" | "video">("informations");
   const [isPlaying, setIsPlaying] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
@@ -127,9 +129,9 @@ export default function CandidatProfilDetail({
     const url = fullProfile?.cvUrl || candidat?.cvUrl;
     if (url) {
       window.open(url, "_blank");
-      showNotification("Téléchargement du CV au format PDF en cours...");
+      showNotification(t("downloadingCv"));
     } else {
-      showNotification("Aucun CV disponible pour ce candidat.");
+      showNotification(t("noCvAvailable"));
     }
   };
 
@@ -137,9 +139,9 @@ export default function CandidatProfilDetail({
     const url = fullProfile?.cvUrl || candidat?.cvUrl;
     if (url) {
       window.open(url, "_blank");
-      showNotification("Ouverture de l'aperçu du document CV...");
+      showNotification(t("openingCv"));
     } else {
-      showNotification("Aucun CV disponible pour ce candidat.");
+      showNotification(t("noCvAvailable"));
     }
   };
 
@@ -161,7 +163,7 @@ export default function CandidatProfilDetail({
             onClick={onBack}
             className="hover:text-[#32A8D7] transition-colors"
           >
-            Accueil
+            {t("home")}
           </button>
           <span>&rsaquo;</span>
           <button
@@ -169,10 +171,10 @@ export default function CandidatProfilDetail({
             onClick={onBack}
             className="hover:text-[#32A8D7] transition-colors"
           >
-            Liste des candidatures
+            {t("applicationsList")}
           </button>
           <span>&rsaquo;</span>
-          <span className="text-slate-800 font-bold">Profil du talent</span>
+          <span className="text-slate-800 font-bold">{t("talentProfile")}</span>
         </div>
 
         <button
@@ -181,7 +183,7 @@ export default function CandidatProfilDetail({
           className="flex items-center gap-1.5 text-xs font-semibold text-[#32A8D7] hover:underline"
         >
           <ArrowLeft size={16} />
-          Retour à la liste
+          {t("backToList")}
         </button>
       </div>
 
@@ -194,12 +196,10 @@ export default function CandidatProfilDetail({
           {/* Carte Résumé Profil */}
           <div className="bg-white rounded-2xl p-6 border border-slate-200/80 shadow-xs flex flex-col items-center text-center">
             <div className="relative w-28 h-28 rounded-full overflow-hidden mb-4 ring-4 ring-pink-100 bg-pink-100">
-              <Image
+              <img
                 src={imageUrl}
                 alt={name}
-                fill
-                sizes="112px"
-                className="object-cover"
+                className="object-cover w-full h-full"
               />
             </div>
 
@@ -212,10 +212,10 @@ export default function CandidatProfilDetail({
 
             <div className="flex items-center gap-2 mb-5">
               <span className="text-[11px] font-bold px-3 py-0.5 rounded-md bg-emerald-500 text-white">
-                Actif
+                {t("active")}
               </span>
               <span className="text-[11px] font-bold px-3 py-0.5 rounded-md bg-sky-50 text-[#32A8D7] border border-sky-200">
-                Certifié
+                {t("certified")}
               </span>
             </div>
 
@@ -241,14 +241,14 @@ export default function CandidatProfilDetail({
                   : 'bg-white border border-slate-300 text-slate-700 hover:bg-slate-50'
               }`}
             >
-              Envoyer un mail
+              {t("sendEmail")}
             </button>
           </div>
 
           {/* Carte CV actualisé */}
           <div className="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-xs space-y-4">
             <h3 className="text-xs font-bold text-slate-700">
-              CV actualisé le 21 avril 2025
+              {t("cvUpdated")}
             </h3>
 
             {/* Document Preview */}
@@ -261,12 +261,12 @@ export default function CandidatProfilDetail({
                 />
               ) : (
                 <div className="flex flex-col items-center justify-center w-full h-full text-slate-400 p-6">
-                  <span className="text-sm font-medium">Aucun CV disponible</span>
+                  <span className="text-sm font-medium">{t("noCvAvailable")}</span>
                 </div>
               )}
               <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent flex items-end p-3">
                 <span className="text-[11px] text-white font-medium bg-black/40 backdrop-blur-xs px-2.5 py-1 rounded">
-                  Document certifié Netacuv
+                  {t("certifiedDocument")}
                 </span>
               </div>
             </div>
@@ -279,7 +279,7 @@ export default function CandidatProfilDetail({
                 className="flex-1 py-2 px-2 text-[11px] font-semibold text-slate-700 bg-white border border-slate-300 hover:bg-slate-50 rounded-md transition-colors flex items-center justify-center gap-1.5 shadow-xs"
               >
                 <Download size={13} className="text-red-500" />
-                Télécharger le pdf
+                {t("downloadCv")}
               </button>
               <button
                 type="button"
@@ -287,7 +287,7 @@ export default function CandidatProfilDetail({
                 className="flex-1 py-2 px-2 text-[11px] font-semibold text-white bg-[#32A8D7] hover:bg-[#2896c2] rounded-md transition-colors flex items-center justify-center gap-1.5 shadow-xs"
               >
                 <Eye size={13} />
-                Prévisualiser
+                {t("previewCv")}
               </button>
             </div>
           </div>
@@ -308,7 +308,7 @@ export default function CandidatProfilDetail({
                   : "text-slate-600 hover:text-slate-900"
               }`}
             >
-              Informations
+              {t("tabInfo")}
             </button>
             <button
               type="button"
@@ -319,7 +319,7 @@ export default function CandidatProfilDetail({
                   : "text-slate-600 hover:text-slate-900"
               }`}
             >
-              Réseaux
+              {t("tabNetworks")}
             </button>
             <button
               type="button"
@@ -330,7 +330,7 @@ export default function CandidatProfilDetail({
                   : "text-slate-600 hover:text-slate-900"
               }`}
             >
-              Vidéo Entretien
+              {t("tabVideo")}
             </button>
           </div>
 
@@ -340,30 +340,30 @@ export default function CandidatProfilDetail({
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                 <div>
                   <label className="block text-xs font-semibold text-slate-700 mb-1.5">
-                    Prénom
+                    {t("firstName")}
                   </label>
                   <input
                     type="text"
                     readOnly
-                    value={name?.split(" ")[0] || "Non spécifié"}
+                    value={name?.split(" ")[0] || t("unspecified")}
                     className="w-full bg-slate-100 border border-slate-200/80 rounded-md py-2.5 px-3.5 text-xs text-slate-800 font-medium outline-none cursor-default"
                   />
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-slate-700 mb-1.5">
-                    Nom
+                    {t("lastName")}
                   </label>
                   <input
                     type="text"
                     readOnly
-                    value={name?.split(" ").slice(1).join(" ") || "Non spécifié"}
+                    value={name?.split(" ").slice(1).join(" ") || t("unspecified")}
                     className="w-full bg-slate-100 border border-slate-200/80 rounded-md py-2.5 px-3.5 text-xs text-slate-800 font-medium outline-none cursor-default"
                   />
                 </div>
 
                 <div>
                   <label className="block text-xs font-semibold text-slate-700 mb-1.5">
-                    Titre professionnel
+                    {t("profession")}
                   </label>
                   <input
                     type="text"
@@ -374,7 +374,7 @@ export default function CandidatProfilDetail({
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-slate-700 mb-1.5">
-                    Nom d'utilisateur
+                    {t("username")}
                   </label>
                   <input
                     type="text"
@@ -386,18 +386,18 @@ export default function CandidatProfilDetail({
 
                 <div>
                   <label className="block text-xs font-semibold text-slate-700 mb-1.5">
-                    Sexe H/F
+                    {t("gender")}
                   </label>
                   <input
                     type="text"
                     readOnly
-                    value={fullProfile?.gender || "Non précisé"}
+                    value={fullProfile?.gender || t("unspecified")}
                     className="w-full bg-slate-100 border border-slate-200/80 rounded-md py-2.5 px-3.5 text-xs text-slate-800 font-medium outline-none cursor-default"
                   />
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-slate-700 mb-1.5">
-                    Profession / Domaine
+                    {t("domain")}
                   </label>
                   <input
                     type="text"
@@ -409,18 +409,18 @@ export default function CandidatProfilDetail({
 
                 <div>
                   <label className="block text-xs font-semibold text-slate-700 mb-1.5">
-                    Localisation
+                    {t("location")}
                   </label>
                   <input
                     type="text"
                     readOnly
-                    value={fullProfile?.location || candidat?.location || "Non spécifié"}
+                    value={fullProfile?.location || candidat?.location || t("unspecified")}
                     className="w-full bg-slate-100 border border-slate-200/80 rounded-md py-2.5 px-3.5 text-xs text-slate-800 font-medium outline-none cursor-default"
                   />
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-slate-700 mb-1.5">
-                    Numéro de téléphone
+                    {t("phone")}
                   </label>
                   <input
                     type="text"
@@ -431,7 +431,7 @@ export default function CandidatProfilDetail({
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-slate-700 mb-1.5">
-                    Email
+                    {t("email")}
                   </label>
                   <input
                     type="text"
@@ -444,24 +444,24 @@ export default function CandidatProfilDetail({
 
               <div>
                 <label className="block text-xs font-semibold text-slate-700 mb-1.5">
-                  Biographie
+                  {t("bio")}
                 </label>
                 <textarea
                   readOnly
                   rows={3}
-                  value={fullProfile?.bio || "Aucune biographie disponible."}
+                  value={fullProfile?.bio || t("noBio")}
                   className="w-full bg-slate-100 border border-slate-200/80 rounded-md p-3.5 text-xs text-slate-800 font-medium outline-none cursor-default resize-none"
                 />
               </div>
 
               <div>
                 <label className="block text-xs font-semibold text-slate-700 mb-1.5">
-                  Compétences clés
+                  {t("skills")}
                 </label>
                 <input
                   type="text"
                   readOnly
-                  value={fullProfile?.skills?.join(", ") || "Non spécifié"}
+                  value={fullProfile?.skills?.join(", ") || t("unspecified")}
                   className="w-full bg-slate-100 border border-slate-200/80 rounded-md py-2.5 px-3.5 text-xs text-slate-800 font-medium outline-none cursor-default"
                 />
               </div>
@@ -500,20 +500,20 @@ export default function CandidatProfilDetail({
               <div className="flex items-center gap-2.5 text-[#32A8D7]">
                 <Video size={22} />
                 <h3 className="text-base font-bold text-[#0071a2]">
-                  Entretien vidéo de {name}
+                  {t("interviewVideoOf")} {name}
                 </h3>
               </div>
 
               {/* Texte explicatif officiel */}
               <div className="p-4 sm:p-5 rounded-xl bg-sky-50/60 border border-sky-100 text-xs text-slate-700 space-y-3 leading-relaxed">
                 <p>
-                  Ce test est constitué de 20 questions avec une variation de temps pour répondre. Les talents disposent de 3 tentatives. En cas d'annulation, l'entretien recommence depuis le début.
+                  {t("testInfo1")}
                 </p>
                 <p>
-                  Si les 3 tentatives ont étés annulées sans succès, ils devront attendre 3 jours avant de pouvoir réessayer.
+                  {t("testInfo2")}
                 </p>
                 <p className="font-bold italic text-slate-800">
-                  Bon visionnage à vous !
+                  {t("enjoyWatching")}
                 </p>
               </div>
 
@@ -526,7 +526,7 @@ export default function CandidatProfilDetail({
               ) : (
                 <div className="relative w-full aspect-video rounded-2xl bg-slate-100 border border-slate-200 flex flex-col items-center justify-center text-slate-400">
                   <Video size={48} className="mb-4 opacity-50" />
-                  <p className="text-sm font-medium">Aucune vidéo d'entretien disponible</p>
+                  <p className="text-sm font-medium">{t("noVideoAvailable")}</p>
                 </div>
               )}
 
@@ -535,19 +535,19 @@ export default function CandidatProfilDetail({
                 <div className="mt-6 p-5 rounded-xl bg-indigo-50/60 border border-indigo-100">
                   <h4 className="text-sm font-bold text-indigo-900 flex items-center gap-2 mb-3">
                     <CheckCircle size={18} className="text-indigo-500" />
-                    Évaluation de l'IA Netacuv
+                    {t("aiEvaluation")}
                   </h4>
                   <div className="flex items-center gap-4 mb-4">
                     <div className="flex-shrink-0 w-16 h-16 rounded-full bg-white border-2 border-indigo-200 flex items-center justify-center shadow-sm">
                       <span className="text-lg font-black text-indigo-600">{fullProfile.interviewSession.aiScore}%</span>
                     </div>
                     <div className="text-xs text-slate-700 leading-relaxed">
-                      Ce score est calculé par notre intelligence artificielle en analysant la pertinence des réponses, le langage corporel, et la clarté de l'expression.
+                      {t("aiScoreExplanation")}
                     </div>
                   </div>
                   {fullProfile.interviewSession.aiFeedback && (
                     <div className="bg-white rounded-lg p-4 border border-indigo-50 text-xs text-slate-700 leading-relaxed shadow-sm">
-                      <strong className="text-indigo-800 block mb-1">Résumé de l'analyse :</strong>
+                      <strong className="text-indigo-800 block mb-1">{t("questionSummary")}</strong>
                       {fullProfile.interviewSession.aiFeedback}
                     </div>
                   )}
@@ -563,7 +563,7 @@ export default function CandidatProfilDetail({
       {showPremiumModal && (
         <PremiumRequiredModal 
           onClose={() => setShowPremiumModal(false)} 
-          message="Passez au plan Premium pour contacter ce talent et consulter ses informations détaillées."
+          message={t("premiumRequiredCandidate")}
         />
       )}
     </div>

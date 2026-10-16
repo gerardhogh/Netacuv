@@ -26,7 +26,9 @@ import Link from "next/link";
 import Image from "next/image";
 import useSWR from "swr";
 import toast from "react-hot-toast";
+import { useTranslations, useLocale } from "next-intl";
 import ReportModal from "@/app/components/ReportModal";
+import { EmptyState } from "@/components/ui/EmptyState";
 
 const fetcher = (url: string) => fetch(url).then(res => res.json());
 
@@ -64,6 +66,8 @@ export default function OffresEmplois({
   onLimitReached?: () => void;
   onApplySuccess?: () => void;
 }) {
+  const t = useTranslations("talent.jobOffers");
+  const locale = useLocale();
   const [view, setView] = useState<ViewState>("list");
   const [selectedJob, setSelectedJob] = useState<any | null>(null);
   const [companyTab, setCompanyTab] = useState<"info" | "reseaux">("info");
@@ -89,6 +93,51 @@ export default function OffresEmplois({
   const { data, error, isLoading } = useSWR("/api/jobs", fetcher);
   const jobs = data?.jobs || [];
 
+  const { data: myAppsData, mutate: mutateApps } = useSWR("/api/applications", fetcher);
+  const { data: favsData, mutate: mutateFavs } = useSWR("/api/favorites?type=JOB_OFFER", fetcher);
+
+  const appliedJobIds = new Set<string>(
+    (myAppsData?.applications || []).map((app: any) => String(app.jobOfferId || app.jobOffer?.id || ""))
+  );
+
+  const favoriteJobIds = new Set<string>(
+    (favsData?.favorites || []).map((f: any) => String(f.targetId))
+  );
+
+  const handleToggleFavorite = async (job: any, e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    try {
+      const isFav = favoriteJobIds.has(job.id);
+      const res = await fetch("/api/favorites", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          targetType: "JOB_OFFER",
+          targetId: job.id,
+          title: job.title,
+          subtitle: job.recruiter?.companyName || job.company || "Entreprise",
+          location: job.location,
+          metadata: {
+            contractType: job.contractType,
+            salary: job.salary,
+            createdAt: job.createdAt,
+          },
+        }),
+      });
+
+      if (res.ok) {
+        mutateFavs();
+        if (isFav) {
+          toast.success(t("favoriteRemoved"));
+        } else {
+          toast.success(t("favoriteSaved"));
+        }
+      }
+    } catch {
+      toast.error(t("favoriteError"));
+    }
+  };
+
   const handleViewDetail = (job: any) => {
     setSelectedJob(job);
     setView("detail");
@@ -113,9 +162,9 @@ export default function OffresEmplois({
         <>
           <div className="space-y-5">
             <div>
-              <h2 className="text-xl font-bold text-[#0B3A5A]">Offres d'emploi disponibles</h2>
+              <h2 className="text-xl font-bold text-[#0B3A5A]">{t("availableJobsTitle")}</h2>
               <p className="text-[14px] text-slate-600 mt-1.5">
-                Des entreprises recrutent : Postes à pourvoir dès maintenant dans divers secteurs.
+                {t("availableJobsSubtitle")}
               </p>
             </div>
 
@@ -123,12 +172,12 @@ export default function OffresEmplois({
               {isLoading ? (
                 <div className="col-span-1 sm:col-span-2 lg:col-span-4 p-10 text-center text-slate-400">
                   <div className="w-8 h-8 border-4 border-slate-200 border-t-blue-500 rounded-full animate-spin mx-auto mb-4"></div>
-                  Chargement des offres...
+                  {t("loadingJobs")}
                 </div>
               ) : error ? (
                 <div className="col-span-1 sm:col-span-2 lg:col-span-4 p-10 text-center text-red-500 bg-red-50 rounded-2xl border border-red-100">
                   <AlertTriangle className="mx-auto mb-2 opacity-50" size={32} />
-                  Erreur lors du chargement des offres.
+                  {t("loadingError")}
                 </div>
               ) : filteredJobs.length > 0 ? (
                 filteredJobs.map((job: any) => (
@@ -141,22 +190,27 @@ export default function OffresEmplois({
                         </div>
                       </div>
                       <div className="flex items-center justify-between text-[11px] text-slate-400 mb-2">
-                        <span>Publié le: {new Date(job.createdAt).toLocaleDateString("fr-FR")}</span>
-                        {job.status === "PUBLISHED" ? (
+                        <span>{t("publishedOn")}: {new Date(job.createdAt).toLocaleDateString(locale === "en" ? "en-US" : "fr-FR")}</span>
+                        {appliedJobIds.has(job.id) ? (
+                          <div className="flex items-center gap-1 bg-emerald-50 text-emerald-700 border border-emerald-200 px-2 py-0.5 rounded-full text-[11px] font-semibold">
+                            <CheckCircle size={11} className="text-emerald-600" />
+                            <span>{t("applied")}</span>
+                          </div>
+                        ) : job.status === "PUBLISHED" ? (
                           <div className="flex items-center gap-1.5 bg-slate-50 px-2 py-0.5 rounded-full border border-slate-100">
-                            <span className="text-slate-600 font-medium">Active</span>
+                            <span className="text-slate-600 font-medium">{t("active")}</span>
                             <div className="w-1.5 h-1.5 rounded-full bg-green-500"></div>
                           </div>
                         ) : (
                           <div className="flex items-center gap-1.5 bg-slate-50 px-2 py-0.5 rounded-full border border-slate-100">
-                            <span className="text-slate-600 font-medium">Inactive</span>
+                            <span className="text-slate-600 font-medium">{t("inactive")}</span>
                             <div className="w-1.5 h-1.5 rounded-full bg-yellow-500"></div>
                           </div>
                         )}
                       </div>
                       <h4 className="font-bold text-[#4B5563] text-[15px] leading-snug mb-1">{job.title}</h4>
                       <div className="text-[12px] text-slate-500 mb-1">
-                        Entreprise : <span className="font-semibold text-[#32A8D7]">{job.company}</span>
+                        {t("company")} : <span className="font-semibold text-[#32A8D7]">{job.company}</span>
                       </div>
                       <div className="text-[12px] text-slate-400">
                         {job.location}
@@ -170,7 +224,7 @@ export default function OffresEmplois({
                         }}
                         className="flex-1 py-2 text-[13px] font-semibold text-[#32A8D7] border border-[#32A8D7] rounded-lg hover:bg-blue-50 transition-colors bg-white shadow-xs"
                       >
-                        Voir détail
+                        {t("viewDetail")}
                       </button>
 
                       {/* Bouton 3 points avec menu d'actions interactif */}
@@ -185,8 +239,8 @@ export default function OffresEmplois({
                             e.stopPropagation();
                             setOpenMenuJobId(openMenuJobId === job.id ? null : job.id);
                           }}
-                          aria-label="Options de l'offre"
-                          title="Plus d'options"
+                          aria-label={t("moreOptions")}
+                          title={t("moreOptions")}
                         >
                           <MoreHorizontal size={16} />
                         </button>
@@ -204,7 +258,7 @@ export default function OffresEmplois({
                               className="w-full px-3.5 py-2 text-left text-xs font-semibold text-slate-700 hover:bg-slate-50 flex items-center gap-2.5 transition-colors"
                             >
                               <Eye size={14} className="text-slate-400" />
-                              <span>Voir le détail</span>
+                              <span>{t("viewDetail")}</span>
                             </button>
 
                             <button
@@ -213,24 +267,27 @@ export default function OffresEmplois({
                                 if (typeof window !== "undefined") {
                                   const url = `${window.location.origin}/talents#emplois`;
                                   navigator.clipboard.writeText(url);
-                                  toast.success("Lien de l'offre copié dans le presse-papier !");
+                                  toast.success(t("linkCopied"));
                                 }
                               }}
                               className="w-full px-3.5 py-2 text-left text-xs font-semibold text-slate-700 hover:bg-slate-50 flex items-center gap-2.5 transition-colors"
                             >
                               <Share2 size={14} className="text-slate-400" />
-                              <span>Partager l'offre</span>
+                              <span>{t("share")}</span>
                             </button>
 
                             <button
-                              onClick={() => {
+                              onClick={(e) => {
                                 setOpenMenuJobId(null);
-                                toast.success("Offre sauvegardée dans vos favoris !");
+                                handleToggleFavorite(job, e);
                               }}
                               className="w-full px-3.5 py-2 text-left text-xs font-semibold text-slate-700 hover:bg-slate-50 flex items-center gap-2.5 transition-colors"
                             >
-                              <Bookmark size={14} className="text-slate-400" />
-                              <span>Sauvegarder l'offre</span>
+                              <Bookmark 
+                                size={14} 
+                                className={favoriteJobIds.has(job.id) ? "text-[#32A8D7] fill-[#32A8D7]" : "text-slate-400"} 
+                              />
+                              <span>{favoriteJobIds.has(job.id) ? t("removeFromFavorites") : t("saveOffer")}</span>
                             </button>
 
                             <div className="my-1 border-t border-slate-100" />
@@ -248,7 +305,7 @@ export default function OffresEmplois({
                               className="w-full px-3.5 py-2 text-left text-xs font-bold text-rose-600 hover:bg-rose-50 flex items-center gap-2.5 transition-colors"
                             >
                               <Flag size={14} className="text-rose-500" />
-                              <span>Signaler cette offre</span>
+                              <span>{t("report")}</span>
                             </button>
                           </div>
                         )}
@@ -257,16 +314,19 @@ export default function OffresEmplois({
                   </div>
                 ))
               ) : (
-                <div className="col-span-full text-center py-12 text-slate-500 bg-slate-50 rounded-2xl border border-dashed border-slate-200">
-                  <Briefcase size={32} className="mx-auto text-slate-300 mb-3" />
-                  <p className="text-sm font-medium">Aucune offre ne correspond à votre recherche.</p>
+                <div className="col-span-full">
+                  <EmptyState
+                    type="offres"
+                    title={t("emptyOffersTitle")}
+                    description={t("emptyOffersDesc")}
+                  />
                 </div>
               )}
             </div>
           </div>
 
           <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-100 shadow-xl space-y-6">
-            <h3 className="font-bold text-slate-900 text-lg">Sites pour postuler aux meilleures offres d'emplois</h3>
+            <h3 className="font-bold text-slate-900 text-lg">{t("jobBoardsTitle")}</h3>
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
               {JOB_BOARDS.map((board, i) => (
                 <Link 
@@ -296,12 +356,12 @@ export default function OffresEmplois({
           </div>
 
           <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-100 shadow-xl space-y-6">
-            <h3 className="font-bold text-slate-900 text-lg">Conseils pratiques</h3>
+            <h3 className="font-bold text-slate-900 text-lg">{t("tipsTitle")}</h3>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {[
-                { title: "Rédiger un CV attrayant", desc: "Mettez en valeur vos compétences de manière claire et concise." },
-                { title: "Préparer ses entretiens", desc: "Anticipez les questions fréquentes et entraînez-vous." },
-                { title: "Réseautage efficace", desc: "Développez votre réseau professionnel sur LinkedIn et ailleurs." }
+                { title: t("tip1Title"), desc: t("tip1Desc") },
+                { title: t("tip2Title"), desc: t("tip2Desc") },
+                { title: t("tip3Title"), desc: t("tip3Desc") }
               ].map((tip, i) => (
                 <div key={i} className="p-6 bg-blue-50/50 rounded-2xl border border-blue-100 hover:shadow-md transition-shadow">
                   <div className="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center text-blue-600 mb-4">
@@ -320,9 +380,9 @@ export default function OffresEmplois({
       {view === "detail" && selectedJob && (
         <div className="space-y-6">
           <div className="flex flex-wrap items-center gap-2 text-xs font-semibold text-slate-500">
-            <button onClick={() => setView("list")} className="hover:text-blue-600 transition-colors">Accueil</button>
+            <button onClick={() => setView("list")} className="hover:text-blue-600 transition-colors">{t("home")}</button>
             <ChevronRight size={14} className="text-slate-400" />
-            <button onClick={() => setView("list")} className="hover:text-blue-600 transition-colors">Offres d'emplois</button>
+            <button onClick={() => setView("list")} className="hover:text-blue-600 transition-colors">{t("title")}</button>
             <ChevronRight size={14} className="text-slate-400" />
             <span className="text-slate-900 px-2 py-1 bg-slate-100 rounded-md">{selectedJob.category}</span>
           </div>
@@ -332,7 +392,15 @@ export default function OffresEmplois({
             <div className="h-32 w-full bg-gradient-to-r from-blue-600 to-blue-400"></div>
             
             <div className="absolute top-6 right-6 flex items-center gap-2">
-              <button className="w-10 h-10 rounded-full bg-white/20 hover:bg-white/40 backdrop-blur-md flex items-center justify-center text-white transition-all shadow-sm">
+              <button 
+                onClick={() => {
+                  if (typeof window !== "undefined") {
+                    navigator.clipboard.writeText(window.location.href);
+                    toast.success(t("linkCopied"));
+                  }
+                }}
+                className="w-10 h-10 rounded-full bg-white/20 hover:bg-white/40 backdrop-blur-md flex items-center justify-center text-white transition-all shadow-sm"
+              >
                 <Share2 size={16} />
               </button>
             </div>
@@ -347,11 +415,11 @@ export default function OffresEmplois({
                 
                 {selectedJob.status === "CLOSED" ? (
                   <span className="px-4 py-1.5 bg-red-50 text-red-600 text-xs font-bold rounded-full border border-red-100 inline-flex items-center gap-1.5">
-                    <span className="w-1.5 h-1.5 bg-red-500 rounded-full"></span> Offre clôturée
+                    <span className="w-1.5 h-1.5 bg-red-500 rounded-full"></span> {t("closedOffer")}
                   </span>
                 ) : (
                   <span className="px-4 py-1.5 bg-green-50 text-green-700 text-xs font-bold rounded-full border border-green-200 shadow-sm inline-flex items-center gap-1.5">
-                    <span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></span> Recrutement en cours
+                    <span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></span> {t("hiringOpen")}
                   </span>
                 )}
               </div>
@@ -363,37 +431,37 @@ export default function OffresEmplois({
                     <Building size={16} className="text-slate-400" />
                     <button onClick={handleViewCompany} className="text-blue-600 hover:text-blue-700 hover:underline transition-colors">{selectedJob.recruiter?.companyName || "Entreprise"}</button>
                   </span>
-                  <span className="flex items-center gap-1.5"><MapPin size={16} className="text-slate-400" /> {selectedJob.location || "Non précisé"}</span>
-                  <span className="flex items-center gap-1.5"><Clock size={16} className="text-slate-400" /> {new Date(selectedJob.createdAt).toLocaleDateString("fr-FR")}</span>
+                  <span className="flex items-center gap-1.5"><MapPin size={16} className="text-slate-400" /> {selectedJob.location || t("unspecified")}</span>
+                  <span className="flex items-center gap-1.5"><Clock size={16} className="text-slate-400" /> {new Date(selectedJob.createdAt).toLocaleDateString(locale === "en" ? "en-US" : "fr-FR")}</span>
                 </div>
 
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-10">
                   <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100 flex flex-col gap-1 text-center">
                     <Briefcase size={18} className="mx-auto text-slate-400 mb-1" />
-                    <span className="text-[10px] text-slate-400 uppercase font-bold tracking-wider">Secteur</span>
-                    <span className="text-sm font-bold text-slate-800">Non précisé</span>
+                    <span className="text-[10px] text-slate-400 uppercase font-bold tracking-wider">{t("sector")}</span>
+                    <span className="text-sm font-bold text-slate-800">{t("unspecified")}</span>
                   </div>
                   <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100 flex flex-col gap-1 text-center">
                     <CheckCircle size={18} className="mx-auto text-slate-400 mb-1" />
-                    <span className="text-[10px] text-slate-400 uppercase font-bold tracking-wider">Contrat</span>
-                    <span className="text-sm font-bold text-slate-800">{selectedJob.contractType || "Non précisé"}</span>
+                    <span className="text-[10px] text-slate-400 uppercase font-bold tracking-wider">{t("contract")}</span>
+                    <span className="text-sm font-bold text-slate-800">{selectedJob.contractType || t("unspecified")}</span>
                   </div>
                   <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100 flex flex-col gap-1 text-center">
                     <Users size={18} className="mx-auto text-slate-400 mb-1" />
-                    <span className="text-[10px] text-slate-400 uppercase font-bold tracking-wider">Taille Ent.</span>
-                    <span className="text-sm font-bold text-slate-800">Non précisé</span>
+                    <span className="text-[10px] text-slate-400 uppercase font-bold tracking-wider">{t("companySize")}</span>
+                    <span className="text-sm font-bold text-slate-800">{t("unspecified")}</span>
                   </div>
                   <div className="p-4 bg-green-50/50 rounded-2xl border border-green-100 flex flex-col gap-1 text-center">
                     <span className="text-lg mb-1">💰</span>
-                    <span className="text-[10px] text-green-600 uppercase font-bold tracking-wider">Salaire</span>
-                    <span className="text-sm font-bold text-green-800 line-clamp-1">{selectedJob.salary || "À négocier"}</span>
+                    <span className="text-[10px] text-green-600 uppercase font-bold tracking-wider">{t("salary")}</span>
+                    <span className="text-sm font-bold text-green-800 line-clamp-1">{selectedJob.salary || t("negotiable")}</span>
                   </div>
                 </div>
 
                 <div className="space-y-6">
                   <div>
                     <h3 className="font-bold text-slate-900 text-lg mb-4 flex items-center gap-2">
-                      <span className="w-1 h-5 bg-blue-600 rounded-full"></span> Description de l'Offre
+                      <span className="w-1 h-5 bg-blue-600 rounded-full"></span> {t("jobDescription")}
                     </h3>
                     <div className="text-sm text-slate-600 whitespace-pre-wrap leading-relaxed bg-slate-50 p-6 rounded-2xl border border-slate-100">
                       {selectedJob.description}
@@ -402,7 +470,7 @@ export default function OffresEmplois({
 
                   <div>
                     <h3 className="font-bold text-slate-900 text-lg mb-4 flex items-center gap-2">
-                      <span className="w-1 h-5 bg-blue-600 rounded-full"></span> Compétences requises
+                      <span className="w-1 h-5 bg-blue-600 rounded-full"></span> {t("skillsRequired")}
                     </h3>
                     <div className="flex flex-wrap gap-2.5">
                       {["Dynamisme", "Autonomie", "Rigueur"].map((skill, i) => (
@@ -423,7 +491,7 @@ export default function OffresEmplois({
               onClick={() => setView("list")}
               className="px-6 py-3 bg-white hover:bg-slate-50 text-slate-700 text-sm font-bold rounded-xl transition-colors border border-slate-200"
             >
-              Retour à la liste
+              {t("backToList")}
             </button>
             <div className="flex items-center gap-3">
               <button 
@@ -436,59 +504,101 @@ export default function OffresEmplois({
                   setReportModalOpen(true);
                 }}
                 className="px-4 py-3 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-600 transition-colors border border-rose-200 text-xs font-bold flex items-center gap-1.5"
-                title="Signaler cette offre"
+                title={t("report")}
               >
                 <Flag size={15} />
-                <span className="hidden sm:inline">Signaler</span>
+                <span className="hidden sm:inline">{t("reportShort")}</span>
               </button>
+              {/* Bouton Favori */}
               <button 
-                onClick={() => toast.success("Offre enregistrée dans vos favoris !")}
-                className="w-12 h-12 flex items-center justify-center rounded-xl bg-slate-50 hover:bg-slate-100 text-slate-400 hover:text-blue-600 transition-colors border border-slate-200"
-                title="Sauvegarder"
-              >
-                <Bookmark size={18} />
-              </button>
-              <button 
-                disabled={selectedJob.status === "CLOSED" || applying}
-                onClick={async () => {
-                  if (!isPremium && (applicationsCount ?? 0) >= 1) {
-                    if (onLimitReached) onLimitReached();
-                    return;
-                  }
-
-                  setApplying(true);
-                  try {
-                    const res = await fetch('/api/applications', {
-                      method: 'POST',
-                      headers: { 'Content-Type': 'application/json' },
-                      body: JSON.stringify({ jobOfferId: selectedJob.id })
-                    });
-                    if (res.ok) {
-                      setApplySuccess(true);
-                      if (onApplySuccess) onApplySuccess();
-                      setTimeout(() => setApplySuccess(false), 3000);
-                    } else {
-                      const err = await res.json();
-                      if (err.error === 'Upgrade Required' || res.status === 403) {
-                        if (onLimitReached) onLimitReached();
-                      } else {
-                        alert(err.error || "Erreur lors de la candidature");
-                      }
-                    }
-                  } catch (e) {
-                    alert("Erreur lors de la candidature");
-                  } finally {
-                    setApplying(false);
-                  }
-                }}
-                className={`px-8 py-3 text-white text-sm font-bold rounded-xl transition-all shadow-lg flex items-center gap-2 ${
-                  selectedJob.status === "CLOSED" || applySuccess 
-                  ? "bg-slate-300 cursor-not-allowed shadow-none" 
-                  : "bg-blue-600 hover:bg-blue-700 shadow-blue-500/25 hover:scale-105"
+                onClick={(e) => handleToggleFavorite(selectedJob, e)}
+                className={`w-12 h-12 flex items-center justify-center rounded-xl transition-colors border ${
+                  favoriteJobIds.has(selectedJob.id)
+                    ? "bg-sky-50 text-[#32A8D7] border-sky-200 shadow-xs"
+                    : "bg-slate-50 hover:bg-slate-100 text-slate-400 hover:text-[#32A8D7] border-slate-200"
                 }`}
+                title={favoriteJobIds.has(selectedJob.id) ? t("removeFromFavorites") : t("saveOffer")}
               >
-                {selectedJob.status === "CLOSED" ? "Offre non disponible" : applySuccess ? "Candidature envoyée" : applying ? "Envoi..." : "Postuler maintenant"} <ArrowRight size={16} />
+                <Bookmark 
+                  size={18} 
+                  className={favoriteJobIds.has(selectedJob.id) ? "fill-[#32A8D7]" : ""} 
+                />
               </button>
+
+              {/* Bouton Postuler / Candidature envoyée */}
+              {(() => {
+                const isAlreadyApplied = appliedJobIds.has(selectedJob.id) || applySuccess;
+                const isClosed = selectedJob.status === "CLOSED";
+
+                return (
+                  <button 
+                    disabled={isClosed || applying || isAlreadyApplied}
+                    onClick={async () => {
+                      if (isAlreadyApplied) return;
+                      if (!isPremium && (applicationsCount ?? 0) >= 1) {
+                        if (onLimitReached) onLimitReached();
+                        return;
+                      }
+
+                      setApplying(true);
+                      try {
+                        const res = await fetch('/api/applications', {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ jobOfferId: selectedJob.id })
+                        });
+
+                        if (res.ok) {
+                          setApplySuccess(true);
+                          appliedJobIds.add(selectedJob.id);
+                          mutateApps();
+                          if (onApplySuccess) onApplySuccess();
+                          toast.success(t("applySuccess", { title: selectedJob.title }));
+                        } else {
+                          const err = await res.json();
+                          if (res.status === 409 || err.alreadyApplied) {
+                            setApplySuccess(true);
+                            appliedJobIds.add(selectedJob.id);
+                            mutateApps();
+                            toast.error(t("alreadyAppliedNotice"));
+                          } else if (err.error === 'Upgrade Required' || res.status === 403) {
+                            if (onLimitReached) onLimitReached();
+                          } else {
+                            toast.error(err.error || "Erreur lors de la candidature");
+                          }
+                        }
+                      } catch (e) {
+                        toast.error("Erreur lors de la candidature");
+                      } finally {
+                        setApplying(false);
+                      }
+                    }}
+                    className={`px-8 py-3 text-sm font-bold rounded-xl transition-all flex items-center gap-2 ${
+                      isAlreadyApplied
+                        ? "bg-emerald-50 text-emerald-700 border border-emerald-300 cursor-not-allowed shadow-none"
+                        : isClosed 
+                        ? "bg-slate-200 text-slate-500 cursor-not-allowed shadow-none" 
+                        : "bg-[#1e8ae9] hover:bg-[#1672c2] text-white shadow-lg shadow-blue-500/25 hover:scale-[1.02] cursor-pointer"
+                    }`}
+                  >
+                    {isAlreadyApplied ? (
+                      <>
+                        <CheckCircle size={16} className="text-emerald-600" />
+                        <span>{t("applicationSent")}</span>
+                      </>
+                    ) : isClosed ? (
+                      <span>{t("offerUnavailable")}</span>
+                    ) : applying ? (
+                      <span>{t("submitting")}</span>
+                    ) : (
+                      <>
+                        <span>{t("applyNow")}</span>
+                        <ArrowRight size={16} />
+                      </>
+                    )}
+                  </button>
+                );
+              })()}
             </div>
           </div>
         </div>
@@ -498,13 +608,13 @@ export default function OffresEmplois({
       {view === "company" && selectedJob && (
         <div className="space-y-6">
           <div className="flex flex-wrap items-center gap-2 text-xs font-semibold text-slate-500">
-            <button onClick={() => setView("list")} className="hover:text-blue-600 transition-colors">Accueil</button>
+            <button onClick={() => setView("list")} className="hover:text-blue-600 transition-colors">{t("home")}</button>
             <ChevronRight size={14} className="text-slate-400" />
-            <button onClick={() => setView("list")} className="hover:text-blue-600 transition-colors">Offres d'emplois</button>
+            <button onClick={() => setView("list")} className="hover:text-blue-600 transition-colors">{t("title")}</button>
             <ChevronRight size={14} className="text-slate-400" />
             <button onClick={() => setView("detail")} className="hover:text-blue-600 transition-colors">{selectedJob.title}</button>
             <ChevronRight size={14} className="text-slate-400" />
-            <span className="text-slate-900 px-2 py-1 bg-slate-100 rounded-md">Profil entreprise</span>
+            <span className="text-slate-900 px-2 py-1 bg-slate-100 rounded-md">{t("companyProfile")}</span>
           </div>
 
           <div className="bg-white rounded-3xl overflow-hidden border border-slate-100 shadow-xl relative">
@@ -529,10 +639,10 @@ export default function OffresEmplois({
                   </div>
                   <div className="flex flex-wrap gap-2">
                     <button className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-lg transition-colors flex items-center gap-1.5 border border-slate-200">
-                      <Mail size={14} /> Contacter
+                      <Mail size={14} /> {t("contact")}
                     </button>
                     <button className="px-4 py-2 bg-blue-50 text-blue-600 hover:bg-blue-100 text-xs font-bold rounded-lg transition-colors flex items-center gap-1.5 border border-blue-100">
-                      <Link2 size={14} /> Site web
+                      <Link2 size={14} /> {t("website")}
                     </button>
                     <button 
                       onClick={() => {
@@ -544,9 +654,9 @@ export default function OffresEmplois({
                         setReportModalOpen(true);
                       }}
                       className="px-3.5 py-2 bg-rose-50 hover:bg-rose-100 text-rose-600 text-xs font-bold rounded-lg transition-colors flex items-center gap-1.5 border border-rose-200"
-                      title="Signaler ce compte entreprise"
+                      title={t("reportCompany")}
                     >
-                      <Flag size={14} /> Signaler ce compte
+                      <Flag size={14} /> {t("reportCompany")}
                     </button>
                   </div>
                 </div>
@@ -561,7 +671,7 @@ export default function OffresEmplois({
                   companyTab === "info" ? "border-blue-600 text-blue-600" : "border-transparent text-slate-500 hover:text-slate-700"
                 }`}
               >
-                <Building size={16} /> À propos de l'entreprise
+                <Building size={16} /> {t("aboutCompany")}
               </button>
               <button 
                 onClick={() => setCompanyTab("reseaux")}
@@ -569,7 +679,7 @@ export default function OffresEmplois({
                   companyTab === "reseaux" ? "border-blue-600 text-blue-600" : "border-transparent text-slate-500 hover:text-slate-700"
                 }`}
               >
-                <Share2 size={16} /> Réseaux Sociaux
+                <Share2 size={16} /> {t("socialNetworks")}
               </button>
             </div>
 
@@ -578,33 +688,33 @@ export default function OffresEmplois({
               {companyTab === "info" ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
                   <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Nom de l'entreprise</label>
+                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">{t("companyName")}</label>
                     <div className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-800 font-medium">
                       {selectedJob.recruiter?.companyName || "Entreprise"}
                     </div>
                   </div>
                   <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Secteur d'activité</label>
+                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">{t("industry")}</label>
                     <div className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-800 font-medium flex items-center gap-2">
                       <span className="w-2 h-2 rounded-full bg-blue-500"></span> Technologies & Logiciels
                     </div>
                   </div>
                   <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Taille de l'entreprise</label>
+                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">{t("companySize")}</label>
                     <div className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-800 font-medium flex items-center gap-2">
-                      <Users size={16} className="text-slate-400" /> Non précisé
+                      <Users size={16} className="text-slate-400" /> {t("unspecified")}
                     </div>
                   </div>
                   <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Siège Social</label>
+                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">{t("headquarters")}</label>
                     <div className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-800 font-medium flex items-center gap-2">
-                      <MapPin size={16} className="text-slate-400" /> {selectedJob.location?.split('(')[0].trim() || "Non précisé"}
+                      <MapPin size={16} className="text-slate-400" /> {selectedJob.location?.split('(')[0].trim() || t("unspecified")}
                     </div>
                   </div>
                   <div className="space-y-1.5 md:col-span-2 mt-2">
-                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Description de l'entreprise</label>
+                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">{t("companyDesc")}</label>
                     <div className="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-700 leading-relaxed min-h-[100px]">
-                      {selectedJob.recruiter?.companyName || "Cette entreprise"} est une entreprise technologique innovante offrant des solutions de pointe pour le marché africain. Notre mission est de simplifier les opérations quotidiennes grâce à des logiciels robustes et des interfaces intuitives. Nous valorisons la créativité, l'inclusion et l'impact.
+                      {selectedJob.recruiter?.companyName || "Cette entreprise"}
                     </div>
                   </div>
                 </div>
@@ -646,7 +756,7 @@ export default function OffresEmplois({
                   onClick={() => setView("detail")}
                   className="px-6 py-2.5 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-sm font-bold rounded-xl transition-colors shadow-sm"
                 >
-                  Retour à l'offre
+                  {t("backToJob")}
                 </button>
               </div>
             </div>

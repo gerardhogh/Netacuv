@@ -4,8 +4,10 @@ import { Search, LayoutList, LayoutGrid } from "lucide-react";
 import { TalentDetails } from "../components/TalentDetails";
 import { CustomSelect } from "../components/CustomSelect";
 import { Modal } from "@/app/components/ui/Modal";
+import { EmptyState } from "@/components/ui/EmptyState";
 import TalentCard from "@/app/components/TalentCard";
 import useSWR from "swr";
+import { useTranslations } from "next-intl";
 
 const fetcher = (url: string) => fetch(url).then(res => res.json());
 
@@ -44,6 +46,7 @@ interface TalentData {
 }
 
 export default function AdminTalents() {
+  const t = useTranslations("admin.talents");
   const [viewMode, setViewMode] = useState<"table" | "cards">("table");
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("Tous");
@@ -108,7 +111,7 @@ export default function AdminTalents() {
       {/* Header and Stats row */}
       <div className="flex flex-col xl:flex-row xl:items-center gap-6 justify-between bg-white p-4 rounded-xl shadow-sm border border-slate-100">
         <h2 className="text-xl font-bold">
-          <span className="text-[#232323]">Liste des</span> <span className="text-[#32A8D7]">talents</span>
+          <span className="text-[#232323]">{t("title")}</span> <span className="text-[#32A8D7]">{t("titleHighlight")}</span>
         </h2>
         
         <div className="flex flex-wrap items-center gap-4">
@@ -116,7 +119,7 @@ export default function AdminTalents() {
             <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
             <input
               type="text"
-              placeholder="Rechercher"
+              placeholder={t("searchPlaceholder")}
               value={search}
               onChange={e => setSearch(e.target.value)}
               className="pl-10 pr-4 py-2 border border-slate-200 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-[#32A8D7] w-48 sm:w-64"
@@ -127,10 +130,10 @@ export default function AdminTalents() {
             value={statusFilter}
             onChange={setStatusFilter}
             options={[
-              { label: "Tous les statuts", value: "Tous" },
-              { label: "Actif", value: "Actif" },
-              { label: "En attente", value: "En attente" },
-              { label: "Suspendu", value: "Suspendu" }
+              { label: t("allStatuses"), value: "Tous" },
+              { label: t("active"), value: "Actif" },
+              { label: t("pending"), value: "En attente" },
+              { label: t("suspended"), value: "Suspendu" }
             ]}
           />
           
@@ -138,9 +141,9 @@ export default function AdminTalents() {
             value={videoFilter}
             onChange={setVideoFilter}
             options={[
-              { label: "Vidéo : Tous", value: "Tous" },
-              { label: "Vidéo : Oui", value: "Oui" },
-              { label: "Vidéo : Non", value: "Non" }
+              { label: t("videoAll"), value: "Tous" },
+              { label: t("videoYes"), value: "Oui" },
+              { label: t("videoNo"), value: "Non" }
             ]}
           />
 
@@ -149,7 +152,7 @@ export default function AdminTalents() {
             <button
               type="button"
               onClick={() => setViewMode("table")}
-              title="Affichage Tableau"
+              title={t("viewTable")}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
                 viewMode === "table"
                   ? "bg-white text-slate-900 shadow-xs font-bold"
@@ -157,12 +160,12 @@ export default function AdminTalents() {
               }`}
             >
               <LayoutList size={15} />
-              <span>Tableau</span>
+              <span>{t("viewTable")}</span>
             </button>
             <button
               type="button"
               onClick={() => setViewMode("cards")}
-              title="Affichage Cartes"
+              title={t("viewCards")}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
                 viewMode === "cards"
                   ? "bg-white text-[#32A8D7] shadow-xs font-bold"
@@ -170,26 +173,55 @@ export default function AdminTalents() {
               }`}
             >
               <LayoutGrid size={15} />
-              <span>Cartes</span>
+              <span>{t("viewCards")}</span>
             </button>
           </div>
 
           <div className="flex flex-wrap gap-2">
-            <span className="px-3 py-1.5 bg-[#eaf6fc] border border-[#d6effa] text-[#32A8D7] text-sm font-semibold rounded-full">
-              {stats.total} talents au total
-            </span>
-            <span className="px-3 py-1.5 bg-green-50 border border-green-100 text-green-700 text-sm font-semibold rounded-full">
-              {stats.actifs} actifs
-            </span>
-            <span className="px-3 py-1.5 bg-yellow-50 border border-yellow-100 text-yellow-700 text-sm font-semibold rounded-full">
-              {stats.attente} en attente
-            </span>
-            <span className="px-3 py-1.5 bg-slate-50 border border-slate-200 text-slate-600 text-sm font-semibold rounded-full">
-              {stats.suspendus} suspendus
-            </span>
-            <span className="px-3 py-1.5 bg-red-50 border border-red-100 text-red-600 text-sm font-semibold rounded-full">
-              {stats.supprimes} supprimés
-            </span>
+            <button
+              type="button"
+              onClick={() => setStatusFilter("Tous")}
+              className={`px-3 py-1.5 text-sm font-semibold rounded-full transition-all cursor-pointer ${
+                statusFilter === "Tous"
+                  ? "bg-[#32A8D7] text-white shadow-xs"
+                  : "bg-[#eaf6fc] border border-[#d6effa] text-[#32A8D7] hover:bg-[#d6effa]"
+              }`}
+            >
+              {t("totalCount", { count: stats.total })}
+            </button>
+            <button
+              type="button"
+              onClick={() => setStatusFilter("Actif")}
+              className={`px-3 py-1.5 text-sm font-semibold rounded-full transition-all cursor-pointer ${
+                statusFilter === "Actif"
+                  ? "bg-green-600 text-white shadow-xs"
+                  : "bg-green-50 border border-green-100 text-green-700 hover:bg-green-100"
+              }`}
+            >
+              {t("activeCount", { count: stats.actifs })}
+            </button>
+            <button
+              type="button"
+              onClick={() => setStatusFilter("En attente")}
+              className={`px-3 py-1.5 text-sm font-semibold rounded-full transition-all cursor-pointer ${
+                statusFilter === "En attente"
+                  ? "bg-yellow-500 text-white shadow-xs"
+                  : "bg-yellow-50 border border-yellow-100 text-yellow-700 hover:bg-yellow-100"
+              }`}
+            >
+              {t("pendingCount", { count: stats.attente })}
+            </button>
+            <button
+              type="button"
+              onClick={() => setStatusFilter("Suspendu")}
+              className={`px-3 py-1.5 text-sm font-semibold rounded-full transition-all cursor-pointer ${
+                statusFilter === "Suspendu"
+                  ? "bg-slate-700 text-white shadow-xs"
+                  : "bg-slate-50 border border-slate-200 text-slate-600 hover:bg-slate-100"
+              }`}
+            >
+              {t("suspendedCount", { count: stats.suspendus })}
+            </button>
           </div>
         </div>
       </div>
@@ -197,34 +229,29 @@ export default function AdminTalents() {
       {/* Content: Table or Cards */}
       {loading ? (
         <div className="bg-white rounded-xl border border-slate-100 shadow-sm p-12 text-center text-slate-500">
-          Chargement des talents...
+          {t("loadingTalents")}
         </div>
       ) : filtered.length === 0 ? (
-        <div className="bg-white rounded-xl border border-slate-100 shadow-sm flex flex-col items-center justify-center py-20 text-slate-400">
-          <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" className="mb-4 text-slate-300">
-            <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
-            <circle cx="9" cy="7" r="4" />
-            <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
-            <path d="M16 3.13a4 4 0 0 1 0 7.75" />
-          </svg>
-          <p className="text-lg font-medium text-slate-500 mb-1">Aucun talent trouvé</p>
-          <p className="text-sm">Il n&apos;y a pas de talents correspondant à vos critères.</p>
-        </div>
+        <EmptyState
+          type="talents"
+          title={t("emptyTitle")}
+          description={t("emptyDesc")}
+        />
       ) : viewMode === "cards" ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5 sm:gap-6 animate-fade-in">
-          {filtered.map(t => (
+          {filtered.map(tData => (
             <TalentCard
-              key={t.id}
-              id={t.id}
-              name={t.name}
-              location={t.location || t.country || "Non précisé"}
-              profession={t.domaine || t.skills || "Talent Netacuv"}
-              imageUrl={t.avatar || "/assets/avatar_africain.jpg"}
-              isVerified={t.isVerified ?? true}
-              isPremium={t.isPremium}
-              hasVideo={t.videoOk}
-              onViewProfile={() => setSelectedTalent(t)}
-              onSendEmail={() => window.open(`mailto:${t.email}`)}
+              key={tData.id}
+              id={tData.id}
+              name={tData.name}
+              location={tData.location || tData.country || t("unspecified")}
+              profession={tData.domaine || tData.skills || "Talent Netacuv"}
+              imageUrl={tData.avatar || "/assets/avatar_africain.jpg"}
+              isVerified={tData.isVerified ?? true}
+              isPremium={tData.isPremium}
+              hasVideo={tData.videoOk}
+              onViewProfile={() => setSelectedTalent(tData)}
+              onSendEmail={() => window.open(`mailto:${tData.email}`)}
             />
           ))}
         </div>
@@ -234,85 +261,85 @@ export default function AdminTalents() {
             <table className="w-full text-sm text-left">
               <thead className="bg-slate-50/50 border-b border-slate-100">
                 <tr>
-                  <th className="px-5 py-4 font-semibold text-slate-500">No</th>
-                  <th className="px-5 py-4 font-semibold text-slate-500">Nom complet</th>
-                  <th className="px-5 py-4 font-semibold text-slate-500">Domaine</th>
-                  <th className="px-5 py-4 font-semibold text-slate-500 whitespace-nowrap">Date d&apos;inscription</th>
-                  <th className="px-5 py-4 font-semibold text-slate-500">Localisation</th>
-                  <th className="px-5 py-4 font-semibold text-slate-500">Contact</th>
-                  <th className="px-5 py-4 font-semibold text-slate-500">Email</th>
-                  <th className="px-5 py-4 font-semibold text-slate-500">Statut</th>
-                  <th className="px-5 py-4 font-semibold text-slate-500 whitespace-nowrap">Abonnement</th>
-                  <th className="px-5 py-4 font-semibold text-slate-500 whitespace-nowrap">Vidéo test</th>
-                  <th className="px-5 py-4 font-semibold text-slate-500">Action admin</th>
+                  <th className="px-5 py-4 font-semibold text-slate-500">{t("thNo")}</th>
+                  <th className="px-5 py-4 font-semibold text-slate-500">{t("thFullName")}</th>
+                  <th className="px-5 py-4 font-semibold text-slate-500">{t("thDomain")}</th>
+                  <th className="px-5 py-4 font-semibold text-slate-500 whitespace-nowrap">{t("thDate")}</th>
+                  <th className="px-5 py-4 font-semibold text-slate-500">{t("thLocation")}</th>
+                  <th className="px-5 py-4 font-semibold text-slate-500">{t("thContact")}</th>
+                  <th className="px-5 py-4 font-semibold text-slate-500">{t("thEmail")}</th>
+                  <th className="px-5 py-4 font-semibold text-slate-500">{t("thStatus")}</th>
+                  <th className="px-5 py-4 font-semibold text-slate-500 whitespace-nowrap">{t("thSubscription")}</th>
+                  <th className="px-5 py-4 font-semibold text-slate-500 whitespace-nowrap">{t("thTestVideo")}</th>
+                  <th className="px-5 py-4 font-semibold text-slate-500">{t("thAction")}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {filtered.map(t => (
-                  <tr key={t.id} className="hover:bg-slate-50/50 transition-colors">
-                    <td className="px-5 py-4 text-slate-500">{t.no}</td>
+                {filtered.map(tData => (
+                  <tr key={tData.id} className="hover:bg-slate-50/50 transition-colors">
+                    <td className="px-5 py-4 text-slate-500">{tData.no}</td>
                     <td className="px-5 py-4">
-                      <button onClick={() => setSelectedTalent(t)} className="text-[#32A8D7] font-semibold hover:underline text-left">
-                        {t.name}
+                      <button onClick={() => setSelectedTalent(tData)} className="text-[#32A8D7] font-semibold hover:underline text-left">
+                        {tData.name}
                       </button>
                     </td>
-                    <td className="px-5 py-4 text-slate-700 whitespace-nowrap">{t.domaine}</td>
-                    <td className="px-5 py-4 text-slate-500 whitespace-nowrap">{t.date}</td>
-                    <td className="px-5 py-4 text-slate-700">{t.location}</td>
+                    <td className="px-5 py-4 text-slate-700 whitespace-nowrap">{tData.domaine}</td>
+                    <td className="px-5 py-4 text-slate-500 whitespace-nowrap">{tData.date}</td>
+                    <td className="px-5 py-4 text-slate-700">{tData.location}</td>
                     <td className="px-5 py-4 whitespace-nowrap">
-                      <span className="font-bold text-slate-800">{t.contact}</span>
+                      <span className="font-bold text-slate-800">{tData.contact}</span>
                     </td>
                     <td className="px-5 py-4">
-                      <a href={`mailto:${t.email}`} className="text-[#32A8D7] hover:underline">{t.email}</a>
+                      <a href={`mailto:${tData.email}`} className="text-[#32A8D7] hover:underline">{tData.email}</a>
                     </td>
                     <td className="px-5 py-4">
                       <div className="flex items-center gap-2">
                         <span className="text-xs font-semibold text-slate-700">
-                          {t.status}
+                          {tData.status === 'Actif' ? t("active") : tData.status === 'En attente' ? t("pending") : t("suspended")}
                         </span>
-                        <span className={`w-2 h-2 rounded-full ${t.status === 'Actif' ? 'bg-green-500' : t.status === 'En attente' ? 'bg-yellow-400' : 'bg-red-500'}`}></span>
+                        <span className={`w-2 h-2 rounded-full ${tData.status === 'Actif' ? 'bg-green-500' : tData.status === 'En attente' ? 'bg-yellow-400' : 'bg-red-500'}`}></span>
                       </div>
                     </td>
                     <td className="px-5 py-4">
-                      {t.isPremium ? (
+                      {tData.isPremium ? (
                         <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-amber-50 border border-amber-200 text-amber-700 text-xs font-bold rounded-full whitespace-nowrap">
-                          ★ Premium
+                          ★ {t("premium")}
                         </span>
                       ) : (
                         <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-slate-50 border border-slate-200 text-slate-500 text-xs font-semibold rounded-full whitespace-nowrap">
-                          Gratuit
+                          {t("free")}
                         </span>
                       )}
                     </td>
                     <td className="px-5 py-4">
-                      {t.videoOk ? (
+                      {tData.videoOk ? (
                         <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-green-50 border border-green-200 text-green-700 text-xs font-bold rounded-full whitespace-nowrap">
-                          <span className="w-1.5 h-1.5 rounded-full bg-green-500"></span> Oui
+                          <span className="w-1.5 h-1.5 rounded-full bg-green-500"></span> {t("yes")}
                         </span>
                       ) : (
                         <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-slate-50 border border-slate-200 text-slate-400 text-xs font-semibold rounded-full whitespace-nowrap">
-                          <span className="w-1.5 h-1.5 rounded-full bg-slate-300"></span> Non
+                          <span className="w-1.5 h-1.5 rounded-full bg-slate-300"></span> {t("no")}
                         </span>
                       )}
                     </td>
                     <td className="px-5 py-4">
                       <div className="flex flex-col gap-1 text-xs font-semibold items-start">
-                        <button onClick={() => setSelectedTalent(t)} className="text-[#32A8D7] hover:underline">Voir profil</button>
+                        <button onClick={() => setSelectedTalent(tData)} className="text-[#32A8D7] hover:underline">{t("viewProfile")}</button>
                         
-                        {t.status === 'En attente' && (
-                          <button onClick={() => setConfirmAction({ id: t.id, type: 'activate' })} className="text-green-500 hover:underline">Approuver</button>
+                        {tData.status === 'En attente' && (
+                          <button onClick={() => setConfirmAction({ id: tData.id, type: 'activate' })} className="text-green-500 hover:underline">{t("approve")}</button>
                         )}
-                        {t.status === 'Suspendu' && (
-                          <button onClick={() => setConfirmAction({ id: t.id, type: 'activate' })} className="text-green-500 hover:underline">Réactiver</button>
-                        )}
-                        
-                        <button onClick={() => setSelectedTalent(t)} className="text-[#32A8D7] hover:underline">Modifier</button>
-                        
-                        {t.status !== 'Suspendu' && (
-                          <button onClick={() => setConfirmAction({ id: t.id, type: 'suspend' })} className="text-yellow-500 hover:underline">Suspendre</button>
+                        {tData.status === 'Suspendu' && (
+                          <button onClick={() => setConfirmAction({ id: tData.id, type: 'activate' })} className="text-green-500 hover:underline">{t("reactivate")}</button>
                         )}
                         
-                        <button onClick={() => setConfirmAction({ id: t.id, type: 'delete' })} className="text-red-500 hover:underline">Supprimer</button>
+                        <button onClick={() => setSelectedTalent(tData)} className="text-[#32A8D7] hover:underline">{t("edit")}</button>
+                        
+                        {tData.status !== 'Suspendu' && (
+                          <button onClick={() => setConfirmAction({ id: tData.id, type: 'suspend' })} className="text-yellow-500 hover:underline">{t("suspend")}</button>
+                        )}
+                        
+                        <button onClick={() => setConfirmAction({ id: tData.id, type: 'delete' })} className="text-red-500 hover:underline">{t("delete")}</button>
                       </div>
                     </td>
                   </tr>
@@ -327,13 +354,13 @@ export default function AdminTalents() {
       <Modal
         isOpen={!!confirmAction}
         onClose={() => setConfirmAction(null)}
-        title={confirmAction?.type === 'delete' ? 'Supprimer le talent' : confirmAction?.type === 'activate' ? 'Activer le talent' : 'Suspendre le talent'}
+        title={confirmAction?.type === 'delete' ? t('confirmDeleteTitle') : confirmAction?.type === 'activate' ? t('confirmTitleActivate') : t('confirmTitleSuspend')}
         description={
           confirmAction?.type === 'delete' 
-            ? 'Voulez-vous vraiment supprimer ce talent ? Cette action est irréversible.' 
+            ? t('confirmDeleteMsg')
             : confirmAction?.type === 'activate'
-            ? 'Voulez-vous activer ce talent ?'
-            : 'Voulez-vous suspendre ce talent ?'
+            ? t('confirmDescActivate')
+            : t('confirmDescSuspend')
         }
       >
         <div className="flex justify-end gap-3 mt-4">
@@ -341,7 +368,7 @@ export default function AdminTalents() {
             onClick={() => setConfirmAction(null)}
             className="px-4 py-2 text-sm font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors"
           >
-            Annuler
+            {t("cancel")}
           </button>
           <button 
             onClick={handleConfirmAction}
@@ -349,7 +376,7 @@ export default function AdminTalents() {
               confirmAction?.type === 'delete' ? 'bg-red-500 hover:bg-red-600' : 'bg-[#32A8D7] hover:bg-[#2b90b8]'
             }`}
           >
-            Confirmer
+            {t("confirm")}
           </button>
         </div>
       </Modal>

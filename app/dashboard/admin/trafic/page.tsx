@@ -4,6 +4,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { Globe, Users, Activity } from "lucide-react";
+import { getTranslations } from "next-intl/server";
 import TrafficClient from "./TrafficClient";
 
 export const dynamic = "force-dynamic";
@@ -11,9 +12,14 @@ export const dynamic = "force-dynamic";
 export default async function TraficPage() {
   const session = await getServerSession(authOptions);
 
-  if (!session || (session.user.role !== "SUPER ADMIN" && session.user.role !== "ADMIN")) {
+  const upperRole = (session?.user?.role || "").toUpperCase();
+  const isAllowed = upperRole.includes("ADMIN");
+
+  if (!session || !isAllowed) {
     redirect("/connexion");
   }
+
+  const t = await getTranslations("admin.traffic");
 
   // Get total visitors
   const totalVisits = await prisma.visitor.count();
@@ -78,7 +84,7 @@ export default async function TraficPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-slate-800">Trafic & Visites</h1>
+        <h1 className="text-2xl font-bold text-slate-800">{t("pageTitle")}</h1>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -87,7 +93,7 @@ export default async function TraficPage() {
             <Globe size={24} />
           </div>
           <div>
-            <p className="text-sm text-slate-500 font-medium">Total Visites</p>
+            <p className="text-sm text-slate-500 font-medium">{t("totalVisits")}</p>
             <p className="text-2xl font-bold text-slate-800">{totalVisits}</p>
           </div>
         </div>
@@ -97,7 +103,7 @@ export default async function TraficPage() {
             <Users size={24} />
           </div>
           <div>
-            <p className="text-sm text-slate-500 font-medium">Visiteurs Uniques (IPs)</p>
+            <p className="text-sm text-slate-500 font-medium">{t("uniqueVisitors")}</p>
             <p className="text-2xl font-bold text-slate-800">{uniqueVisitors}</p>
           </div>
         </div>
@@ -107,7 +113,7 @@ export default async function TraficPage() {
             <Activity size={24} />
           </div>
           <div>
-            <p className="text-sm text-slate-500 font-medium">Visites (7 derniers jours)</p>
+            <p className="text-sm text-slate-500 font-medium">{t("visitsLast7Days")}</p>
             <p className="text-2xl font-bold text-slate-800">{recentVisitsForChart.length}</p>
           </div>
         </div>

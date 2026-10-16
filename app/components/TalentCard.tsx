@@ -6,6 +6,7 @@ import Link from "next/link";
 import { Bookmark, BadgeCheck, CheckCircle, Crown, Flag } from "lucide-react";
 import PremiumRequiredModal from "./PremiumRequiredModal";
 import ReportModal from "./ReportModal";
+import { useTranslations } from "next-intl";
 
 export interface TalentCardProps {
   id?: string | number;
@@ -41,6 +42,7 @@ export default function TalentCard({
   isPremium = false,
   hasVideo = false,
 }: TalentCardProps) {
+  const t = useTranslations("talentCard");
   const [showPremiumModal, setShowPremiumModal] = useState(false);
   const [showReportModal, setShowReportModal] = useState(false);
 
@@ -66,11 +68,9 @@ export default function TalentCard({
               <div className="w-12 h-12 rounded-full bg-slate-200/80" />
             </div>
           )}
-          <Image
+          <img
             src={currentSrc}
             alt={name}
-            fill
-            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, (max-width: 1280px) 33vw, 25vw"
             loading="lazy"
             decoding="async"
             onLoad={() => setIsLoaded(true)}
@@ -88,7 +88,7 @@ export default function TalentCard({
           {isVerified && (
             <div
               className="absolute top-2.5 right-2.5 flex items-center justify-center rounded-full bg-white p-0.5 shadow-sm"
-              title="Profil certifié et vérifié"
+              title={t("certifiedAndVerified")}
             >
               <CheckCircle className="w-5 h-5 text-white fill-emerald-500" />
             </div>
@@ -98,7 +98,7 @@ export default function TalentCard({
           {isPremium && (
             <div
               className="absolute top-2.5 left-2.5 flex items-center gap-1.5 rounded-full bg-gradient-to-r from-amber-500 to-amber-600 text-white px-2.5 py-1 shadow-md text-[11px] font-bold tracking-wide"
-              title="Profil certifié Premium"
+              title={t("certifiedPremium")}
             >
               <Crown className="w-3.5 h-3.5 text-yellow-200 fill-yellow-200" />
               <span>Premium</span>
@@ -112,18 +112,18 @@ export default function TalentCard({
           <div className="flex justify-between items-start mb-1.5">
             <div className="min-w-0 pr-2">
               <h3 className={`font-bold text-slate-900 text-base leading-snug truncate ${blurSensitive ? 'blur-sm select-none' : ''}`}>
-                {blurSensitive ? "Profil Confidentiel" : name}
+                {blurSensitive ? t("confidentialProfile") : name}
               </h3>
               <p className={`text-xs text-slate-400 mt-0.5 font-normal truncate ${blurSensitive ? 'blur-sm select-none' : ''}`}>
-                {blurSensitive ? "Localisation Masquée" : location}
+                {blurSensitive ? t("hiddenLocation") : location}
               </p>
             </div>
             <div className="flex items-center gap-0.5 -mr-1 -mt-1 shrink-0">
               <button
                 type="button"
                 onClick={() => onFavorite?.(id)}
-                aria-label="Ajouter aux favoris"
-                title="Ajouter aux favoris"
+                aria-label={t("addToFavorites")}
+                title={t("addToFavorites")}
                 className="text-[#32A8D7] hover:text-[#258eb8] p-1 rounded-lg hover:bg-sky-50 transition-colors"
               >
                 <Bookmark
@@ -134,8 +134,8 @@ export default function TalentCard({
               <button
                 type="button"
                 onClick={() => setShowReportModal(true)}
-                aria-label="Signaler ce profil"
-                title="Signaler ce profil"
+                aria-label={t("reportProfile")}
+                title={t("reportProfile")}
                 className="text-slate-300 hover:text-rose-500 p-1 rounded-lg hover:bg-rose-50 transition-colors"
               >
                 <Flag className="w-4 h-4" />
@@ -145,7 +145,7 @@ export default function TalentCard({
 
           {/* Profession */}
           <p className="text-xs text-slate-700 font-semibold mb-4 mt-1">
-            Profession :{" "}
+            {t("profession")}{" "}
             <span className="font-normal text-slate-500">{profession}</span>
           </p>
 
@@ -175,7 +175,7 @@ export default function TalentCard({
                   : 'border-slate-300 text-slate-700 hover:bg-slate-50 active:bg-slate-100'
               }`}
             >
-              Envoyer un mail
+              {t("sendEmail")}
             </button>
 
             {destination ? (
@@ -186,7 +186,7 @@ export default function TalentCard({
                 }}
                 className="flex-1 py-2 px-2 text-xs font-semibold bg-[#32A8D7] hover:bg-[#2896c2] active:bg-[#2283aa] text-white rounded-md transition-colors shadow-xs hover:shadow text-center truncate"
               >
-                Voir profil
+                {t("viewProfile")}
               </Link>
             ) : (
               <button
@@ -194,7 +194,7 @@ export default function TalentCard({
                 onClick={() => onViewProfile?.(id)}
                 className="flex-1 py-2 px-2 text-xs font-semibold bg-[#32A8D7] hover:bg-[#2896c2] active:bg-[#2283aa] text-white rounded-md transition-colors shadow-xs hover:shadow text-center truncate"
               >
-                Voir profil
+                {t("viewProfile")}
               </button>
             )}
           </div>
@@ -204,7 +204,7 @@ export default function TalentCard({
       {showPremiumModal && (
         <PremiumRequiredModal 
           onClose={() => setShowPremiumModal(false)} 
-          message="Passez au plan Premium pour contacter ce talent et consulter son profil complet."
+          message={t("premiumModalMessage")}
         />
       )}
 

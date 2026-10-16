@@ -7,6 +7,7 @@ import { useAuth } from "../context/AuthContext";
 import LogoutButton from "./LogoutButton";
 import LanguageSwitcher from "./LanguageSwitcher";
 import NotificationBell from "./NotificationBell";
+import { useTranslations } from "next-intl";
 import {
   Menu,
   X,
@@ -24,6 +25,7 @@ export default function Navbar({
 }: {
   variant?: "default" | "transparent" | "auth";
 }) {
+  const t = useTranslations("publicNav");
   const [mobileOpen, setMobileOpen] = useState(false);
   const { user, logout } = useAuth();
 
@@ -78,11 +80,11 @@ export default function Navbar({
         {/* Desktop links */}
         <div className="hidden md:flex items-center gap-1.5">
           {[
-            { href: "/", label: "Accueil", icon: Home },
-            { href: "/#pourquoi", label: "Pourquoi ?", icon: Star },
-            { href: "/#comment", label: "Comment ça marche ?", icon: HelpCircle },
-            { href: "/talents", label: "Talents", icon: Users },
-            { href: "/recruteurs", label: "Recruteurs", icon: Briefcase },
+            { href: "/", label: t("home"), icon: Home },
+            { href: "/#pourquoi", label: t("why"), icon: Star },
+            { href: "/#comment", label: t("howItWorks"), icon: HelpCircle },
+            { href: "/talents", label: t("talents"), icon: Users },
+            { href: "/recruteurs", label: t("recruiters"), icon: Briefcase },
           ].map(({ href, label }) => (
             <Link
               key={href}
@@ -109,12 +111,11 @@ export default function Navbar({
                 className="flex items-center gap-2.5 px-3 py-1.5 rounded-full border border-slate-200 bg-white hover:border-blue-500 hover:bg-blue-50/30 transition-all shadow-sm group"
               >
                 <div className="w-8 h-8 rounded-full overflow-hidden relative border border-slate-200 bg-slate-100">
-                  <Image
+                  <img
                     src={user.avatar || "/assets/avatar_africain.jpg"}
                     alt={user.name}
                     width={32}
                     height={32}
-                    priority
                     onError={(e) => {
                       (e.target as HTMLImageElement).src = "/assets/avatar_africain.jpg";
                     }}
@@ -136,12 +137,12 @@ export default function Navbar({
                 className="btn-primary text-xs py-2 px-3 flex items-center gap-1.5"
               >
                 <LayoutDashboard size={14} />
-                Dashboard
+                {t("dashboard")}
               </Link>
 
               <button
                 onClick={logout}
-                title="Se déconnecter"
+                title={t("logout")}
                 className="p-2 rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50 transition-all"
               >
                 <LogOut size={16} />
@@ -153,11 +154,11 @@ export default function Navbar({
                 href="/connexion"
                 className={`px-5 py-2 rounded-full text-sm font-semibold border transition-all ${
                   variant === "auth" 
-                    ? "text-white border-white/30 hover:bg-white/10"
+                    ? "text-white border-white/30 hover:bg-white/10" 
                     : "text-blue-600 border-blue-500 hover:bg-blue-50/50"
                 }`}
               >
-                Connexion
+                {t("login")}
               </Link>
               <Link
                 href="/inscription"
@@ -167,7 +168,7 @@ export default function Navbar({
                     : "btn-primary"
                 }`}
               >
-                S'inscrire
+                {t("register")}
               </Link>
             </>
           )}
@@ -195,11 +196,11 @@ export default function Navbar({
           }`}
         >
           {[
-            { href: "/", label: "Accueil" },
-            { href: "/#pourquoi", label: "Pourquoi ?" },
-            { href: "/#comment", label: "Comment ça marche ?" },
-            { href: "/talents", label: "Talents" },
-            { href: "/recruteurs", label: "Recruteurs" },
+            { href: "/", label: t("home") },
+            { href: "/#pourquoi", label: t("why") },
+            { href: "/#comment", label: t("howItWorks") },
+            { href: "/talents", label: t("talents") },
+            { href: "/recruteurs", label: t("recruiters") },
           ].map(({ href, label }) => (
             <Link
               key={href}
@@ -237,12 +238,12 @@ export default function Navbar({
                       : "btn-primary"
                   }`}
                 >
-                  Mon Espace ({user.role})
+                  {t("mySpace", { role: user.role })}
                 </Link>
                 <LogoutButton
                   onClick={() => setMobileOpen(false)}
                   className="p-2.5 rounded-lg border border-red-200 text-red-500 hover:bg-red-50"
-                  title="Déconnexion"
+                  title={t("logout")}
                 >
                   <LogOut size={18} />
                 </LogoutButton>
@@ -258,7 +259,7 @@ export default function Navbar({
                       : "btn-outline"
                   }`}
                 >
-                  Connexion
+                  {t("login")}
                 </Link>
                 <Link
                   href="/inscription"
@@ -269,7 +270,7 @@ export default function Navbar({
                       : "btn-primary"
                   }`}
                 >
-                  S'inscrire
+                  {t("register")}
                 </Link>
               </>
             )}

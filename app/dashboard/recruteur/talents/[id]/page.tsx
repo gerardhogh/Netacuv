@@ -36,10 +36,13 @@ import {
   ExternalLink,
   ArrowLeft,
   Flag,
+  Crown,
 } from "lucide-react";
 import PremiumRequiredModal from "@/app/components/PremiumRequiredModal";
 import NotificationBell from "@/app/components/NotificationBell";
 import ReportModal from "@/app/components/ReportModal";
+import { useTranslations } from "next-intl";
+import LanguageSwitcher from "@/app/components/LanguageSwitcher";
 
 
 // ─── API Data Fetching ────────────────────────────────────────────────────────
@@ -117,13 +120,22 @@ function mapToTalentProfile(dbData: any): TalentProfile {
 }
 
 // ─── Sub-components ────────────────────────────────────────────────────────────
-function InfoField({ label, value, blurSensitive }: { label: string; value: string; blurSensitive?: boolean }) {
-  const isSensitive = blurSensitive && (label === "Numéro de téléphone" || label === "Email" || label === "Nom" || label === "Prénom");
+function InfoField({ label, value, blurSensitive, tDetail }: { label: string; value: string; blurSensitive?: boolean; tDetail: any }) {
+  const isSensitive = blurSensitive && (
+    label === tDetail("phone") || 
+    label === tDetail("email") || 
+    label === tDetail("lastName") || 
+    label === tDetail("firstName") ||
+    label === "Numéro de téléphone" || 
+    label === "Email" || 
+    label === "Nom" || 
+    label === "Prénom"
+  );
   return (
     <div>
       <p className="text-xs text-slate-500 mb-1.5 font-medium">{label}</p>
       <div className={`px-4 py-3 bg-slate-50 rounded-xl border border-slate-100 text-sm text-slate-800 font-medium ${isSensitive ? 'blur-sm select-none' : ''}`}>
-        {isSensitive ? "Masqué (Premium)" : value}
+        {isSensitive ? tDetail("hiddenPremium") : value}
       </div>
     </div>
   );
@@ -134,11 +146,13 @@ function SocialLink({
   label,
   url,
   blurSensitive,
+  tDetail,
 }: {
   icon: React.ReactNode;
   label: string;
   url: string;
   blurSensitive?: boolean;
+  tDetail: any;
 }) {
   return (
     <div className="flex items-center gap-4 py-2">
@@ -150,7 +164,7 @@ function SocialLink({
         <div
           className="flex-1 px-4 py-2.5 bg-slate-50 border border-slate-100 rounded-xl text-sm text-[#32A8D7] font-medium truncate flex items-center justify-between group blur-sm select-none"
         >
-          <span className="truncate">Lien masqué (Premium)</span>
+          <span className="truncate">{tDetail("hiddenLinkPremium")}</span>
         </div>
       ) : (
         <a
@@ -168,31 +182,31 @@ function SocialLink({
 }
 
 // ─── Tab: Informations ─────────────────────────────────────────────────────────
-function TabInformations({ talent, blurSensitive }: { talent: TalentProfile, blurSensitive?: boolean }) {
+function TabInformations({ talent, blurSensitive, tDetail }: { talent: TalentProfile, blurSensitive?: boolean; tDetail: any }) {
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <InfoField label="Prénom" value={talent.firstName} blurSensitive={blurSensitive} />
-        <InfoField label="Nom" value={talent.lastName} blurSensitive={blurSensitive} />
-        <InfoField label="Titre professionnel" value={talent.profession} blurSensitive={blurSensitive} />
-        <InfoField label="Nom d'utilisateur" value={talent.username} blurSensitive={blurSensitive} />
-        <InfoField label="Sexe H/F" value={talent.sex} blurSensitive={blurSensitive} />
-        <InfoField label="Types d'opportunités recherchées" value={talent.opportunites} blurSensitive={blurSensitive} />
-        <InfoField label="Pays/Nationalité" value={talent.pays} blurSensitive={blurSensitive} />
-        <InfoField label="Ville" value={talent.ville} blurSensitive={blurSensitive} />
-        <InfoField label="Numéro de téléphone" value={talent.phone} blurSensitive={blurSensitive} />
-        <InfoField label="Email" value={talent.email} blurSensitive={blurSensitive} />
+        <InfoField label={tDetail("firstName")} value={talent.firstName} blurSensitive={blurSensitive} tDetail={tDetail} />
+        <InfoField label={tDetail("lastName")} value={talent.lastName} blurSensitive={blurSensitive} tDetail={tDetail} />
+        <InfoField label={tDetail("profession")} value={talent.profession} blurSensitive={blurSensitive} tDetail={tDetail} />
+        <InfoField label={tDetail("username")} value={talent.username} blurSensitive={blurSensitive} tDetail={tDetail} />
+        <InfoField label={tDetail("gender")} value={talent.sex} blurSensitive={blurSensitive} tDetail={tDetail} />
+        <InfoField label={tDetail("opportunities")} value={talent.opportunites} blurSensitive={blurSensitive} tDetail={tDetail} />
+        <InfoField label={tDetail("country")} value={talent.pays} blurSensitive={blurSensitive} tDetail={tDetail} />
+        <InfoField label={tDetail("city")} value={talent.ville} blurSensitive={blurSensitive} tDetail={tDetail} />
+        <InfoField label={tDetail("phone")} value={talent.phone} blurSensitive={blurSensitive} tDetail={tDetail} />
+        <InfoField label={tDetail("email")} value={talent.email} blurSensitive={blurSensitive} tDetail={tDetail} />
       </div>
 
       <div>
-        <p className="text-xs text-slate-500 mb-1.5 font-medium">Biographie</p>
+        <p className="text-xs text-slate-500 mb-1.5 font-medium">{tDetail("bio")}</p>
         <div className="px-4 py-3 bg-slate-50 rounded-xl border border-slate-100 text-sm text-slate-700 leading-relaxed min-h-[80px]">
           {talent.bio}
         </div>
       </div>
 
       <div>
-        <p className="text-xs text-slate-500 mb-1.5 font-medium">Compétences clés</p>
+        <p className="text-xs text-slate-500 mb-1.5 font-medium">{tDetail("skills")}</p>
         <div className="px-4 py-3 bg-slate-50 rounded-xl border border-slate-100">
           <div className="flex flex-wrap gap-2">
             {talent.competences.split(",").map((c) => (
@@ -211,7 +225,7 @@ function TabInformations({ talent, blurSensitive }: { talent: TalentProfile, blu
 }
 
 // ─── Tab: Réseaux ──────────────────────────────────────────────────────────────
-function TabReseaux({ talent, blurSensitive }: { talent: TalentProfile, blurSensitive?: boolean }) {
+function TabReseaux({ talent, blurSensitive, tDetail }: { talent: TalentProfile, blurSensitive?: boolean; tDetail: any }) {
   const socialItems = [
     {
       key: "facebook",
@@ -279,16 +293,23 @@ function TabReseaux({ talent, blurSensitive }: { talent: TalentProfile, blurSens
             label={item.label}
             url={url || "—"}
             blurSensitive={blurSensitive}
+            tDetail={tDetail}
           />
         );
       })}
     </div>
   );
 }
-
-// ─── Tab: Vidéo Entretien ─────────────────────────────────────────────────────
-function TabVideoEntretien({ talent, blurSensitive }: { talent: TalentProfile, blurSensitive?: boolean }) {
-  const finalVideoUrl = talent.interviewSession?.videoRecordings || talent.videoUrl;
+function TabVideoEntretien({ talent, blurSensitive, tDetail }: { talent: TalentProfile, blurSensitive?: boolean; tDetail: any }) {
+  let finalVideoUrl = talent.videoUrl || talent.interviewSession?.videoRecordings || "";
+  if (typeof finalVideoUrl === "string" && finalVideoUrl.trim().startsWith("[")) {
+    try {
+      const parsed = JSON.parse(finalVideoUrl);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        finalVideoUrl = parsed[parsed.length - 1] || parsed[0] || "";
+      }
+    } catch (e) {}
+  }
 
   return (
     <div className="space-y-5">
@@ -298,22 +319,19 @@ function TabVideoEntretien({ talent, blurSensitive }: { talent: TalentProfile, b
           <Video size={14} className="text-[#32A8D7]" />
         </div>
         <h3 className="text-base font-bold text-[#32A8D7]">
-          Entretien vidéo de {talent.name}
+          {tDetail("interviewVideoOf", { name: talent.name })}
         </h3>
       </div>
 
       {/* Info banner */}
       <div className="bg-sky-50 border border-sky-100 rounded-xl p-4 space-y-3">
         <p className="text-sm text-slate-700 leading-relaxed">
-          Ce test est constitué de 20 questions avec une variation de temps pour répondre.
-          Les talents disposent de 3 tentatives. En cas d&apos;annulation, l&apos;entretien recommence depuis
-          le début.
+          {tDetail("testInfo1")}
         </p>
         <p className="text-sm text-slate-700 leading-relaxed">
-          Si les 3 tentatives ont étés annulées sans succès, ils devront attendre 3 jours avant de
-          pouvoir réessayer.
+          {tDetail("testInfo2")}
         </p>
-        <p className="text-sm font-bold text-slate-700 italic">Bon visionnage à vous !</p>
+        <p className="text-sm font-bold text-slate-700 italic">{tDetail("enjoyWatching")}</p>
       </div>
 
       {/* Video player */}
@@ -326,7 +344,7 @@ function TabVideoEntretien({ talent, blurSensitive }: { talent: TalentProfile, b
       ) : (
         <div className="relative w-full aspect-video rounded-2xl bg-slate-100 border border-slate-200 flex flex-col items-center justify-center text-slate-400">
           <Video size={48} className="mb-4 opacity-50" />
-          <p className="text-sm font-medium">Aucune vidéo d'entretien disponible</p>
+          <p className="text-sm font-medium">{tDetail("noVideoAvailable")}</p>
         </div>
       )}
 
@@ -335,19 +353,19 @@ function TabVideoEntretien({ talent, blurSensitive }: { talent: TalentProfile, b
         <div className="mt-6 p-5 rounded-xl bg-indigo-50/60 border border-indigo-100">
           <h4 className="text-sm font-bold text-indigo-900 flex items-center gap-2 mb-3">
             <CheckCircle size={18} className="text-indigo-500" />
-            Évaluation de l'IA Netacuv
+            {tDetail("aiEvaluation")}
           </h4>
           <div className="flex items-center gap-4 mb-4">
             <div className="flex-shrink-0 w-16 h-16 rounded-full bg-white border-2 border-indigo-200 flex items-center justify-center shadow-sm">
               <span className="text-lg font-black text-indigo-600">{talent.interviewSession.aiScore}%</span>
             </div>
             <div className="text-xs text-slate-700 leading-relaxed">
-              Ce score est calculé par notre intelligence artificielle en analysant la pertinence des réponses, le langage corporel, et la clarté de l'expression.
+              {tDetail("aiScoreExplanation")}
             </div>
           </div>
           {talent.interviewSession.aiFeedback && (
             <div className="bg-white rounded-lg p-4 border border-indigo-50 text-xs text-slate-700 leading-relaxed shadow-sm space-y-4">
-              <strong className="text-indigo-800 block mb-2 text-sm">Résumé de l'analyse par question :</strong>
+              <strong className="text-indigo-800 block mb-2 text-sm">{tDetail("questionSummary")}</strong>
               {(() => {
                 try {
                   const feedbackObj = JSON.parse(talent.interviewSession.aiFeedback);
@@ -383,19 +401,10 @@ function TabVideoEntretien({ talent, blurSensitive }: { talent: TalentProfile, b
   );
 }
 
-// ─── Sidebar items (same as recruteur page) ────────────────────────────────────
-const SIDEBAR_ITEMS = [
-  { key: "dashboard", icon: LayoutDashboard, label: "Accueil", href: "/dashboard/recruteur" },
-  { key: "recherche", icon: Search, label: "Recherche talents", href: "/dashboard/recruteur?tab=recherche" },
-  { key: "candidatures", icon: Users, label: "Candidatures", href: "/dashboard/recruteur?tab=candidatures" },
-  { key: "emplois", icon: Briefcase, label: "Mes emplois", href: "/dashboard/recruteur?tab=emplois" },
-  { key: "favoris", icon: Bookmark, label: "Favoris", href: "/dashboard/recruteur?tab=favoris" },
-  { key: "affiliation", icon: Share2, label: "Affiliation", href: "/dashboard/recruteur?tab=affiliation" },
-  { key: "parametres", icon: Settings, label: "Paramètres", href: "/dashboard/recruteur?tab=parametres" },
-];
-
 // ─── Main page ─────────────────────────────────────────────────────────────────
 export default function TalentDetailPage() {
+  const t = useTranslations();
+  const tDetail = useTranslations("recruiter.talentDetail");
   const params = useParams();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -405,7 +414,18 @@ export default function TalentDetailPage() {
   const [talent, setTalent] = useState<TalentProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  const isPremiumRecruiter = user?.role === "admin" || user?.isPremium;
+  const [isPremiumRecruiter, setIsPremiumRecruiter] = useState<boolean>(Boolean(user?.isPremium || user?.role === "admin"));
+
+  useEffect(() => {
+    fetch("/api/recruiters/me", { cache: "no-store" })
+      .then((res) => res.json())
+      .then((data) => {
+        if (data && !data.error && data.isPremium !== undefined) {
+          setIsPremiumRecruiter(Boolean(data.isPremium || user?.role === "admin"));
+        }
+      })
+      .catch(() => {});
+  }, [user]);
 
   useEffect(() => {
     if (id) {
@@ -466,11 +486,11 @@ export default function TalentDetailPage() {
     if (favs.includes(strId)) {
       favs = favs.filter(f => f !== strId);
       setIsFavorite(false);
-      showToast("Retiré des favoris");
+      showToast(tDetail("removedFavorites"));
     } else {
       favs.push(strId);
       setIsFavorite(true);
-      showToast("Ajouté aux favoris !");
+      showToast(tDetail("addedFavorites"));
     }
     localStorage.setItem("favorites", JSON.stringify(favs));
   };
@@ -493,9 +513,20 @@ export default function TalentDetailPage() {
   };
 
   const tabs = [
-    { key: "informations" as const, label: "Informations" },
-    { key: "reseaux" as const, label: "Réseaux" },
-    { key: "video" as const, label: "Vidéo Entretien" },
+    { key: "informations" as const, label: tDetail("tabInfo") },
+    { key: "reseaux" as const, label: tDetail("tabNetworks") },
+    { key: "video" as const, label: tDetail("tabVideo") },
+  ];
+
+  const sidebarItems = [
+    { key: "dashboard", icon: LayoutDashboard, label: t("nav.dashboard"), href: "/dashboard/recruteur" },
+    { key: "recherche", icon: Search, label: t("nav.searchTalents"), href: "/dashboard/recruteur?tab=recherche" },
+    { key: "candidatures", icon: Users, label: t("nav.applications"), href: "/dashboard/recruteur?tab=candidatures" },
+    { key: "emplois", icon: Briefcase, label: t("nav.myJobs"), href: "/dashboard/recruteur?tab=emplois" },
+    { key: "favoris", icon: Bookmark, label: t("nav.favorites"), href: "/dashboard/recruteur?tab=favoris" },
+    { key: "affiliation", icon: Share2, label: t("nav.affiliation"), href: "/dashboard/recruteur?tab=affiliation" },
+    { key: "profil", icon: Users, label: t("nav.myProfile"), href: "/dashboard/recruteur?tab=profil" },
+    { key: "parametres", icon: Settings, label: t("nav.settings"), href: "/dashboard/recruteur?tab=parametres" },
   ];
 
   return (
@@ -525,16 +556,12 @@ export default function TalentDetailPage() {
         {/* Logo */}
         <div className="p-5 border-b border-slate-100 flex items-center justify-between shrink-0">
           <Link href="/" className="block">
-            <div className="relative h-7 w-28">
-              <Image
+            <div className="relative h-7 w-28 flex items-center">
+              <img
                 src="/Logo/PNG/Logo.png"
                 alt="Netacuv Logo"
-                fill
-                sizes="144px"
-                priority
-                className="object-contain object-left"
+                className="h-7 w-auto object-contain object-left"
               />
-
             </div>
           </Link>
           <button
@@ -547,7 +574,7 @@ export default function TalentDetailPage() {
 
         {/* Nav */}
         <nav className="flex-1 p-4 space-y-1.5 overflow-y-auto">
-          {SIDEBAR_ITEMS.map(({ key, icon: Icon, label, href }) => (
+          {sidebarItems.map(({ key, icon: Icon, label, href }) => (
             <Link
               key={key}
               href={href}
@@ -557,6 +584,9 @@ export default function TalentDetailPage() {
               <span>{label}</span>
             </Link>
           ))}
+          <div className="mt-2 pt-2 border-t border-slate-100 px-4 md:hidden">
+            <LanguageSwitcher variant="mobile" showLabel={true} onSelect={() => setSidebarOpen(false)} />
+          </div>
         </nav>
 
         {/* Logout */}
@@ -565,7 +595,7 @@ export default function TalentDetailPage() {
             className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-medium text-red-500 hover:bg-red-50 transition-colors"
           >
             <LogOut size={18} />
-            <span>Déconnexion</span>
+            <span>{t("nav.logout")}</span>
           </LogoutButton>
         </div>
       </aside>
@@ -583,13 +613,18 @@ export default function TalentDetailPage() {
             >
               <Menu size={22} />
             </button>
-            <h1 className="text-xl sm:text-2xl font-normal text-slate-800 tracking-tight">
-              Recherche <span className="font-bold text-slate-900">profils</span>
+            <h1 className="text-xl sm:text-2xl font-bold text-[#232323] tracking-tight">
+              {t("recruiter.searchTalents")}
             </h1>
           </div>
 
           {/* Right: notifications + avatar */}
           <div className="flex items-center gap-3">
+            {/* Desktop Language Switcher */}
+            <div className="hidden md:flex items-center">
+              <LanguageSwitcher variant="desktop" showLabel={false} align="right" />
+            </div>
+
             {/* Notification Bell temps réel */}
             <NotificationBell align="right" />
 
@@ -600,12 +635,11 @@ export default function TalentDetailPage() {
                 className="flex items-center gap-2 p-1 pr-2 rounded-full hover:bg-slate-100 transition-colors border border-transparent hover:border-slate-200"
               >
                 <div className="w-8 h-8 rounded-full overflow-hidden bg-slate-200 relative">
-                  <Image
+                  <img
                     src={user?.avatar || "/assets/avatar_africain.jpg"}
                     alt="Avatar"
                     width={32}
                     height={32}
-                    priority
                     onError={(e) => {
                       (e.target as HTMLImageElement).src = "/assets/avatar_africain.jpg";
                     }}
@@ -620,14 +654,17 @@ export default function TalentDetailPage() {
                     <p className="text-xs font-bold text-slate-800 truncate">{companyName}</p>
                     <p className="text-[11px] text-slate-400 truncate">{companyEmail}</p>
                   </div>
+                  <Link href="/dashboard/recruteur?tab=profil" className="block w-full text-left px-4 py-2 text-xs text-slate-600 hover:bg-slate-50 font-medium">
+                    <Users size={14} className="inline mr-2" />{t("nav.myProfile")}
+                  </Link>
                   <Link href="/dashboard/recruteur?tab=emplois" className="block w-full text-left px-4 py-2 text-xs text-slate-600 hover:bg-slate-50 font-medium">
-                    <Briefcase size={14} className="inline mr-2" />Mes Emplois
+                    <Briefcase size={14} className="inline mr-2" />{t("nav.myJobs")}
                   </Link>
                   <Link href="/dashboard/recruteur?tab=parametres" className="block w-full text-left px-4 py-2 text-xs text-slate-600 hover:bg-slate-50 font-medium">
-                    <Settings size={14} className="inline mr-2" />Paramètres
+                    <Settings size={14} className="inline mr-2" />{t("nav.settings")}
                   </Link>
                   <LogoutButton className="w-full text-left px-4 py-2 text-xs text-red-600 hover:bg-red-50 font-semibold border-t border-slate-100 mt-1 block">
-                    <LogOut size={14} className="inline mr-2" />Déconnexion
+                    <LogOut size={14} className="inline mr-2" />{t("nav.logout")}
                   </LogoutButton>
                 </div>
               )}
@@ -641,14 +678,14 @@ export default function TalentDetailPage() {
           {/* Breadcrumb */}
           <nav className="flex items-center gap-1.5 text-xs text-slate-500">
             <Link href="/dashboard/recruteur" className="hover:text-[#32A8D7] transition-colors font-medium">
-              Accueil
+              {t("nav.home")}
             </Link>
             <ChevronRight size={13} className="text-slate-300" />
             <Link href="/dashboard/recruteur?tab=recherche" className="hover:text-[#32A8D7] transition-colors font-medium">
-              Recherche profils
+              {t("nav.searchTalents")}
             </Link>
             <ChevronRight size={13} className="text-slate-300" />
-            <span className="text-slate-800 font-semibold">Détails</span>
+            <span className="text-slate-800 font-semibold">{tDetail("details")}</span>
           </nav>
 
           {/* Back button (mobile friendly) */}
@@ -657,18 +694,43 @@ export default function TalentDetailPage() {
             className="inline-flex items-center gap-2 text-sm font-medium text-slate-500 hover:text-[#32A8D7] transition-colors self-start md:hidden"
           >
             <ArrowLeft size={16} />
-            Retour
+            {tDetail("back")}
           </button>
 
           {isLoading ? (
             <div className="flex flex-col items-center justify-center py-20 text-slate-500">
               <div className="w-10 h-10 border-4 border-[#32A8D7]/30 border-t-[#32A8D7] rounded-full animate-spin mb-4" />
-              <p className="font-medium">Chargement du profil...</p>
+              <p className="font-medium">{tDetail("loadingProfile")}</p>
+            </div>
+          ) : !isPremiumRecruiter && user?.role !== "admin" ? (
+            <div className="bg-white rounded-3xl border border-slate-100 shadow-sm p-8 sm:p-12 text-center max-w-xl mx-auto flex flex-col items-center my-8">
+              <div className="w-16 h-16 rounded-full bg-amber-50 border border-amber-200 flex items-center justify-center mb-4 text-amber-500 shadow-sm">
+                <Crown size={32} />
+              </div>
+              <h2 className="text-xl font-bold text-slate-900 mb-2">Profil réservé aux abonnés Premium</h2>
+              <p className="text-sm text-slate-500 mb-6 leading-relaxed">
+                Pour consulter le profil détaillé de ce talent, visionner son entretien vidéo IA et accéder à son CV complet, vous devez disposer d'un abonnement Recruteur Premium actif.
+              </p>
+              <div className="flex flex-col sm:flex-row gap-3 w-full">
+                <button
+                  onClick={() => router.back()}
+                  className="flex-1 py-3 px-4 rounded-xl border border-slate-200 text-slate-600 font-semibold text-sm hover:bg-slate-50 transition-colors cursor-pointer"
+                >
+                  {tDetail("back")}
+                </button>
+                <Link
+                  href="/dashboard/recruteur?tab=premium"
+                  className="flex-1 py-3 px-4 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-bold text-sm shadow-md shadow-amber-500/20 transition-all flex items-center justify-center gap-2"
+                >
+                  <Crown size={16} />
+                  Passer au Premium
+                </Link>
+              </div>
             </div>
           ) : !talent ? (
             <div className="flex flex-col items-center justify-center py-20 text-slate-500">
               <Users size={48} className="mb-4 opacity-30" />
-              <p className="font-medium text-lg">Profil non trouvé</p>
+              <p className="font-medium text-lg">{tDetail("profileNotFound")}</p>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-[300px_1fr] gap-6 items-start">
@@ -678,16 +740,13 @@ export default function TalentDetailPage() {
                 <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6 flex flex-col items-center text-center">
                   {/* Avatar */}
                   <div className="relative w-28 h-28 rounded-full overflow-hidden border-4 border-slate-100 shadow-md mb-4 bg-slate-100">
-                    <Image
+                    <img
                       src={talent.imageUrl || "/assets/avatar_africain.jpg"}
                       alt={talent.name}
-                      fill
-                      sizes="112px"
-                      priority
-                      className="object-cover object-top"
                       onError={(e) => {
                         (e.target as HTMLImageElement).src = `https://ui-avatars.com/api/?name=${encodeURIComponent(talent.name)}&background=32A8D7&color=fff&size=256`;
                       }}
+                      className="object-cover object-top w-full h-full"
                     />
                   </div>
 
@@ -698,13 +757,13 @@ export default function TalentDetailPage() {
                 <div className="flex items-center gap-2 mt-3">
                   {talent.isActive && (
                     <span className="inline-flex items-center gap-1 px-3 py-1 bg-green-500 text-white text-xs font-bold rounded-full">
-                      Actif
+                      {tDetail("active")}
                     </span>
                   )}
                   {talent.isVerified && (
                     <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-sky-50 text-[#32A8D7] border border-sky-200 text-xs font-bold rounded-full">
                       <BadgeCheck size={12} />
-                      Certifié
+                      {tDetail("certified")}
                     </span>
                   )}
                 </div>
@@ -720,7 +779,7 @@ export default function TalentDetailPage() {
                     }`}
                   >
                     <Bookmark size={15} fill={isFavorite ? "white" : "none"} />
-                    {isFavorite ? "Sauvegardé" : "Sauvegarder"}
+                    {isFavorite ? tDetail("saved") : tDetail("save")}
                   </button>
                   <button
                     onClick={(e) => {
@@ -729,7 +788,7 @@ export default function TalentDetailPage() {
                         setShowPremiumModal(true);
                         return;
                       }
-                      showToast(`Email envoyé à ${talent.name}`);
+                      showToast(`${tDetail("sendEmail")} ${talent.name}`);
                     }}
                     className={`w-full py-2.5 rounded-xl text-sm font-semibold transition-all flex items-center justify-center gap-2 ${
                       !(user?.isPremium || talent.isContactUnmasked)
@@ -738,16 +797,16 @@ export default function TalentDetailPage() {
                     }`}
                   >
                     <Mail size={15} />
-                    Envoyer un mail
+                    {tDetail("sendEmail")}
                   </button>
 
                   <button
                     onClick={() => setReportModalOpen(true)}
                     className="w-full py-2 rounded-xl text-xs font-semibold text-rose-500 hover:text-rose-600 hover:bg-rose-50 transition-colors flex items-center justify-center gap-1.5 border border-slate-100 hover:border-rose-100"
-                    title="Signaler ce profil"
+                    title={tDetail("reportProfile")}
                   >
                     <Flag size={13} />
-                    Signaler ce profil
+                    {tDetail("reportProfile")}
                   </button>
                 </div>
               </div>
@@ -755,7 +814,7 @@ export default function TalentDetailPage() {
               {/* CV card */}
               <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
                 <p className="text-xs font-semibold text-slate-500 mb-3">
-                  CV actualisé le {talent.cvUpdated}
+                  {tDetail("cvUpdated")} {talent.cvUpdated}
                 </p>
 
                 {/* CV preview thumbnail */}
@@ -763,7 +822,7 @@ export default function TalentDetailPage() {
                   {user?.isPremium === false ? (
                     <div className="absolute inset-0 flex items-center justify-center bg-slate-200 blur-sm pointer-events-none">
                       <div className="text-slate-800 text-sm font-bold bg-white/50 px-3 py-1 rounded">
-                        CV masqué (Premium)
+                        {tDetail("cvHiddenPremium")}
                       </div>
                     </div>
                   ) : talent.cvUrl ? (
@@ -775,7 +834,7 @@ export default function TalentDetailPage() {
                   ) : (
                     <div className="absolute inset-0 flex items-center justify-center bg-slate-50">
                       <div className="text-slate-400 text-sm font-medium">
-                        Aucun CV importé
+                        {tDetail("noCvUploaded")}
                       </div>
                     </div>
                   )}
@@ -792,15 +851,15 @@ export default function TalentDetailPage() {
                     onClick={(e) => {
                       if (user?.isPremium === false) {
                         e.preventDefault();
-                        showToast("Premium requis pour télécharger le CV");
+                        showToast(tDetail("cvHiddenPremium"));
                       } else if (!talent.cvUrl) {
                         e.preventDefault();
-                        showToast("Aucun CV disponible");
+                        showToast(tDetail("noCvUploaded"));
                       }
                     }}
                   >
                     <Download size={13} />
-                    Télécharger
+                    {tDetail("downloadCv")}
                   </a>
                   <a
                     href={user?.isPremium !== false ? (talent.cvUrl || "#") : "#"}
@@ -810,15 +869,15 @@ export default function TalentDetailPage() {
                     onClick={(e) => {
                       if (user?.isPremium === false) {
                         e.preventDefault();
-                        showToast("Premium requis pour voir le CV");
+                        showToast(tDetail("cvHiddenPremium"));
                       } else if (!talent.cvUrl) {
                         e.preventDefault();
-                        showToast("Aucun CV disponible");
+                        showToast(tDetail("noCvUploaded"));
                       }
                     }}
                   >
                     <Eye size={13} />
-                    Ouvrir
+                    {tDetail("openCv")}
                   </a>
                 </div>
               </div>
@@ -845,9 +904,9 @@ export default function TalentDetailPage() {
 
               {/* Tab content */}
               <div className="p-6">
-                {activeTab === "informations" && <TabInformations talent={talent} blurSensitive={!(isPremiumRecruiter || talent?.isContactUnmasked)} />}
-                {activeTab === "reseaux" && <TabReseaux talent={talent} blurSensitive={!(isPremiumRecruiter || talent?.isContactUnmasked)} />}
-                {activeTab === "video" && <TabVideoEntretien talent={talent} blurSensitive={!(isPremiumRecruiter || talent?.isContactUnmasked)} />}
+                {activeTab === "informations" && <TabInformations talent={talent} blurSensitive={!(isPremiumRecruiter || talent?.isContactUnmasked)} tDetail={tDetail} />}
+                {activeTab === "reseaux" && <TabReseaux talent={talent} blurSensitive={!(isPremiumRecruiter || talent?.isContactUnmasked)} tDetail={tDetail} />}
+                {activeTab === "video" && <TabVideoEntretien talent={talent} blurSensitive={!(isPremiumRecruiter || talent?.isContactUnmasked)} tDetail={tDetail} />}
               </div>
             </div>
             </div>
@@ -858,7 +917,7 @@ export default function TalentDetailPage() {
       {showPremiumModal && (
         <PremiumRequiredModal 
           onClose={() => setShowPremiumModal(false)} 
-          message="Passez au plan Premium pour contacter ce talent et consulter son profil complet."
+          message={t("talentCard.premiumModalMessage")}
         />
       )}
 

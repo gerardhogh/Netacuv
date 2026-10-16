@@ -5,6 +5,7 @@ import Footer from "../components/Footer";
 import { Mail, Phone, Clock, Send, Paperclip } from "lucide-react";
 import Image from "next/image";
 import { useState } from "react";
+import { CustomSelect } from "@/components/ui/CustomSelect";
 
 export default function ContactPage() {
   const [formData, setFormData] = useState({
@@ -112,11 +113,16 @@ export default function ContactPage() {
 
               <div>
                 <label className="block text-sm font-bold text-slate-700 mb-2">Vous êtes *</label>
-                <select className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-slate-50 focus:bg-white transition-colors cursor-pointer">
-                  <option value="talent">Un Talent / Candidat</option>
-                  <option value="recruteur">Un Recruteur / Entreprise</option>
-                  <option value="autre">Autre</option>
-                </select>
+                <CustomSelect
+                  value={formData.role}
+                  onChange={(val) => setFormData({ ...formData, role: val })}
+                  options={[
+                    { label: "Un Talent / Candidat", value: "talent" },
+                    { label: "Un Recruteur / Entreprise", value: "recruteur" },
+                    { label: "Autre", value: "autre" },
+                  ]}
+                  buttonClassName="py-3 bg-slate-50 border-slate-200"
+                />
               </div>
 
               <div>

@@ -49,36 +49,70 @@ interface Question {
 type Phase = "pre_start" | "countdown" | "recording" | "finished";
 
 // ─── Question bank ────────────────────────────────────────────────────────────
+// Durées strictement alignées sur les captures Figma (02:00 = 120s, 01:20 = 80s, 01:30/00:90 = 90s, 00:30 = 30s)
 const QUESTION_BANK: Question[] = [
-  { text: "Présentez-vous en 2 minutes maximum.", duration: 120 },
-  { text: "Pourquoi devrions-nous vous recruter ?", duration: 120 },
-  { text: "Parlez-nous d'un défi professionnel que vous avez surmonté.", duration: 120 },
-  { text: "Quels sont vos points forts et vos points faibles ?", duration: 90 },
-  { text: "Où vous voyez-vous dans 5 ans ?", duration: 90 },
-  { text: "Décrivez une situation où vous avez travaillé en équipe.", duration: 120 },
-  { text: "Comment gérez-vous les conflits au travail ?", duration: 90 },
-  { text: "Qu'est-ce qui vous motive dans votre travail ?", duration: 90 },
-  { text: "Comment réagissez-vous face à la pression ?", duration: 90 },
+  { text: "Présentez-vous en 2 minutes maximum.", duration: 120 }, // Q1 : 02:00 (120s) - TOUJOURS EN PREMIER
+  { text: "Pourquoi devrions-nous vous recruter ?", duration: 120 }, // Q2 : 02:00 (120s)
+  { text: "Parlez-nous d'un défi professionnel que vous avez surmonté.", duration: 120 }, // Q3 : 02:00 (120s)
+  { text: "Quels sont vos points forts et vos points faibles ?", duration: 80 }, // Q4 : 01:20 (80s)
+  { text: "Où vous voyez-vous dans 5 ans ?", duration: 80 }, // Q5 : 01:20 (80s)
+  { text: "Décrivez une situation où vous avez travaillé en équipe.", duration: 120 }, // Q6 : 02:00 (120s)
+  { text: "Comment gérez-vous les conflits au travail ?", duration: 90 }, // Q7 : 00:90 (90s)
+  { text: "Qu'est-ce qui vous motive dans votre travail ?", duration: 90 }, // Q8 : 00:90 (90s)
+  { text: "Comment réagissez-vous face à la pression ?", duration: 90 }, // Q9 : 00:90 (90s)
   {
     text: "Quel type de management vous convient le mieux ?",
     subtitle:
       "(Comment vous aimez être encadré(e) ou dirigé(e) au travail. En d'autres termes, quel style de gestion vous motive, vous rend productif(ve) et à l'aise dans votre environnement professionnel.)",
-    duration: 90,
+    duration: 90, // Q10 : 00:90 (90s)
   },
-  { text: "Quelle est votre plus grande qualité ?", duration: 60 },
-  { text: "Quels outils utilisez-vous au quotidien dans votre métier ?", duration: 90 },
+  { text: "Quelle est votre plus grande qualité ?", duration: 30 }, // Q11 : 00:30 (30s)
+  { text: "Quels outils utilisez-vous au quotidien dans votre métier ?", duration: 90 }, // Q12 : 00:90 (90s)
   {
     text: "Qu'est-ce qui selon vous va vous poser des difficultés dans ce poste ?",
-    duration: 90,
+    duration: 80, // Q13 : 01:20 (80s)
   },
   {
     text: "Que faites-vous si vous êtes en désaccord avec votre manager ?",
-    duration: 90,
+    duration: 80, // Q14 : 01:20 (80s)
   },
   {
     text: "Comment utilisez-vous l'intelligence artificielle",
     subtitle: "(ex : ChatGPT, Notion AI, etc.) dans votre métier ?",
-    duration: 90,
+    duration: 80, // Q15 : 01:20 (80s)
+  },
+];
+
+const QUESTION_BANK_EN: Question[] = [
+  { text: "Please introduce yourself in 2 minutes maximum.", duration: 120 }, // Q1 : 02:00 (120s) - ALWAYS FIRST
+  { text: "Why should we hire you?", duration: 120 }, // Q2 : 02:00 (120s)
+  { text: "Tell us about a professional challenge you overcame.", duration: 120 }, // Q3 : 02:00 (120s)
+  { text: "What are your strengths and weaknesses?", duration: 80 }, // Q4 : 01:20 (80s)
+  { text: "Where do you see yourself in 5 years?", duration: 80 }, // Q5 : 01:20 (80s)
+  { text: "Describe a situation where you worked as part of a team.", duration: 120 }, // Q6 : 02:00 (120s)
+  { text: "How do you handle workplace conflicts?", duration: 90 }, // Q7 : 00:90 (90s)
+  { text: "What motivates you in your work?", duration: 90 }, // Q8 : 00:90 (90s)
+  { text: "How do you handle stress and pressure?", duration: 90 }, // Q9 : 00:90 (90s)
+  {
+    text: "What style of management suits you best?",
+    subtitle:
+      "(How you like to be mentored or led at work. What management style motivates you, makes you productive and comfortable in your professional environment.)",
+    duration: 90, // Q10 : 00:90 (90s)
+  },
+  { text: "What is your greatest quality?", duration: 30 }, // Q11 : 00:30 (30s)
+  { text: "What tools do you use on a daily basis in your profession?", duration: 90 }, // Q12 : 00:90 (90s)
+  {
+    text: "What do you think will be most challenging for you in this role?",
+    duration: 80, // Q13 : 01:20 (80s)
+  },
+  {
+    text: "What do you do if you disagree with your manager?",
+    duration: 80, // Q14 : 01:20 (80s)
+  },
+  {
+    text: "How do you use artificial intelligence",
+    subtitle: "(e.g., ChatGPT, Notion AI, etc.) in your profession?",
+    duration: 80, // Q15 : 01:20 (80s)
   },
 ];
 
@@ -90,6 +124,16 @@ function shuffleArray<T>(arr: T[]): T[] {
     [a[i], a[j]] = [a[j], a[i]];
   }
   return a;
+}
+
+// ─── Génération des questions d'entretien ─────────────────────────────────────
+// Règle stricte : la Question 1 reste FIXE et OBLIGATOIRE en 1ère position.
+// Toutes les questions suivantes (Q2 à Q15) sont mélangées aléatoirement pour chaque session.
+function getInitialInterviewQuestions(locale?: string): Question[] {
+  const bank = locale === "en" ? QUESTION_BANK_EN : QUESTION_BANK;
+  const firstQuestion = bank[0];
+  const remainingQuestions = shuffleArray(bank.slice(1));
+  return [firstQuestion, ...remainingQuestions];
 }
 
 // ─── Format time ──────────────────────────────────────────────────────────────
@@ -124,6 +168,9 @@ let currentTtsAudio: HTMLAudioElement | null = null;
 
 // ─── Stop any in-progress AI speech ──────────────────────────────────────────
 function stopCurrentTts() {
+  if (typeof window !== "undefined" && window.speechSynthesis) {
+    try { window.speechSynthesis.cancel(); } catch (_) {}
+  }
   if (currentTtsAudio) {
     try {
       currentTtsAudio.pause();
@@ -194,14 +241,14 @@ export default function InterviewPage() {
   const [voiceLevel, setVoiceLevel] = useState(0); // 0-1
 
   const sidebarItems = [
-    { key: "dashboard", icon: Home, label: "Tableau de bord" },
-    { key: "profil", icon: FileText, label: "Mon profil" },
-    { key: "transactions", icon: History, label: "Mes transactions" },
-    { key: "video", icon: Video, label: "Entretien vidéo" },
-    { key: "emplois", icon: Briefcase, label: "Offres d'emploi" },
-    { key: "premium", icon: Star, label: "Talents Premium" },
-    { key: "affiliation", icon: Share2, label: "Affiliation" },
-    { key: "parametres", icon: Settings, label: "Paramètres" },
+    { key: "dashboard", icon: Home, label: t("interview.sidebar.dashboard") },
+    { key: "profil", icon: FileText, label: t("interview.sidebar.profile") },
+    { key: "transactions", icon: History, label: t("interview.sidebar.transactions") },
+    { key: "video", icon: Video, label: t("interview.sidebar.video") },
+    { key: "emplois", icon: Briefcase, label: t("interview.sidebar.jobs") },
+    { key: "premium", icon: Star, label: t("interview.sidebar.premium") },
+    { key: "affiliation", icon: Share2, label: t("interview.sidebar.affiliation") },
+    { key: "parametres", icon: Settings, label: t("interview.sidebar.settings") },
   ];
 
   // ── Stop all tracks & release webcam/audio ─────────────────────────────────
@@ -249,10 +296,10 @@ export default function InterviewPage() {
     router.push(`/dashboard/talent?tab=${tabKey}#${tabKey}`);
   };
 
-  // ── Shuffle on mount ─────────────────────────────────────────────────────────
+  // ── Initialise questions on mount (Q1 fixe en 1er, reste randomisé) ────────
   useEffect(() => {
-    setQuestions(shuffleArray(QUESTION_BANK));
-  }, []);
+    setQuestions(getInitialInterviewQuestions(lang));
+  }, [lang]);
 
   const currentQuestion = questions[questionIndex];
   const totalQuestions = questions.length;
@@ -295,7 +342,7 @@ export default function InterviewPage() {
     rafRef.current = requestAnimationFrame(tick);
   }, []);
 
-  // ── Speak question via Gemini TTS and mix audio into the recording ────────────
+  // ── Lecture instantanée de la question par synthèse vocale (sans latence) ─────
   const speakCurrentQuestion = useCallback(() => {
     if (!currentQuestion) return;
     const text = currentQuestion.text;
@@ -304,65 +351,45 @@ export default function InterviewPage() {
     setIsAiSpeaking(true);
     stopCurrentTts();
 
-    fetch("/api/ai/tts", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ text, subtitle, lang }),
-    })
-      .then(async (res) => {
-        if (!res.ok) throw new Error(`TTS API ${res.status}`);
-        const blob = await res.blob();
-        const url = URL.createObjectURL(blob);
-        const audio = new Audio(url);
-        audio.crossOrigin = "anonymous";
-        currentTtsAudio = audio;
+    if (typeof window === "undefined" || !window.speechSynthesis) {
+      setIsAiSpeaking(false);
+      return;
+    }
 
-        // Route TTS audio through the shared AudioContext mixer so it gets recorded
-        if (audioCtxRef.current && mixerDestRef.current) {
-          try {
-            // Resume context if suspended (browser autoplay policy)
-            if (audioCtxRef.current.state === "suspended") {
-              await audioCtxRef.current.resume();
-            }
-            const ttsSource = audioCtxRef.current.createMediaElementSource(audio);
-            ttsSource.connect(mixerDestRef.current);
-            // Also connect to speakers so talent can hear the question live
-            ttsSource.connect(audioCtxRef.current.destination);
-          } catch (e) {
-            console.warn("TTS audio routing error:", e);
-          }
-        }
+    const cleanText = text.replace(/[*_#]/g, "").trim();
+    const cleanSub = subtitle ? subtitle.replace(/[()_#]/g, "").trim() : "";
+    const fullText = cleanSub ? `${cleanText}. ${cleanSub}` : cleanText;
 
-        audio.onended = () => {
-          URL.revokeObjectURL(url);
-          currentTtsAudio = null;
-          setIsAiSpeaking(false);
-        };
-        audio.onerror = () => {
-          URL.revokeObjectURL(url);
-          currentTtsAudio = null;
-          setIsAiSpeaking(false);
-        };
+    const utter = new SpeechSynthesisUtterance(fullText);
+    const langMap: Record<string, string> = { fr: "fr-FR", en: "en-US", es: "es-ES", pt: "pt-PT", zh: "zh-CN" };
+    utter.lang = langMap[lang] || "fr-FR";
+    utter.rate = 1.0;
+    utter.pitch = 1.0;
 
-        await audio.play();
-      })
-      .catch((err) => {
-        console.warn("Gemini TTS failed, falling back to Web Speech API:", err);
-        // ── Fallback: browser SpeechSynthesis ────────────────────────────────
-        setIsAiSpeaking(false);
-        if (typeof window === "undefined" || !window.speechSynthesis) return;
-        const cleanText = text.replace(/[*_#]/g, "").trim();
-        const cleanSub = subtitle ? subtitle.replace(/[()_#]/g, "").trim() : "";
-        const fullText = cleanSub ? `${cleanText}. ${cleanSub}` : cleanText;
-        const utter = new SpeechSynthesisUtterance(fullText);
-        utter.lang = { fr: "fr-FR", en: "en-US", es: "es-ES", pt: "pt-PT", zh: "zh-CN" }[lang] || "fr-FR";
-        utter.rate = 0.95;
-        utter.onstart = () => setIsAiSpeaking(true);
-        utter.onend = () => setIsAiSpeaking(false);
-        utter.onerror = () => setIsAiSpeaking(false);
-        window.speechSynthesis.cancel();
-        window.speechSynthesis.speak(utter);
-      });
+    // Sélection de la meilleure voix naturelle si disponible
+    const voices = window.speechSynthesis.getVoices();
+    const targetPrefix = (langMap[lang] || "fr-FR").slice(0, 2).toLowerCase();
+    const naturalVoice =
+      voices.find(
+        (v) =>
+          v.lang.toLowerCase().startsWith(targetPrefix) &&
+          (v.name.includes("Google") || v.name.includes("Natural") || v.name.includes("Premium") || v.name.includes("Amelie") || v.name.includes("Thomas"))
+      ) || voices.find((v) => v.lang.toLowerCase().startsWith(targetPrefix));
+
+    if (naturalVoice) {
+      utter.voice = naturalVoice;
+    }
+
+    utter.onstart = () => setIsAiSpeaking(true);
+    utter.onend = () => setIsAiSpeaking(false);
+    utter.onerror = () => setIsAiSpeaking(false);
+
+    try {
+      window.speechSynthesis.speak(utter);
+    } catch (e) {
+      console.warn("SpeechSynthesis error:", e);
+      setIsAiSpeaking(false);
+    }
   }, [currentQuestion, lang]);
 
   // ── Webcam & Exit Cleanups ──────────────────────────────────────────────────
@@ -493,8 +520,13 @@ export default function InterviewPage() {
     }
   }, [lang]);
 
-  // ── Intelligent Next Question & AI Relance ─────────────────────────────────
-  const handleNextQuestion = useCallback(async () => {
+  const isTransitioningRef = useRef(false);
+
+  // ── Passer à la question suivante de façon ordonnée, instantanée et sans doublon ──
+  const handleNextQuestion = useCallback(() => {
+    if (isTransitioningRef.current) return;
+    isTransitioningRef.current = true;
+
     stopCurrentTts();
     setIsAiSpeaking(false);
     if (recognitionRef.current) {
@@ -513,65 +545,21 @@ export default function InterviewPage() {
 
     setRecordingTime(0);
     recordingTimeRef.current = 0;
+    setTranscript("");
+    transcriptRef.current = "";
 
-    const answeredCount = interviewHistoryRef.current.length;
-    const maxInterviewQuestions = 5;
-
-    if (answeredCount >= maxInterviewQuestions) {
-      setPhase("finished");
-      return;
-    }
-
-    try {
-      const res = await fetch("/api/interview/next-question", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          jobDescription: "",
-          candidateTranscript: answerTranscript,
-          history: interviewHistoryRef.current,
-          maxQuestions: maxInterviewQuestions,
-          currentQuestionIndex: questionIndex,
-        }),
-      });
-
-      if (res.ok) {
-        const data = await res.json();
-        if (data.isFinished) {
-          setPhase("finished");
-          return;
-        }
-        if (data.question) {
-          setIsAiFollowUp(Boolean(data.isFollowUp));
-          const dynamicQuestion: Question = {
-            text: data.question,
-            subtitle: data.subtitle || (data.isFollowUp ? "(Relance adaptative de l'IA)" : undefined),
-            duration: data.duration || 90,
-          };
-          setQuestions((prev) => {
-            const nextList = [...prev];
-            nextList[questionIndex + 1] = dynamicQuestion;
-            return nextList;
-          });
-          setQuestionIndex((prev) => prev + 1);
-          setPhase("countdown");
-          return;
-        }
-      }
-    } catch (err) {
-      console.warn("Erreur next-question dynamique Gemini:", err);
-    }
-
-    // Repli de secours sur le catalogue existant
     const nextIndex = questionIndex + 1;
-    if (nextIndex < totalQuestions && nextIndex < maxInterviewQuestions) {
-      setIsAiFollowUp(false);
+    if (nextIndex < questions.length) {
       setQuestionIndex(nextIndex);
       setPhase("countdown");
     } else {
       setPhase("finished");
     }
-  }, [currentQuestion, questionIndex, totalQuestions]);
+
+    setTimeout(() => {
+      isTransitioningRef.current = false;
+    }, 300);
+  }, [currentQuestion, questionIndex, questions.length]);
 
   useEffect(() => {
     handleNextQuestionRef.current = handleNextQuestion;
@@ -675,7 +663,7 @@ export default function InterviewPage() {
     if (mediaRecorderRef.current && mediaRecorderRef.current.state !== "inactive") {
       try { mediaRecorderRef.current.stop(); } catch (e) { console.warn(e); }
     }
-    setQuestions(shuffleArray(QUESTION_BANK));
+    setQuestions(getInitialInterviewQuestions(lang));
     setQuestionIndex(0);
     setPhase("countdown");
     startMediaRecorder();
@@ -702,18 +690,20 @@ export default function InterviewPage() {
 
   const isFirstQuestion = questionIndex === 0;
   const countdownTitle =
-    phase === "countdown" && isFirstQuestion ? "Soyez prêt !" : "Temps écoulé.";
+    phase === "countdown" && isFirstQuestion
+      ? t("interview.phase.getReady")
+      : t("interview.phase.timesUp");
   const countdownSub =
     phase === "countdown" && isFirstQuestion
-      ? "Première Question dans"
-      : "Question suivante dans";
+      ? t("interview.phase.firstQuestionIn")
+      : t("interview.phase.nextQuestionIn");
 
   const rightLabel =
     phase === "pre_start"
       ? ""
       : phase === "finished"
-      ? "Entretien Terminé"
-      : `Question ${questionIndex + 1}`;
+      ? t("interview.phase.completedTitle")
+      : t("interview.phase.questionNum", { num: questionIndex + 1 });
 
   const rightText =
     phase === "countdown"
@@ -721,7 +711,7 @@ export default function InterviewPage() {
       : phase === "recording" && currentQuestion
       ? currentQuestion.text
       : phase === "finished"
-      ? "Vos réponses ont été enregistrées avec succès."
+      ? t("interview.phase.completedMsg")
       : "";
 
   const rightSubtitle =
@@ -754,15 +744,19 @@ export default function InterviewPage() {
     const finalizeAndSave = async () => {
       setIsSavingVideo(true);
       try {
-        if (mediaRecorderRef.current) {
-          mediaRecorderRef.current.onstop = null;
-          if (mediaRecorderRef.current.state !== "inactive") {
+        // Wait for MediaRecorder to cleanly finish and flush last dataavailable chunk
+        if (mediaRecorderRef.current && mediaRecorderRef.current.state !== "inactive") {
+          await new Promise<void>((resolve) => {
+            const mr = mediaRecorderRef.current;
+            if (!mr) return resolve();
+            mr.addEventListener("stop", () => resolve(), { once: true });
             try {
-              mediaRecorderRef.current.stop();
+              mr.stop();
             } catch (e) {
-              console.warn("MediaRecorder stop error:", e);
+              resolve();
             }
-          }
+            setTimeout(resolve, 800);
+          });
         }
 
         // Determine the effective MIME type from the recorder or fallback
@@ -775,8 +769,24 @@ export default function InterviewPage() {
             ? "video/mp4"
             : "video/webm");
 
+        // Collect final blob from chunks or fallback to IndexedDB
+        let videoBlob: Blob | null = null;
         if (chunksRef.current.length > 0) {
-          const videoBlob = new Blob(chunksRef.current, { type: mimeType });
+          videoBlob = new Blob(chunksRef.current, { type: mimeType });
+        } else {
+          try {
+            const savedBlob = await getVideoFromDB();
+            if (savedBlob && savedBlob.size > 0) {
+              videoBlob = savedBlob;
+            }
+          } catch (err) {
+            console.warn("Fallback IndexedDB read error:", err);
+          }
+        }
+
+        let serverVideoUrl: string | null = null;
+
+        if (videoBlob && videoBlob.size > 0) {
           const localVideoUrl = URL.createObjectURL(videoBlob);
           setRecordedVideoUrl(localVideoUrl);
 
@@ -787,13 +797,13 @@ export default function InterviewPage() {
             console.error("Erreur sauvegarde IndexedDB:", idbErr);
           }
 
-          // 2. Upload to Netacuv server with 15s timeout
+          // 2. Upload to Netacuv server with generous timeout
           try {
             const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 15000);
+            const timeoutId = setTimeout(() => controller.abort(), 120000); // 2 minutes
 
             const formData = new FormData();
-            const ext = mimeType.includes("mp4") ? "mp4" : "webm";
+            const ext = (videoBlob.type || mimeType).includes("mp4") ? "mp4" : "webm";
             formData.append("video", videoBlob, `interview.${ext}`);
             const currentUserId = (userRef.current as any)?.id;
             if (currentUserId) {
@@ -809,44 +819,42 @@ export default function InterviewPage() {
 
             if (uploadRes.ok) {
               const result = await uploadRes.json();
-              if (result.videoUrl && typeof window !== "undefined") {
-                localStorage.setItem("interview_video_url", result.videoUrl);
-                setRecordedVideoUrl(result.videoUrl);
-                window.dispatchEvent(new Event("dashboardProfileUpdated"));
+              if (result.videoUrl) {
+                serverVideoUrl = result.videoUrl;
+                if (typeof window !== "undefined") {
+                  localStorage.setItem("interview_video_url", result.videoUrl);
+                  setRecordedVideoUrl(result.videoUrl);
+                  window.dispatchEvent(new Event("dashboardProfileUpdated"));
+                }
               }
             } else {
               console.warn("Échec upload vidéo serveur:", uploadRes.status);
             }
           } catch (e) {
-            console.warn("Erreur ou timeout upload vidéo serveur:", e);
+            console.warn("Erreur upload vidéo serveur:", e);
           }
         } else {
-          // Chunks vides : tenter de récupérer depuis IndexedDB ou localStorage
-          try {
-            const savedBlob = await getVideoFromDB();
-            if (savedBlob && savedBlob.size > 0) {
-              const fallbackUrl = URL.createObjectURL(savedBlob);
-              setRecordedVideoUrl(fallbackUrl);
-            } else {
-              const storedUrl = typeof window !== "undefined" ? localStorage.getItem("interview_video_url") : null;
-              if (storedUrl) {
-                setRecordedVideoUrl(storedUrl);
-              }
-            }
-          } catch (fallbackErr) {
-            console.warn("Fallback IndexedDB error:", fallbackErr);
+          const storedUrl = typeof window !== "undefined" ? localStorage.getItem("interview_video_url") : null;
+          if (storedUrl) {
+            setRecordedVideoUrl(storedUrl);
+            serverVideoUrl = storedUrl;
           }
         }
+
         // 3. Évaluation complète par Gemini 1.5 Pro
         try {
           setIsEvaluating(true);
+          const currentUserId = (userRef.current as any)?.id;
           const evalRes = await fetch("/api/interview/evaluate", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
               jobDescription: "",
               history: interviewHistoryRef.current,
-              candidateName: (userRef.current as any)?.name || "Candidat",
+              candidateName: (userRef.current as any)?.name || (lang === "en" ? "Candidate" : "Candidat"),
+              locale: lang,
+              userId: currentUserId,
+              videoUrl: serverVideoUrl || (typeof window !== "undefined" ? localStorage.getItem("interview_video_url") : null),
             }),
           });
           if (evalRes.ok) {
@@ -913,8 +921,8 @@ export default function InterviewPage() {
           <button
             onClick={() => setMenuDrawerOpen(true)}
             className="p-1.5 -ml-1.5 sm:-ml-2 rounded-xl text-[#008de4] hover:bg-white/10 transition-colors focus:outline-none focus:ring-2 focus:ring-[#008de4]/50 cursor-pointer"
-            title="Menu de navigation"
-            aria-label="Ouvrir le menu"
+            title={t("interview.menuTitle")}
+            aria-label={t("interview.menuTitle")}
           >
             <Menu className="w-7 h-7 sm:w-9 sm:h-9" strokeWidth={2.5} />
           </button>
@@ -922,23 +930,23 @@ export default function InterviewPage() {
             onClick={() => handleNavigate("profil")}
             className="text-white text-lg sm:text-2xl flex items-center gap-1.5 sm:gap-2 cursor-pointer select-none"
           >
-            <span className="font-light">Profil</span>
-            <span className="font-bold">talent</span>
+            <span className="font-light">{t("interview.headerTitle").split(" ")[0]}</span>
+            <span className="font-bold">{t("interview.headerTitle").split(" ").slice(1).join(" ")}</span>
           </div>
         </div>
-        <div className="flex items-center gap-4 sm:gap-8">
+        <div className="flex items-center gap-3 sm:gap-6">
+          <div className="scale-90 sm:scale-100">
+            <LanguageSwitcher />
+          </div>
           <Bell className="text-white cursor-pointer hover:text-[#008de4] transition-colors w-5 h-5 sm:w-6 sm:h-6" />
           <div
             onClick={() => handleNavigate("profil")}
             className="flex items-center gap-1.5 sm:gap-2 cursor-pointer group"
           >
             <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full overflow-hidden bg-blue-100 relative border-2 border-transparent group-hover:border-[#008de4] transition-colors">
-              <Image 
+              <img 
                 src={user?.avatar || "/assets/avatar_africain.jpg"} 
                 alt="Avatar" 
-                fill 
-                sizes="(max-width: 640px) 32px, 40px"
-                priority
                 onError={(e) => {
                   (e.target as HTMLImageElement).src = "/assets/avatar_africain.jpg";
                 }}
@@ -1004,8 +1012,8 @@ export default function InterviewPage() {
                   <div className="w-12 h-12 rounded-full bg-[#008de4]/20 border border-[#008de4]/30 flex items-center justify-center mb-3 text-[#32A8D7]">
                     <Video className="w-6 h-6 animate-pulse" />
                   </div>
-                  <p className="text-white font-bold text-sm sm:text-base">Préparation de votre vidéo enregistrée...</p>
-                  <p className="text-white/60 text-xs sm:text-sm mt-1">Votre vidéo est en cours de traitement pour le visionnage.</p>
+                  <p className="text-white font-bold text-sm sm:text-base">{t("interview.preparingVideo")}</p>
+                  <p className="text-white/60 text-xs sm:text-sm mt-1">{t("interview.preparingVideoDesc")}</p>
                 </div>
               )
             ) : (
@@ -1024,8 +1032,8 @@ export default function InterviewPage() {
                 <div className="w-14 h-14 rounded-full bg-white/10 border border-white/20 flex items-center justify-center mb-3">
                   <CameraOff className="w-7 h-7 text-white/60" />
                 </div>
-                <p className="text-white font-bold text-sm">Caméra désactivée</p>
-                <p className="text-white/50 text-xs mt-1">Activez votre caméra ci-dessous pour reprendre le flux vidéo</p>
+                <p className="text-white font-bold text-sm">{t("interview.cameraOffTitle")}</p>
+                <p className="text-white/50 text-xs mt-1">{t("interview.cameraOffDesc")}</p>
               </div>
             )}
 
@@ -1059,7 +1067,7 @@ export default function InterviewPage() {
                   />
                   <button
                     onClick={toggleMic}
-                    title={micOn ? "Désactiver le micro" : "Activer le micro"}
+                    title={micOn ? t("interview.micDisable") : t("interview.micEnable")}
                     className={`relative w-8 h-8 sm:w-11 sm:h-11 rounded-full flex items-center justify-center border sm:border-2 backdrop-blur-sm transition-all duration-200 shadow-lg ${
                       micOn
                         ? "bg-white/15 border-white/30 hover:bg-white/25"
@@ -1077,7 +1085,7 @@ export default function InterviewPage() {
                 {/* Camera button */}
                 <button
                   onClick={toggleCamera}
-                  title={cameraOn ? "Désactiver la caméra" : "Activer la caméra"}
+                  title={cameraOn ? t("interview.cameraDisable") : t("interview.cameraEnable")}
                   className={`w-8 h-8 sm:w-11 sm:h-11 rounded-full flex items-center justify-center border sm:border-2 backdrop-blur-sm transition-all duration-200 shadow-lg ${
                     cameraOn
                       ? "bg-white/15 border-white/30 hover:bg-white/25"
@@ -1101,7 +1109,7 @@ export default function InterviewPage() {
                   className="flex items-center gap-1 sm:gap-2 px-2.5 sm:px-4 py-1.5 sm:py-2 rounded-full bg-white/15 border border-white/25 backdrop-blur-sm hover:bg-white/25 active:scale-95 transition-all duration-200 text-white text-[11px] sm:text-[13px] font-medium shadow-lg"
                 >
                   <SkipForward className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
-                  Passer
+                  {t("interview.phase.skipQuestion")}
                 </button>
                 <button
                   onClick={() => {
@@ -1110,7 +1118,7 @@ export default function InterviewPage() {
                   }}
                   className="flex items-center gap-1 sm:gap-2 px-2.5 sm:px-4 py-1.5 sm:py-2 rounded-full bg-[#008de4] hover:bg-blue-600 active:scale-95 transition-all duration-200 text-white text-[11px] sm:text-[13px] font-medium shadow-lg"
                 >
-                  Terminer
+                  {t("interview.phase.finishBtn")}
                 </button>
               </div>
             )}
@@ -1123,7 +1131,7 @@ export default function InterviewPage() {
               <button
                 type="button"
                 onClick={togglePlayRecordedVideo}
-                title={isPlayingRecorded ? "Mettre en pause" : "Lire la vidéo"}
+                title={isPlayingRecorded ? t("interview.pauseVideo") : t("interview.watchVideo")}
                 className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-[#008de4] hover:bg-blue-600 flex items-center justify-center flex-shrink-0 text-white cursor-pointer transition-all active:scale-95 shadow-md"
               >
                 {isPlayingRecorded ? (
@@ -1222,37 +1230,14 @@ export default function InterviewPage() {
             >
               <path d="M15 10l4.553-2.069A1 1 0 0121 8.87V15.13a1 1 0 01-1.447.9L15 14M3 8a2 2 0 012-2h10a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V8z" />
             </svg>
-            <h1 className="text-xl sm:text-2xl lg:text-[26px] font-bold text-[#008de4]">Entretien Vidéo</h1>
+            <h1 className="text-xl sm:text-2xl lg:text-[26px] font-bold text-[#008de4]">{t("interview.title")}</h1>
           </div>
 
-          {/* Question label with TTS audio button */}
+          {/* Question label */}
           <div className="flex items-center justify-between gap-2 mb-1.5 sm:mb-3 min-h-[30px]">
-            <div className="flex items-center gap-2 min-w-0">
-              <h3 className="text-[#008de4] text-sm sm:text-lg lg:text-[20px] font-medium truncate">
-                {rightLabel}
-              </h3>
-              {isAiFollowUp && (phase === "countdown" || phase === "recording") && (
-                <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-amber-500/20 border border-amber-500/40 text-amber-300 text-[10px] sm:text-xs font-semibold shrink-0">
-                  Relance IA
-                </span>
-              )}
-            </div>
-            {(phase === "countdown" || phase === "recording") && currentQuestion && (
-              <button
-                type="button"
-                onClick={speakCurrentQuestion}
-                disabled={isAiSpeaking}
-                className={`flex-shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-semibold transition-all cursor-pointer shadow-sm active:scale-95 ${
-                  isAiSpeaking
-                    ? "bg-[#32A8D7]/20 border-[#32A8D7] text-[#32A8D7] animate-pulse"
-                    : "bg-white/10 border-white/20 text-white/90 hover:bg-white/20 hover:text-white"
-                }`}
-                title="Écouter la question posée par l'IA"
-              >
-                <Volume2 className={`w-3.5 h-3.5 ${isAiSpeaking ? "text-[#32A8D7] animate-bounce" : ""}`} />
-                <span>{isAiSpeaking ? "L'IA lit la question..." : "Écouter la question"}</span>
-              </button>
-            )}
+            <h3 className="text-[#008de4] text-sm sm:text-lg lg:text-[20px] font-medium truncate">
+              {rightLabel}
+            </h3>
           </div>
 
           {/* Question text */}
@@ -1273,16 +1258,17 @@ export default function InterviewPage() {
               <div className="bg-[#0a1e2d] rounded-lg p-3.5 sm:p-5 border border-white/5 mb-3 sm:mb-6 text-xs sm:text-[13.5px] text-[#94a3b8] leading-[1.6] shadow-lg">
                 <p className="mb-2 sm:mb-4">
                   <span className="font-bold text-white">NB : </span>
-                  Vous disposez de 3 tentatives. En cas d&apos;annulation, l&apos;entretien recommence depuis le début.
+                  {t("interview.nbNotice1")}
                 </p>
                 <p>
-                  Si vous utilisez vos 3 tentatives sans succès, vous devrez attendre 3 jours avant de pouvoir réessayer.
+                  {t("interview.nbNotice2")}
                 </p>
               </div>
 
               <div className="bg-[#121919] rounded-lg p-3 sm:p-5 border border-white/5 mb-4 sm:mb-8 shadow-lg flex items-center justify-between">
                 <p className="text-white font-bold text-xs sm:text-[15px]">
-                  Essais restants : <span className="text-[#008de4] font-extrabold">{triesLeft}</span>
+                  {t("interview.triesRemaining")}{" "}
+                  <span className="text-[#008de4] font-extrabold">{triesLeft}</span>
                 </p>
               </div>
             </>
@@ -1294,8 +1280,8 @@ export default function InterviewPage() {
               <div className="w-10 h-10 sm:w-14 sm:h-14 rounded-full bg-green-500 flex items-center justify-center mb-2.5 text-white shadow-[0_0_15px_rgba(34,197,94,0.5)]">
                 <Check className="w-5 h-5 sm:w-7 sm:h-7" strokeWidth={3} />
               </div>
-              <h3 className="text-white text-base sm:text-lg font-bold text-center">Félicitations !</h3>
-              <p className="text-green-400 text-xs sm:text-[13px] text-center mt-1 font-medium">Votre entretien a été validé et enregistré.</p>
+              <h3 className="text-white text-base sm:text-lg font-bold text-center">{t("interview.congratulations")}</h3>
+              <p className="text-green-400 text-xs sm:text-[13px] text-center mt-1 font-medium">{t("interview.validatedAndSaved")}</p>
             </div>
           )}
 
@@ -1303,16 +1289,16 @@ export default function InterviewPage() {
           {phase === "finished" && isEvaluating && (
             <div className="flex items-center gap-2.5 p-3 rounded-xl bg-sky-950/40 border border-sky-500/20 text-sky-300 text-xs mb-4 animate-pulse">
               <Loader2 className="w-4 h-4 animate-spin shrink-0 text-[#32A8D7]" />
-              <span>Génération du rapport d&apos;évaluation IA par Gemini 1.5 Pro...</span>
+              <span>{t("interview.generatingAiReport")}</span>
             </div>
           )}
 
           {phase === "finished" && aiEvaluation && (
             <div className="p-4 rounded-2xl bg-white/5 border border-white/10 mb-4 text-xs space-y-2.5 shadow-lg">
               <div className="flex items-center justify-between border-b border-white/10 pb-2">
-                <span className="text-white font-bold text-xs sm:text-sm">Rapport IA Netacuv</span>
+                <span className="text-white font-bold text-xs sm:text-sm">{t("interview.aiReportTitle")}</span>
                 <div className="flex items-center gap-1.5">
-                  <span className="text-slate-300 text-[11px]">Score :</span>
+                  <span className="text-slate-300 text-[11px]">{t("interview.scoreLabel")}</span>
                   <span className="text-sm font-extrabold text-[#32A8D7]">{aiEvaluation.overallScore}/100</span>
                   <span
                     className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
@@ -1332,7 +1318,7 @@ export default function InterviewPage() {
               </p>
               {aiEvaluation.strengths && aiEvaluation.strengths.length > 0 && (
                 <div className="pt-1">
-                  <span className="text-emerald-400 font-bold block mb-1 text-[11px]">Points forts :</span>
+                  <span className="text-emerald-400 font-bold block mb-1 text-[11px]">{t("interview.strengths")}</span>
                   <div className="flex flex-wrap gap-1">
                     {aiEvaluation.strengths.slice(0, 3).map((s: string, idx: number) => (
                       <span key={idx} className="px-2 py-0.5 rounded-md bg-emerald-950/50 border border-emerald-500/30 text-emerald-200 text-[10px]">
@@ -1353,7 +1339,7 @@ export default function InterviewPage() {
                 {isSavingVideo && (
                   <div className="w-full flex items-center gap-2 px-4 py-2.5 rounded-xl bg-sky-950/60 border border-sky-500/30 text-sky-300 text-xs font-medium animate-in fade-in duration-200">
                     <Loader2 className="w-3.5 h-3.5 animate-spin flex-shrink-0" />
-                    <span>Synchronisation et enregistrement de votre vidéo en cours...</span>
+                    <span>{t("interview.syncingVideo")}</span>
                   </div>
                 )}
 
@@ -1367,12 +1353,12 @@ export default function InterviewPage() {
                     {isPlayingRecorded ? (
                       <>
                         <Pause className="w-4 h-4 fill-white flex-shrink-0" />
-                        <span className="truncate">Pause vidéo</span>
+                        <span className="truncate">{t("interview.pauseVideo")}</span>
                       </>
                     ) : (
                       <>
                         <Play className="w-4 h-4 fill-white flex-shrink-0" />
-                        <span className="truncate">Visualiser la vidéo</span>
+                        <span className="truncate">{t("interview.watchVideo")}</span>
                       </>
                     )}
                   </button>
@@ -1384,7 +1370,7 @@ export default function InterviewPage() {
                     className="flex-1 h-11 px-3 sm:px-4 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white active:scale-95 transition-all text-[11px] sm:text-[13px] font-bold flex items-center justify-center gap-2 cursor-pointer shadow-lg shadow-emerald-500/20 overflow-hidden"
                   >
                     <ArrowLeft className="w-4 h-4 flex-shrink-0" />
-                    <span className="truncate">Retour au profil</span>
+                    <span className="truncate">{t("interview.backToProfile")}</span>
                   </button>
                 </div>
 
@@ -1397,7 +1383,7 @@ export default function InterviewPage() {
                   }}
                   className="w-full px-4 py-2.5 rounded-full border border-white/20 text-white/80 hover:bg-white/10 hover:text-white transition-all text-xs sm:text-[13px] font-medium text-center cursor-pointer"
                 >
-                  Accéder à mon tableau de bord
+                  {t("interview.goToDashboard")}
                 </button>
               </div>
             ) : (
@@ -1407,7 +1393,7 @@ export default function InterviewPage() {
                   onClick={() => setIsCancelModalOpen(true)}
                   className="px-4 sm:px-5 py-2.5 rounded-full border border-red-500/80 text-red-500 hover:bg-red-500/10 transition-colors text-xs sm:text-[14px] font-medium whitespace-nowrap text-center cursor-pointer"
                 >
-                  Annuler le test
+                  {t("interview.cancelTest")}
                 </button>
 
                 {phase === "pre_start" && (
@@ -1415,7 +1401,7 @@ export default function InterviewPage() {
                     onClick={() => setIsStartModalOpen(true)}
                     className="flex-1 px-4 sm:px-5 py-2.5 rounded-full bg-[#008de4] text-white hover:bg-blue-600 active:scale-95 transition-all text-xs sm:text-[14px] font-medium text-center cursor-pointer shadow-md"
                   >
-                    Commencer le test
+                    {t("interview.startTest")}
                   </button>
                 )}
 
@@ -1425,7 +1411,7 @@ export default function InterviewPage() {
                     disabled={triesLeft <= 0}
                     className="flex-1 px-4 sm:px-5 py-2.5 rounded-full bg-[#008de4] text-white hover:bg-blue-600 active:scale-95 transition-all text-xs sm:text-[14px] font-medium disabled:opacity-40 disabled:cursor-not-allowed text-center cursor-pointer shadow-md"
                   >
-                    Recommencer le test
+                    {t("interview.restartTest")}
                   </button>
                 )}
               </div>
@@ -1459,7 +1445,7 @@ export default function InterviewPage() {
               <button
                 onClick={() => setMenuDrawerOpen(false)}
                 className="p-1.5 rounded-lg text-white/60 hover:text-white hover:bg-white/10 transition-colors"
-                aria-label="Fermer le menu"
+                aria-label={t("interview.closeMenu")}
               >
                 <X size={20} />
               </button>
@@ -1490,12 +1476,11 @@ export default function InterviewPage() {
             <div className="p-4 border-t border-white/10 bg-[#061017]/60">
               <div className="flex items-center gap-3 p-3 rounded-2xl bg-white/5 border border-white/5">
                 <div className="w-10 h-10 rounded-full overflow-hidden relative border border-white/20 flex-shrink-0">
-                  <Image
+                  <img
                     src={user?.avatar || "/assets/avatar_africain.jpg"}
                     alt="Avatar"
                     width={40}
                     height={40}
-                    priority
                     onError={(e) => {
                       (e.target as HTMLImageElement).src = "/assets/avatar_africain.jpg";
                     }}
@@ -1504,7 +1489,7 @@ export default function InterviewPage() {
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-xs font-bold text-white truncate">
-                    {user?.name || "Candidat"}
+                    {user?.name || (lang === "en" ? "Candidate" : "Candidat")}
                   </p>
                   <p className="text-[11px] text-white/50 truncate">
                     {user?.email || "candidat@email.com"}
@@ -1517,7 +1502,7 @@ export default function InterviewPage() {
                     router.push("/connexion");
                   }}
                   className="p-1.5 rounded-lg text-white/50 hover:text-red-400 hover:bg-red-500/10 transition-colors"
-                  title="Se déconnecter"
+                  title={t("interview.logout")}
                 >
                   <LogOut size={16} />
                 </button>

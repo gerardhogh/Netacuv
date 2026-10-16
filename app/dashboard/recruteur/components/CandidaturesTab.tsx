@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Image from "next/image";
 import {
   Search,
@@ -20,6 +20,12 @@ import DetailOffreView, { JobDetailData } from "./DetailOffreView";
 import ModifierOffreView from "./ModifierOffreView";
 import useSWR from "swr";
 import { useRouter } from "next/navigation";
+import { CustomSelect } from "@/components/ui/CustomSelect";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { Pagination } from "@/components/ui/Pagination";
+import { useTranslations } from "next-intl";
+import { useAuth } from "@/app/context/AuthContext";
+import PremiumRequiredModal from "@/app/components/PremiumRequiredModal";
 
 // ─── Mock data ────────────────────────────────────────────────────────────────
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -41,15 +47,15 @@ const MOCK_JOB: JobDetailData = {
 };
 
 // ─── Status badge ─────────────────────────────────────────────────────────────
-function StatutBadge({ statut }: { statut: "Accepté" | "En attente" | "Rejeté" }) {
+function StatutBadge({ statut, t }: { statut: "Accepté" | "En attente" | "Rejeté"; t: any }) {
   const cfg = {
-    Accepté: { bg: "bg-green-50 text-green-600 border-green-100", icon: <CheckCircle size={11} /> },
-    "En attente": { bg: "bg-amber-50 text-amber-600 border-amber-100", icon: <Clock size={11} /> },
-    Rejeté: { bg: "bg-red-50 text-red-500 border-red-100", icon: <XCircle size={11} /> },
-  }[statut];
+    Accepté: { label: t("statusAccepted"), bg: "bg-green-50 text-green-600 border-green-100", icon: <CheckCircle size={11} /> },
+    "En attente": { label: t("statusPending"), bg: "bg-amber-50 text-amber-600 border-amber-100", icon: <Clock size={11} /> },
+    Rejeté: { label: t("statusRejected"), bg: "bg-red-50 text-red-500 border-red-100", icon: <XCircle size={11} /> },
+  }[statut] || { label: statut, bg: "bg-slate-50 text-slate-600 border-slate-100", icon: null };
   return (
     <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold border whitespace-nowrap ${cfg.bg}`}>
-      {cfg.icon} {statut}
+      {cfg.icon} {cfg.label}
     </span>
   );
 }
@@ -82,6 +88,7 @@ interface ApiApplication {
 
 // ─── Main component ───────────────────────────────────────────────────────────
 export default function CandidaturesTab() {
+  const t = useTranslations("recruiter.applicationsTab");
   type ViewState =
     | { type: "list" }
     | { type: "detail-offre"; offreId: string }
@@ -89,13 +96,49 @@ export default function CandidaturesTab() {
 
   const [view, setView] = useState<ViewState>({ type: "list" });
   const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 20;
   const [toastMsg, setToastMsg] = useState<string | null>(null);
   const router = useRouter();
+  const { user } = useAuth();
+  const [isPremium, setIsPremium] = useState<boolean>(false);
+  const [showPremiumModal, setShowPremiumModal] = useState<boolean>(false);
+
+  useEffect(() => {
+    fetch("/api/recruiters/me", { cache: "no-store" })
+      .then((res) => res.json())
+      .then((data) => {
+        if (data && !data.error && data.isPremium !== undefined) {
+          setIsPremium(data.isPremium);
+        } else if (user?.isPremium) {
+          setIsPremium(true);
+        }
+      })
+      .catch(() => {
+        if (user?.isPremium) setIsPremium(true);
+      });
+  }, [user]);
+
+  const handleViewTalent = (talentUserId?: string, tab?: string) => {
+    if (!isPremium && user?.role !== "admin") {
+      setShowPremiumModal(true);
+      return;
+    }
+    if (talentUserId) {
+      router.push(`/dashboard/recruteur/talents/${talentUserId}${tab ? `?tab=${tab}` : ""}`);
+    }
+  };
 
   const fetcher = (url: string) => fetch(url).then(res => res.json());
-  const { data: candidaturesFetched = [], mutate } = useSWR("/api/applications?role=recruiter", fetcher);
+  const { data: candidaturesFetched, mutate } = useSWR(`/api/applications?role=recruiter&page=${currentPage}&limit=${pageSize}`, fetcher);
   
-  const candidatures: ApplicationData[] = Array.isArray(candidaturesFetched) ? candidaturesFetched.map((app: any) => ({
+  const rawApplications = Array.isArray(candidaturesFetched)
+    ? candidaturesFetched
+    : (candidaturesFetched?.applications || []);
+
+  const totalCount = candidaturesFetched?.totalCount ?? rawApplications.length;
+  const totalPages = candidaturesFetched?.totalPages ?? Math.max(1, Math.ceil(totalCount / pageSize));
+
+  const candidatures: ApplicationData[] = rawApplications.map((app: any) => ({
     id: app.id,
     talent: app.talent?.user?.name || "Talent sans nom",
     talentUserId: app.talent?.userId,
@@ -110,11 +153,7 @@ export default function CandidaturesTab() {
     cvJoint: !!app.talent?.cvUrl,
     score: Math.floor(Math.random() * 20) + 70, // Mock score for now
     imageUrl: app.talent?.user?.image || `https://ui-avatars.com/api/?name=${encodeURIComponent(app.talent?.user?.name || "T")}&background=random`
-  })) : [];
-
-  const perPage = 8;
-  const totalPages = Math.ceil(candidatures.length / perPage) || 1;
-  const paginated = candidatures.slice((currentPage - 1) * perPage, currentPage * perPage);
+  }));
 
   const showToast = (msg: string) => {
     setToastMsg(msg);
@@ -139,8 +178,19 @@ export default function CandidaturesTab() {
 
   // ── Render ──────────────────────────────────────────────────────────────────
   if (view.type === "detail-offre") {
-    const matchedApp = candidaturesFetched.find((app: any) => app.jobOfferId === view.offreId);
-    const selectedJob = matchedApp ? matchedApp.jobOffer : MOCK_JOB;
+    const matchedApp = rawApplications.find((app: any) => app.jobOfferId === view.offreId);
+    const rawJob = matchedApp ? matchedApp.jobOffer : null;
+    const selectedJob: JobDetailData = rawJob ? {
+      id: rawJob.id || view.offreId,
+      title: rawJob.title || "Offre d'emploi",
+      company: rawJob.recruiter?.companyName || "Mon Entreprise",
+      location: rawJob.location || "Non précisé",
+      publishDate: rawJob.createdAt ? new Date(rawJob.createdAt).toLocaleDateString("fr-FR") : undefined,
+      candidatesCount: rawJob._count?.applications || rawApplications.filter((a: any) => a.jobOfferId === view.offreId).length,
+      type: rawJob.contractType || rawJob.type || "CDI",
+      status: rawJob.status || "Offre en cours",
+      description: rawJob.description || "",
+    } : MOCK_JOB;
 
     return (
       <DetailOffreView
@@ -148,9 +198,7 @@ export default function CandidaturesTab() {
         onBack={() => setView({ type: "list" })}
         onEdit={() => setView({ type: "edit-offre" })}
         onDelete={() => { setView({ type: "list" }); showToast("Offre supprimée."); }}
-        onViewCandidate={(id) => {
-          router.push(`/dashboard/recruteur/talents/${id}`);
-        }}
+        onViewCandidate={(id) => handleViewTalent(id)}
       />
     );
   }
@@ -197,17 +245,19 @@ export default function CandidaturesTab() {
           <input
             type="text"
             className="flex-1 outline-none text-sm text-slate-700 bg-transparent placeholder:text-slate-400"
-            placeholder="Rechercher un talent, une offre..."
+            placeholder={t("searchPlaceholder")}
           />
         </div>
         <div className="flex flex-wrap gap-2">
-          {["Toutes les offres", "License", "Genre", "Pays", "Ville"].map((f) => (
-            <div key={f} className="relative">
-              <select className="appearance-none bg-white border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs font-medium text-slate-600 pr-8 outline-none focus:border-[#32A8D7] cursor-pointer">
-                <option>{f}</option>
-              </select>
-              <ChevronDown size={12} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
-            </div>
+          {[t("allOffers"), "License", "Genre", "Pays", "Ville"].map((f) => (
+            <CustomSelect
+              key={f}
+              value={f}
+              onChange={() => {}}
+              options={[f]}
+              size="sm"
+              className="min-w-[130px]"
+            />
           ))}
         </div>
       </div>
@@ -218,48 +268,41 @@ export default function CandidaturesTab() {
           <table className="w-full text-sm">
             <thead>
               <tr className="bg-slate-50 border-b border-slate-100">
-                <th className="text-left px-4 py-3.5 text-[10px] font-bold text-slate-500 uppercase tracking-wider whitespace-nowrap">No</th>
-                <th className="text-left px-4 py-3.5 text-[10px] font-bold text-slate-500 uppercase tracking-wider whitespace-nowrap">Talent</th>
-                <th className="text-left px-4 py-3.5 text-[10px] font-bold text-slate-500 uppercase tracking-wider whitespace-nowrap">Offre postée</th>
-                <th className="text-left px-4 py-3.5 text-[10px] font-bold text-slate-500 uppercase tracking-wider whitespace-nowrap">Date candidature</th>
-                <th className="text-left px-4 py-3.5 text-[10px] font-bold text-slate-500 uppercase tracking-wider whitespace-nowrap">Type d&apos;emploi</th>
-                <th className="text-left px-4 py-3.5 text-[10px] font-bold text-slate-500 uppercase tracking-wider whitespace-nowrap">Statut</th>
-                <th className="text-left px-4 py-3.5 text-[10px] font-bold text-slate-500 uppercase tracking-wider whitespace-nowrap">Vidéo test</th>
-                <th className="text-left px-4 py-3.5 text-[10px] font-bold text-slate-500 uppercase tracking-wider whitespace-nowrap">CV joint ?</th>
-                <th className="text-left px-4 py-3.5 text-[10px] font-bold text-slate-500 uppercase tracking-wider whitespace-nowrap">Action</th>
+                <th className="text-left px-4 py-3.5 text-[10px] font-bold text-slate-500 uppercase tracking-wider whitespace-nowrap">{t("colNo")}</th>
+                <th className="text-left px-4 py-3.5 text-[10px] font-bold text-slate-500 uppercase tracking-wider whitespace-nowrap">{t("colTalent")}</th>
+                <th className="text-left px-4 py-3.5 text-[10px] font-bold text-slate-500 uppercase tracking-wider whitespace-nowrap">{t("colJobPosted")}</th>
+                <th className="text-left px-4 py-3.5 text-[10px] font-bold text-slate-500 uppercase tracking-wider whitespace-nowrap">{t("colApplyDate")}</th>
+                <th className="text-left px-4 py-3.5 text-[10px] font-bold text-slate-500 uppercase tracking-wider whitespace-nowrap">{t("colJobType")}</th>
+                <th className="text-left px-4 py-3.5 text-[10px] font-bold text-slate-500 uppercase tracking-wider whitespace-nowrap">{t("colStatus")}</th>
+                <th className="text-left px-4 py-3.5 text-[10px] font-bold text-slate-500 uppercase tracking-wider whitespace-nowrap">{t("colVideoTest")}</th>
+                <th className="text-left px-4 py-3.5 text-[10px] font-bold text-slate-500 uppercase tracking-wider whitespace-nowrap">{t("colCvAttached")}</th>
+                <th className="text-left px-4 py-3.5 text-[10px] font-bold text-slate-500 uppercase tracking-wider whitespace-nowrap">{t("colAction")}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-50">
               {candidatures.length === 0 ? (
                 <tr>
-                  <td colSpan={9} className="px-4 py-16 text-center text-slate-400">
-                    <div className="flex flex-col items-center justify-center">
-                      <FileText size={48} className="text-slate-300 mb-3" />
-                      <p className="text-base font-semibold text-slate-600">Aucune candidature</p>
-                      <p className="text-sm">Vous n&apos;avez reçu aucune candidature pour le moment.</p>
-                    </div>
-                  </td>
-                </tr>
-              ) : paginated.length === 0 ? (
-                <tr>
-                  <td colSpan={9} className="px-4 py-10 text-center text-slate-400 text-sm">
-                    Aucune candidature sur cette page.
+                  <td colSpan={9} className="p-8">
+                    <EmptyState
+                      type="candidatures"
+                      title={t("emptyTitle")}
+                      description={t("emptyDesc")}
+                    />
                   </td>
                 </tr>
               ) : (
-                paginated.map((c, index) => (
+                candidatures.map((c, index) => (
                   <tr key={c.id} className="hover:bg-slate-50/70 transition-colors">
                     <td className="px-4 py-3.5 text-xs text-slate-400 font-medium align-middle">
-                      {String((currentPage - 1) * perPage + index + 1).padStart(2, "0")}
+                      {String((currentPage - 1) * pageSize + index + 1).padStart(2, "0")}
                     </td>
                     <td className="px-4 py-3.5 align-middle">
                       <div className="flex items-center gap-2.5">
                         <div className="w-8 h-8 rounded-full overflow-hidden bg-slate-200 relative shrink-0">
-                          <Image
+                          <img
                             src={c.imageUrl}
                             alt={c.talent}
-                            fill
-                            className="object-cover"
+                            className="object-cover w-full h-full"
                             onError={(e) => {
                               (e.target as HTMLImageElement).src = `https://ui-avatars.com/api/?name=${encodeURIComponent(c.talent)}&background=32A8D7&color=fff&size=64`;
                             }}
@@ -283,55 +326,43 @@ export default function CandidaturesTab() {
                       </span>
                     </td>
                     <td className="px-4 py-3.5 align-middle">
-                      <StatutBadge statut={c.statut} />
+                      <StatutBadge statut={c.statut} t={t} />
                     </td>
                     <td className="px-4 py-3.5 align-middle">
                       {c.videoTest ? (
                         <button
-                          onClick={() => {
-                            if (c.talentUserId) {
-                              router.push(`/dashboard/recruteur/talents/${c.talentUserId}?tab=video`);
-                            }
-                          }}
-                          className="inline-flex items-center gap-1 text-[10px] font-semibold text-[#32A8D7] hover:underline"
+                          onClick={() => handleViewTalent(c.talentUserId, "video")}
+                          className="inline-flex items-center gap-1 text-[10px] font-semibold text-[#32A8D7] hover:underline cursor-pointer"
                         >
-                          <Video size={10} /> Oui · Voir
+                          <Video size={10} /> {t("yesView")}
                         </button>
                       ) : (
                         <span className="text-[10px] font-medium text-slate-400 flex items-center gap-1">
-                          <X size={10} /> Non
+                          <X size={10} /> {t("no")}
                         </span>
                       )}
                     </td>
                     <td className="px-4 py-3.5 align-middle">
                       {c.cvJoint ? (
                         <button
-                          onClick={() => {
-                            if (c.talentUserId) {
-                              router.push(`/dashboard/recruteur/talents/${c.talentUserId}?tab=informations`);
-                            }
-                          }}
-                          className="inline-flex items-center gap-1 text-[10px] font-semibold text-[#32A8D7] hover:underline"
+                          onClick={() => handleViewTalent(c.talentUserId, "informations")}
+                          className="inline-flex items-center gap-1 text-[10px] font-semibold text-[#32A8D7] hover:underline cursor-pointer"
                         >
-                          <FileText size={10} /> Oui · Voir
+                          <FileText size={10} /> {t("yesView")}
                         </button>
                       ) : (
                         <span className="text-[10px] font-medium text-slate-400 flex items-center gap-1">
-                          <X size={10} /> Non
+                          <X size={10} /> {t("no")}
                         </span>
                       )}
                     </td>
                     <td className="px-4 py-3.5 align-middle">
                       <div className="flex items-center gap-1.5">
                         <button
-                          onClick={() => {
-                            if (c.talentUserId) {
-                              router.push(`/dashboard/recruteur/talents/${c.talentUserId}`);
-                            }
-                          }}
-                          className="inline-flex items-center gap-1 px-2.5 py-1 bg-[#32A8D7] hover:bg-[#2896c2] text-white text-[10px] font-semibold rounded-lg transition-colors whitespace-nowrap"
+                          onClick={() => handleViewTalent(c.talentUserId)}
+                          className="inline-flex items-center gap-1 px-2.5 py-1 bg-[#32A8D7] hover:bg-[#2896c2] text-white text-[10px] font-semibold rounded-lg transition-colors whitespace-nowrap cursor-pointer"
                         >
-                          <Eye size={10} /> Voir
+                          <Eye size={10} /> {t("view")}
                         </button>
                         {c.statut === "En attente" && (
                           <>
@@ -343,10 +374,10 @@ export default function CandidaturesTab() {
                                   body: JSON.stringify({ status: "ACCEPTED" })
                                 });
                                 mutate();
-                                showToast("Candidature acceptée.");
+                                showToast(t("acceptedToast"));
                               }}
                               className="p-1.5 bg-green-50 text-green-600 hover:bg-green-100 rounded-lg transition-colors"
-                              title="Accepter"
+                              title={t("accept")}
                             >
                               <CheckCircle size={13} />
                             </button>
@@ -358,10 +389,10 @@ export default function CandidaturesTab() {
                                   body: JSON.stringify({ status: "REJECTED" })
                                 });
                                 mutate();
-                                showToast("Candidature rejetée.");
+                                showToast(t("rejectedToast"));
                               }}
                               className="p-1.5 bg-red-50 text-red-500 hover:bg-red-100 rounded-lg transition-colors"
-                              title="Rejeter"
+                              title={t("reject")}
                             >
                               <XCircle size={13} />
                             </button>
@@ -370,7 +401,7 @@ export default function CandidaturesTab() {
                         <button
                           onClick={() => deleteCandidature(c.id)}
                           className="p-1.5 hover:bg-red-50 text-slate-400 hover:text-red-500 rounded-lg transition-colors"
-                          title="Supprimer"
+                          title={t("delete")}
                         >
                           <Trash2 size={13} />
                         </button>
@@ -384,41 +415,25 @@ export default function CandidaturesTab() {
         </div>
 
         {/* Pagination */}
-        <div className="flex items-center justify-between px-4 py-3.5 border-t border-slate-100">
-          <p className="text-xs text-slate-400 font-medium">
-            {candidatures.length} candidatures · Page {currentPage} sur {totalPages}
-          </p>
-          <div className="flex items-center gap-2">
-            <button
-              disabled={currentPage <= 1}
-              onClick={() => setCurrentPage((p) => p - 1)}
-              className="p-1.5 rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-            >
-              <ChevronLeft size={14} />
-            </button>
-            {Array.from({ length: totalPages }, (_, i) => i + 1).map((pg) => (
-              <button
-                key={pg}
-                onClick={() => setCurrentPage(pg)}
-                className={`w-7 h-7 rounded-lg text-xs font-semibold transition-colors ${
-                  pg === currentPage
-                    ? "bg-[#32A8D7] text-white"
-                    : "text-slate-500 hover:bg-slate-100"
-                }`}
-              >
-                {pg}
-              </button>
-            ))}
-            <button
-              disabled={currentPage >= totalPages}
-              onClick={() => setCurrentPage((p) => p + 1)}
-              className="p-1.5 rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-            >
-              <ChevronRight size={14} />
-            </button>
-          </div>
-        </div>
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          totalCount={totalCount}
+          pageSize={pageSize}
+          itemLabel={t("itemLabel")}
+          onPageChange={(page) => setCurrentPage(page)}
+        />
       </div>
+
+      {/* Premium Required Modal */}
+      {showPremiumModal && (
+        <PremiumRequiredModal
+          onClose={() => setShowPremiumModal(false)}
+          title="Abonnement Premium Requis"
+          message="Pour consulter les profils complets des talents, visionner leurs entretiens vidéo IA et télécharger leurs CVs, vous devez souscrire à l'offre Recruteur Premium."
+          upgradeHref="/dashboard/recruteur?tab=premium"
+        />
+      )}
     </div>
   );
 }

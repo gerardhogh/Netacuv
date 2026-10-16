@@ -4,7 +4,11 @@ import { Search, MoreHorizontal, X, Save, ArrowLeft, ChevronRight, Clock, Share2
 import Image from "next/image";
 import Link from "next/link";
 import useSWR, { useSWRConfig } from "swr";
+import { useTranslations } from "next-intl";
 import { EmptyState } from "@/components/ui/EmptyState";
+import { CustomSelect } from "@/components/ui/CustomSelect";
+import { Modal } from "@/components/ui/Modal";
+import { Pagination } from "@/components/ui/Pagination";
 
 const fetcher = (url: string) => fetch(url).then(res => res.json());
 
@@ -24,8 +28,10 @@ interface JobOfferData {
 }
 
 export default function AdminEmplois() {
-  const [activeTab, setActiveTab] = useState("Toutes les offres");
+  const t = useTranslations("admin.jobs");
+  const [activeTab, setActiveTab] = useState<"all" | "mine">("all");
   const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState<string>("ALL");
   const [showPublierModal, setShowPublierModal] = useState(false);
   const [jobToView, setJobToView] = useState<JobOfferData | null>(null);
   const [jobToEdit, setJobToEdit] = useState<JobOfferData | null>(null);
@@ -47,12 +53,12 @@ export default function AdminEmplois() {
       }
     } catch (e) {
       console.error("Erreur toggle status:", e);
-      alert("Une erreur est survenue");
+      alert(t("unexpectedError"));
     }
   };
 
   const handleDelete = async (id: string) => {
-    if (!window.confirm("Voulez-vous vraiment supprimer cette offre ?")) return;
+    if (!window.confirm(t("confirmDelete"))) return;
     try {
       const res = await fetch(`/api/jobs/${id}`, {
         method: "DELETE",
@@ -65,13 +71,19 @@ export default function AdminEmplois() {
       }
     } catch (e) {
       console.error("Erreur delete:", e);
-      alert("Une erreur est survenue");
+      alert(t("unexpectedError"));
     }
   };
 
-  const { data: data = [], isLoading: loading } = useSWR("/api/admin/jobs", fetcher);
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 20;
 
-  const offres: JobOfferData[] = Array.isArray(data) ? data.map((j: Record<string, unknown>) => ({
+  const { data: data, isLoading: loading } = useSWR(`/api/admin/jobs?page=${currentPage}&limit=${pageSize}`, fetcher);
+  const rawJobs = Array.isArray(data) ? data : (data?.jobs || []);
+  const totalCount = data?.totalCount ?? rawJobs.length;
+  const totalPages = data?.totalPages ?? Math.max(1, Math.ceil(totalCount / pageSize));
+
+  const offres: JobOfferData[] = rawJobs.map((j: Record<string, unknown>) => ({
     id: String(j.id).substring(0, 8),
     rawId: String(j.id),
     titre: String(j.title),
@@ -84,12 +96,17 @@ export default function AdminEmplois() {
     isAdminCreated: ["SUPER ADMIN", "ADMIN RH / MODÉRATEUR", "MANAGER IA & CERTIFICATION", "GESTIONNAIRE FINANCIER", "SUPPORT CLIENT", "ADMIN"].includes((j.recruiter as any)?.user?.role?.name?.toUpperCase() || ""),
     candidats: (j.applications as any[])?.length || 0,
     description: String(j.description || "")
-  })) : [];
+  }));
 
-  const filteredToutesOffres = offres.filter(o => 
-    o.titre.toLowerCase().includes(search.toLowerCase()) || 
-    o.entreprise.toLowerCase().includes(search.toLowerCase())
-  );
+  const filteredToutesOffres = offres.filter(o => {
+    const matchesSearch = 
+      o.titre.toLowerCase().includes(search.toLowerCase()) || 
+      o.entreprise.toLowerCase().includes(search.toLowerCase()) ||
+      o.localisation.toLowerCase().includes(search.toLowerCase()) ||
+      o.contrat.toLowerCase().includes(search.toLowerCase());
+    const matchesStatus = statusFilter === "ALL" || o.status === statusFilter;
+    return matchesSearch && matchesStatus;
+  });
 
   const mockMesOffres = offres.filter(o => o.isAdminCreated);
 
@@ -107,9 +124,9 @@ export default function AdminEmplois() {
         <div className="flex items-center gap-3">
           <button
             onClick={() => setJobToView(null)}
-            className="flex items-center gap-1.5 text-sm text-slate-500 hover:text-[#32A8D7] transition-colors"
+            className="flex items-center gap-1.5 text-sm text-slate-500 hover:text-[#32A8D7] transition-colors cursor-pointer"
           >
-            <ArrowLeft size={16} /> Retour
+            <ArrowLeft size={16} /> {t("back")}
           </button>
         </div>
         <DetailOffreView
@@ -129,9 +146,9 @@ export default function AdminEmplois() {
         <div className="flex items-center gap-3">
           <button
             onClick={() => setJobToEdit(null)}
-            className="flex items-center gap-1.5 text-sm text-slate-500 hover:text-[#32A8D7] transition-colors"
+            className="flex items-center gap-1.5 text-sm text-slate-500 hover:text-[#32A8D7] transition-colors cursor-pointer"
           >
-            <ArrowLeft size={16} /> Retour
+            <ArrowLeft size={16} /> {t("back")}
           </button>
         </div>
         <ModifierOffreView
@@ -168,25 +185,25 @@ export default function AdminEmplois() {
       {/* Tabs */}
       <div className="flex border-b border-slate-200">
         <button 
-          onClick={() => setActiveTab("Toutes les offres")}
-          className={`px-6 py-3 font-semibold text-sm border-b-2 transition-colors ${activeTab === "Toutes les offres" ? "border-[#32A8D7] text-[#32A8D7]" : "border-transparent text-slate-500 hover:text-slate-700"}`}
+          onClick={() => setActiveTab("all")}
+          className={`px-6 py-3 font-semibold text-sm border-b-2 transition-colors cursor-pointer ${activeTab === "all" ? "border-[#32A8D7] text-[#32A8D7]" : "border-transparent text-slate-500 hover:text-slate-700"}`}
         >
-          Toutes les offres
+          {t("tabAll")}
         </button>
         <button 
-          onClick={() => setActiveTab("Mes offres")}
-          className={`px-6 py-3 font-semibold text-sm border-b-2 transition-colors ${activeTab === "Mes offres" ? "border-[#32A8D7] text-[#32A8D7]" : "border-transparent text-slate-500 hover:text-slate-700"}`}
+          onClick={() => setActiveTab("mine")}
+          className={`px-6 py-3 font-semibold text-sm border-b-2 transition-colors cursor-pointer ${activeTab === "mine" ? "border-[#32A8D7] text-[#32A8D7]" : "border-transparent text-slate-500 hover:text-slate-700"}`}
         >
-          Mes offres
+          {t("myOffers")}
         </button>
       </div>
 
-      {activeTab === "Toutes les offres" && (
+      {activeTab === "all" && (
         <div className="space-y-6">
           {/* Header and Stats row */}
           <div className="flex flex-col xl:flex-row xl:items-center gap-6 justify-between bg-white p-4 rounded-xl shadow-sm border border-slate-100">
             <h2 className="text-xl font-bold">
-              <span className="text-[#232323]">Liste des</span> <span className="text-[#32A8D7]">offres</span>
+              <span className="text-[#232323]">{t("title")}</span> <span className="text-[#32A8D7]">{t("titleHighlight")}</span>
             </h2>
             
             <div className="flex flex-wrap items-center gap-4">
@@ -194,7 +211,7 @@ export default function AdminEmplois() {
                 <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
                 <input
                   type="text"
-                  placeholder="Rechercher"
+                  placeholder={t("searchPlaceholder")}
                   value={search}
                   onChange={e => setSearch(e.target.value)}
                   className="pl-10 pr-4 py-2 border border-slate-200 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-[#32A8D7] w-48 sm:w-64"
@@ -202,21 +219,50 @@ export default function AdminEmplois() {
               </div>
 
               <div className="flex flex-wrap gap-2">
-                <span className="px-3 py-1.5 bg-[#eaf6fc] border border-[#d6effa] text-[#32A8D7] text-sm font-semibold rounded-full">
-                  {stats.total} offres au total
-                </span>
-                <span className="px-3 py-1.5 bg-green-50 border border-green-100 text-green-700 text-sm font-semibold rounded-full">
-                  {stats.actifs} actifs
-                </span>
-                <span className="px-3 py-1.5 bg-yellow-50 border border-yellow-100 text-yellow-700 text-sm font-semibold rounded-full">
-                  {stats.attente} en attente
-                </span>
-                <span className="px-3 py-1.5 bg-slate-50 border border-slate-200 text-slate-600 text-sm font-semibold rounded-full">
-                  {stats.suspendus} suspendus
-                </span>
-                <span className="px-3 py-1.5 bg-red-50 border border-red-100 text-red-600 text-sm font-semibold rounded-full">
-                  {stats.supprimes} supprimés
-                </span>
+                <button
+                  type="button"
+                  onClick={() => setStatusFilter("ALL")}
+                  className={`px-3 py-1.5 text-sm font-semibold rounded-full transition-all cursor-pointer ${
+                    statusFilter === "ALL"
+                      ? "bg-[#32A8D7] text-white shadow-xs"
+                      : "bg-[#eaf6fc] border border-[#d6effa] text-[#32A8D7] hover:bg-[#d6effa]"
+                  }`}
+                >
+                  {t("totalOffers", { count: stats.total })}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setStatusFilter("Actif")}
+                  className={`px-3 py-1.5 text-sm font-semibold rounded-full transition-all cursor-pointer ${
+                    statusFilter === "Actif"
+                      ? "bg-green-600 text-white shadow-xs"
+                      : "bg-green-50 border border-green-100 text-green-700 hover:bg-green-100"
+                  }`}
+                >
+                  {t("activeCount", { count: stats.actifs })}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setStatusFilter("En attente")}
+                  className={`px-3 py-1.5 text-sm font-semibold rounded-full transition-all cursor-pointer ${
+                    statusFilter === "En attente"
+                      ? "bg-yellow-500 text-white shadow-xs"
+                      : "bg-yellow-50 border border-yellow-100 text-yellow-700 hover:bg-yellow-100"
+                  }`}
+                >
+                  {t("pendingCount", { count: stats.attente })}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setStatusFilter("Suspendu")}
+                  className={`px-3 py-1.5 text-sm font-semibold rounded-full transition-all cursor-pointer ${
+                    statusFilter === "Suspendu"
+                      ? "bg-slate-700 text-white shadow-xs"
+                      : "bg-slate-50 border border-slate-200 text-slate-600 hover:bg-slate-100"
+                  }`}
+                >
+                  {t("suspendedCount", { count: stats.suspendus })}
+                </button>
               </div>
             </div>
           </div>
@@ -224,21 +270,22 @@ export default function AdminEmplois() {
           {/* Table */}
           <div className="bg-white rounded-xl border border-slate-100 shadow-sm overflow-hidden">
             {loading ? (
-              <div className="p-8 text-center text-slate-500">Chargement des offres...</div>
+              <div className="p-8 text-center text-slate-500">{t("loadingJobs")}</div>
             ) : filteredToutesOffres.length > 0 ? (
+              <>
               <div className="overflow-x-auto">
                 <table className="w-full text-sm text-left">
                   <thead className="bg-[#f4f9fd] border-b border-slate-100">
                     <tr>
-                      <th className="px-5 py-4 font-semibold text-[#1e4869]">ID</th>
-                      <th className="px-5 py-4 font-semibold text-[#1e4869]">Titre du poste</th>
-                      <th className="px-5 py-4 font-semibold text-[#1e4869]">Entreprise</th>
-                      <th className="px-5 py-4 font-semibold text-[#1e4869]">Date de publication</th>
-                      <th className="px-5 py-4 font-semibold text-[#1e4869]">Type de contrat</th>
-                      <th className="px-5 py-4 font-semibold text-[#1e4869]">Localisation</th>
-                      <th className="px-5 py-4 font-semibold text-[#1e4869]">Candidatures reçues</th>
-                      <th className="px-5 py-4 font-semibold text-[#1e4869]">Statut</th>
-                      <th className="px-5 py-4 font-semibold text-[#1e4869]">Action admin</th>
+                      <th className="px-5 py-4 font-semibold text-[#1e4869]">{t("thId")}</th>
+                      <th className="px-5 py-4 font-semibold text-[#1e4869]">{t("thTitle")}</th>
+                      <th className="px-5 py-4 font-semibold text-[#1e4869]">{t("thCompany")}</th>
+                      <th className="px-5 py-4 font-semibold text-[#1e4869]">{t("thDate")}</th>
+                      <th className="px-5 py-4 font-semibold text-[#1e4869]">{t("thContract")}</th>
+                      <th className="px-5 py-4 font-semibold text-[#1e4869]">{t("thLocation")}</th>
+                      <th className="px-5 py-4 font-semibold text-[#1e4869]">{t("thApplications")}</th>
+                      <th className="px-5 py-4 font-semibold text-[#1e4869]">{t("thStatus")}</th>
+                      <th className="px-5 py-4 font-semibold text-[#1e4869]">{t("thActions")}</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
@@ -252,38 +299,38 @@ export default function AdminEmplois() {
                         <td className="px-5 py-4 text-[#1e4869]">{o.localisation}</td>
                         <td className="px-5 py-4">
                           <span className="text-[#1e4869] font-medium">{o.candidatures}</span>
-                          <button className="ml-2 text-[#32A8D7] font-semibold hover:underline">Tout voir</button>
+                          <button onClick={() => setJobToView(o)} className="ml-2 text-[#32A8D7] font-semibold hover:underline cursor-pointer">{t("viewAll")}</button>
                         </td>
                         <td className="px-5 py-4">
                           <div className="flex items-center gap-1.5 px-2 py-1 rounded-full w-max text-xs font-semibold" style={{
                             backgroundColor: o.status === 'Actif' ? '#f0fdf4' : o.status === 'En attente' ? '#fefce8' : '#fef2f2',
                             color: '#475569'
                           }}>
-                            {o.status}
+                            {o.status === 'Actif' ? t("active") : o.status === 'En attente' ? t("pending") : t("suspended")}
                             <span className={`w-1.5 h-1.5 rounded-full ${o.status === 'Actif' ? 'bg-green-500' : o.status === 'En attente' ? 'bg-yellow-400' : 'bg-red-500'}`}></span>
                           </div>
                         </td>
                         <td className="px-5 py-4">
                           <div className="flex flex-col gap-1 text-xs font-semibold items-start">
-                            <button onClick={() => setJobToView(o)} className="text-[#32A8D7] hover:underline">Voir l&apos;offre</button>
+                            <button onClick={() => setJobToView(o)} className="text-[#32A8D7] hover:underline cursor-pointer">{t("viewOffer")}</button>
                             
                             {o.status === 'En attente' && (
-                              <button onClick={() => handleToggleStatus(o.rawId, 'PUBLISHED')} className="text-green-500 hover:underline">Approuver</button>
+                              <button onClick={() => handleToggleStatus(o.rawId, 'PUBLISHED')} className="text-green-500 hover:underline cursor-pointer">{t("approve")}</button>
                             )}
                             {o.status === 'Suspendu' && (
-                              <button onClick={() => handleToggleStatus(o.rawId, 'PUBLISHED')} className="text-green-500 hover:underline">Réactiver l&apos;offre</button>
+                              <button onClick={() => handleToggleStatus(o.rawId, 'PUBLISHED')} className="text-green-500 hover:underline cursor-pointer">{t("reactivateOffer")}</button>
                             )}
                             
                             {/* L'admin ne modifie pas les offres externes, sauf s'il les a créées */}
                             {o.isAdminCreated && (
-                              <button onClick={() => setJobToEdit(o)} className="text-[#32A8D7] hover:underline">Modifier</button>
+                              <button onClick={() => setJobToEdit(o)} className="text-[#32A8D7] hover:underline cursor-pointer">{t("edit")}</button>
                             )}
                             
                             {o.status !== 'Suspendu' && (
-                              <button onClick={() => handleToggleStatus(o.rawId, 'CLOSED')} className="text-yellow-500 hover:underline">Clôturer l&apos;offre</button>
+                              <button onClick={() => handleToggleStatus(o.rawId, 'CLOSED')} className="text-yellow-500 hover:underline cursor-pointer">{t("closeOffer")}</button>
                             )}
                             
-                            <button onClick={() => handleDelete(o.rawId)} className="text-red-500 hover:underline">Supprimer</button>
+                            <button onClick={() => handleDelete(o.rawId)} className="text-red-500 hover:underline cursor-pointer">{t("delete")}</button>
                           </div>
                         </td>
                       </tr>
@@ -291,33 +338,44 @@ export default function AdminEmplois() {
                   </tbody>
                 </table>
               </div>
+
+              {/* Pagination */}
+              <Pagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                totalCount={totalCount}
+                pageSize={pageSize}
+                itemLabel={t("itemLabel")}
+                onPageChange={(page) => setCurrentPage(page)}
+              />
+              </>
             ) : (
               <EmptyState 
-                title="Aucune offre trouvée" 
-                description="Il n'y a pas d'offres correspondant à vos critères." 
+                title={t("emptyTitle")} 
+                description={t("emptyDesc")} 
               />
             )}
           </div>
         </div>
       )}
 
-      {activeTab === "Mes offres" && (
+      {activeTab === "mine" && (
         <div className="space-y-6">
           <div className="flex items-center text-sm text-slate-500">
-            <Link href="/dashboard/admin" className="hover:text-slate-800">Accueil</Link>
+            <Link href="/dashboard/admin" className="hover:text-slate-800">{t("home")}</Link>
             <span className="mx-2">›</span>
-            <span>Offres créées par Netacuv</span>
+            <span>{t("createdJobsNetacuv")}</span>
           </div>
 
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-4 rounded-xl shadow-sm border border-slate-100">
-            <h2 className="text-xl font-bold text-[#232323]">Emplois créés</h2>
+            <h2 className="text-xl font-bold text-[#232323]">{t("createdJobs")}</h2>
             
             <div className="flex items-center gap-3">
               <span className="px-4 py-2 bg-[#eaf6fc] text-[#32A8D7] text-sm font-semibold rounded-lg">
-                {mockMesOffres.length} emplois au total
+                {t("totalJobsCount", { count: mockMesOffres.length })}
               </span>
-              <button onClick={() => setShowPublierModal(true)} className="px-4 py-2 bg-white border border-[#32A8D7] text-[#32A8D7] text-sm font-bold rounded-lg hover:bg-[#32A8D7] hover:text-white transition-colors">
-                + Publier une offre
+              <button onClick={() => setShowPublierModal(true)} className="px-4 py-2 bg-white border border-[#32A8D7] text-[#32A8D7] text-sm font-bold rounded-lg hover:bg-[#32A8D7] hover:text-white transition-colors cursor-pointer">
+                {t("publishBtn")}
               </button>
             </div>
           </div>
@@ -337,38 +395,38 @@ export default function AdminEmplois() {
                     </div>
 
                     <div className="flex items-center justify-between text-xs text-slate-500 mb-1">
-                      <span>Publié le: {o.date}</span>
+                      <span>{t("publishedOn", { date: o.date })}</span>
                       <div className={`flex items-center gap-1.5 px-2 py-0.5 rounded-full ${o.status === 'Actif' ? 'bg-green-50 text-green-700' : 'bg-yellow-50 text-yellow-700'}`}>
-                        <span>{o.status}</span>
+                        <span>{o.status === 'Actif' ? t("active") : o.status === 'En attente' ? t("pending") : t("suspended")}</span>
                         <span className={`w-1.5 h-1.5 rounded-full ${o.status === 'Actif' ? 'bg-green-500' : 'bg-yellow-400'}`}></span>
                       </div>
                     </div>
                     
                     <h3 className="font-bold text-slate-800 text-base mb-1">{o.titre}</h3>
-                    <p className="text-sm text-slate-500 mb-1">Entreprise : <span className="font-semibold text-[#32A8D7]">{o.entreprise}</span></p>
+                    <p className="text-sm text-slate-500 mb-1">{t("companyLabel")} <span className="font-semibold text-[#32A8D7]">{o.entreprise}</span></p>
                     <p className="text-sm text-slate-500 mb-4">{o.localisation}</p>
                     
-                    <p className="text-xs text-slate-400 mb-4">{o.candidats} Candidats</p>
+                    <p className="text-xs text-slate-400 mb-4">{t("candidatesCount", { count: o.candidats })}</p>
                     
                     <div className="flex items-center gap-2 mt-auto relative">
-                      <button onClick={() => setJobToView(o)} className="flex-1 py-2 border border-[#32A8D7] text-[#32A8D7] text-sm font-semibold rounded-lg hover:bg-blue-50 transition-colors">
-                        Voir détail
+                      <button onClick={() => setJobToView(o)} className="flex-1 py-2 border border-[#32A8D7] text-[#32A8D7] text-sm font-semibold rounded-lg hover:bg-blue-50 transition-colors cursor-pointer">
+                        {t("viewDetail")}
                       </button>
                       <button 
                         onClick={() => setOpenMenuId(openMenuId === o.id ? null : o.id)}
-                        className="p-2 border border-slate-200 text-slate-500 rounded-lg hover:bg-slate-50 transition-colors">
+                        className="p-2 border border-slate-200 text-slate-500 rounded-lg hover:bg-slate-50 transition-colors cursor-pointer">
                         <MoreHorizontal size={18} />
                       </button>
 
                       {openMenuId === o.id && (
                         <div className="absolute right-0 bottom-full mb-2 w-36 bg-white rounded-xl shadow-lg border border-slate-100 py-1 z-20">
-                          <button onClick={() => { setOpenMenuId(null); setJobToEdit(o); }} className="w-full text-left px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50">Modifier</button>
+                          <button onClick={() => { setOpenMenuId(null); setJobToEdit(o); }} className="w-full text-left px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 cursor-pointer">{t("edit")}</button>
                           {o.status !== 'Suspendu' ? (
-                            <button onClick={() => { setOpenMenuId(null); handleToggleStatus(o.rawId, 'CLOSED'); }} className="w-full text-left px-4 py-2 text-sm font-medium text-yellow-600 hover:bg-slate-50">Clôturer l&apos;offre</button>
+                            <button onClick={() => { setOpenMenuId(null); handleToggleStatus(o.rawId, 'CLOSED'); }} className="w-full text-left px-4 py-2 text-sm font-medium text-yellow-600 hover:bg-slate-50 cursor-pointer">{t("closeOffer")}</button>
                           ) : (
-                            <button onClick={() => { setOpenMenuId(null); handleToggleStatus(o.rawId, 'PUBLISHED'); }} className="w-full text-left px-4 py-2 text-sm font-medium text-green-600 hover:bg-slate-50">Réactiver l&apos;offre</button>
+                            <button onClick={() => { setOpenMenuId(null); handleToggleStatus(o.rawId, 'PUBLISHED'); }} className="w-full text-left px-4 py-2 text-sm font-medium text-green-600 hover:bg-slate-50 cursor-pointer">{t("reactivateOffer")}</button>
                           )}
-                          <button onClick={() => { setOpenMenuId(null); handleDelete(o.rawId); }} className="w-full text-left px-4 py-2 text-sm font-medium text-red-600 hover:bg-slate-50">Supprimer</button>
+                          <button onClick={() => { setOpenMenuId(null); handleDelete(o.rawId); }} className="w-full text-left px-4 py-2 text-sm font-medium text-red-600 hover:bg-slate-50 cursor-pointer">{t("delete")}</button>
                         </div>
                       )}
                     </div>
@@ -377,18 +435,18 @@ export default function AdminEmplois() {
               </div>
               
               <div className="flex justify-end mt-6">
-                <button className="px-6 py-2 bg-slate-100 text-slate-600 font-semibold rounded-lg text-sm hover:bg-slate-200 transition-colors">
-                  Voir plus
+                <button className="px-6 py-2 bg-slate-100 text-slate-600 font-semibold rounded-lg text-sm hover:bg-slate-200 transition-colors cursor-pointer">
+                  {t("viewMore")}
                 </button>
               </div>
             </>
           ) : (
             <EmptyState 
-              title="Vous n'avez publié aucune offre"
-              description="Cliquez sur le bouton 'Publier une offre' pour créer votre première annonce."
+              title={t("emptyMyJobsTitle")}
+              description={t("emptyMyJobsDesc")}
               actionButton={
-                <button onClick={() => setShowPublierModal(true)} className="px-6 py-2 bg-[#32A8D7] text-white font-bold rounded-lg hover:bg-[#2b91bb] transition-colors">
-                  + Publier une offre
+                <button onClick={() => setShowPublierModal(true)} className="px-6 py-2 bg-[#32A8D7] text-white font-bold rounded-lg hover:bg-[#2b91bb] transition-colors cursor-pointer">
+                  {t("publishBtn")}
                 </button>
               }
             />
@@ -413,15 +471,14 @@ export default function AdminEmplois() {
 const MOCK_CANDIDATES: any[] = [];
 
 function CandidateCard({ c }: { c: typeof MOCK_CANDIDATES[number] }) {
+  const t = useTranslations("admin.jobs");
   return (
     <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden flex flex-col">
       <div className="relative w-full aspect-[4/3] bg-pink-100">
-        <Image
+        <img
           src={c.avatar}
           alt={c.nom}
-          fill
-          sizes="(max-width: 640px) 100vw, 33vw"
-          className="object-cover object-top"
+          className="object-cover object-top w-full h-full"
           onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
         />
         {c.certifie && (
@@ -436,10 +493,10 @@ function CandidateCard({ c }: { c: typeof MOCK_CANDIDATES[number] }) {
             <p className="font-bold text-slate-900 text-sm">{c.nom}</p>
             <p className="text-[11px] text-slate-400">{c.localisation}</p>
             <p className="text-[11px] text-slate-500 mt-0.5">
-              <span className="font-semibold">Profession :</span> {c.profession}
+              <span className="font-semibold">{t("professionLabel")}</span> {c.profession}
             </p>
           </div>
-          <button className="text-slate-300 hover:text-[#32A8D7] transition-colors">
+          <button className="text-slate-300 hover:text-[#32A8D7] transition-colors cursor-pointer">
             <Bookmark size={14} />
           </button>
         </div>
@@ -457,6 +514,7 @@ interface DetailOffreViewProps {
 }
 
 function DetailOffreView({ emploi, onBack, onModifier, onSupprimer, onCloturer }: DetailOffreViewProps) {
+  const t = useTranslations("admin.jobs");
   // Extract modeTravail if encoded in description
   const rawDesc = emploi.description || "";
   let modeTravail = "Temps plein";
@@ -472,9 +530,9 @@ function DetailOffreView({ emploi, onBack, onModifier, onSupprimer, onCloturer }
   return (
     <div className="space-y-5 animate-fade-in-up">
       <nav className="flex items-center gap-1.5 text-xs text-slate-400">
-        <button onClick={onBack} className="hover:text-[#32A8D7] transition-colors">Accueil</button>
+        <button onClick={onBack} className="hover:text-[#32A8D7] transition-colors cursor-pointer">{t("home")}</button>
         <ChevronRight size={12} />
-        <button onClick={onBack} className="hover:text-[#32A8D7] transition-colors">Offres d&apos;emplois</button>
+        <button onClick={onBack} className="hover:text-[#32A8D7] transition-colors cursor-pointer">{t("jobOffers")}</button>
         <ChevronRight size={12} />
         <span className="text-slate-700 font-medium truncate max-w-[180px]">{emploi.titre}</span>
       </nav>
@@ -483,24 +541,24 @@ function DetailOffreView({ emploi, onBack, onModifier, onSupprimer, onCloturer }
         <div className="flex items-start justify-between gap-4 mb-3">
           <div>
             <p className="text-xs text-slate-400 mb-1">
-              Publié le : <span className="font-semibold">{emploi.date}</span>
+              {t("publishedOn", { date: emploi.date })}
               &nbsp;·&nbsp;
-              <span className="font-bold text-slate-700">{emploi.candidats} candidats</span>
+              <span className="font-bold text-slate-700">{t("candidatesCount", { count: emploi.candidats })}</span>
             </p>
             <h2 className="text-2xl font-extrabold text-[#32A8D7]">{emploi.titre}</h2>
             <p className="text-sm text-slate-700 mt-0.5">
-              <span className="font-semibold">Entreprise :</span> {emploi.entreprise}&nbsp;&nbsp;
-              <span className="font-semibold">– Localisation :</span> {emploi.localisation}
+              <span className="font-semibold">{t("companyLabel")}</span> {emploi.entreprise}&nbsp;&nbsp;
+              <span className="font-semibold">{t("locationLabel")}</span> {emploi.localisation}
             </p>
           </div>
-          <button className="p-2.5 rounded-xl border border-slate-200 text-slate-400 hover:text-[#32A8D7] hover:border-[#32A8D7] transition-colors shrink-0">
+          <button className="p-2.5 rounded-xl border border-slate-200 text-slate-400 hover:text-[#32A8D7] hover:border-[#32A8D7] transition-colors shrink-0 cursor-pointer">
             <Share2 size={18} />
           </button>
         </div>
 
         <div className="mt-3 space-y-1 text-sm text-slate-600">
           <p>{modeTravail}</p>
-          <p>Type de Contrat : {emploi.contrat}</p>
+          <p>{t("contractTypeLabel")} {emploi.contrat}</p>
         </div>
 
         <div className="flex items-center justify-between mt-5">
@@ -508,37 +566,37 @@ function DetailOffreView({ emploi, onBack, onModifier, onSupprimer, onCloturer }
             (emploi.status === "Actif") ? "bg-amber-50 text-amber-600 border border-amber-200" : "bg-slate-100 text-slate-500"
           }`}>
             {(emploi.status === "Actif") ? (
-              <><span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />Offre en cours</>
+              <><span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />{t("jobOfferInProgress")}</>
             ) : (
-              <><Clock size={11} />Offre clôturée</>
+              <><Clock size={11} />{t("jobOfferClosed")}</>
             )}
           </span>
           {(emploi.status === "Actif") && (
             <button
               onClick={onCloturer}
-              className="px-4 py-2 bg-[#32A8D7] hover:bg-[#2896c2] text-white text-sm font-semibold rounded-xl transition-colors"
+              className="px-4 py-2 bg-[#32A8D7] hover:bg-[#2896c2] text-white text-sm font-semibold rounded-xl transition-colors cursor-pointer"
             >
-              Clôturer l&apos;offre
+              {t("closeOffer")}
             </button>
           )}
         </div>
       </div>
 
       <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6">
-        <h3 className="text-base font-bold text-[#32A8D7] mb-4">Description de l&apos;Offre</h3>
+        <h3 className="text-base font-bold text-[#32A8D7] mb-4">{t("jobDescription")}</h3>
         <div className="text-sm text-slate-600 leading-relaxed whitespace-pre-line">
           {desc}
         </div>
       </div>
 
       <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6">
-        <h3 className="text-base font-bold text-[#32A8D7] mb-1">Candidats postulés</h3>
-        <p className="text-sm text-slate-500 mb-5">{emploi.candidats} candidatures reçues</p>
+        <h3 className="text-base font-bold text-[#32A8D7] mb-1">{t("appliedCandidates")}</h3>
+        <p className="text-sm text-slate-500 mb-5">{t("applicationsReceived", { count: emploi.candidats })}</p>
         {MOCK_CANDIDATES.length === 0 ? (
           <div className="text-center py-8">
             <Users size={32} className="text-slate-300 mx-auto mb-3" />
-            <p className="text-sm font-medium text-slate-600">Aucun candidat</p>
-            <p className="text-xs text-slate-400">Aucun talent n&apos;a encore postulé à cette offre.</p>
+            <p className="text-sm font-medium text-slate-600">{t("noCandidates")}</p>
+            <p className="text-xs text-slate-400">{t("noCandidatesDesc")}</p>
           </div>
         ) : (
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
@@ -552,16 +610,16 @@ function DetailOffreView({ emploi, onBack, onModifier, onSupprimer, onCloturer }
       <div className="flex gap-3 pb-4">
         <button
           onClick={onSupprimer}
-          className="flex-1 py-3 rounded-2xl border border-slate-200 text-sm font-semibold text-slate-600 hover:bg-red-50 hover:text-red-500 hover:border-red-200 transition-colors"
+          className="flex-1 py-3 rounded-2xl border border-slate-200 text-sm font-semibold text-slate-600 hover:bg-red-50 hover:text-red-500 hover:border-red-200 transition-colors cursor-pointer"
         >
-          Supprimer
+          {t("delete")}
         </button>
         {emploi.isAdminCreated && (
           <button
             onClick={onModifier}
-            className="flex-1 py-3 rounded-2xl bg-[#32A8D7] hover:bg-[#2896c2] text-white text-sm font-semibold shadow-sm transition-colors"
+            className="flex-1 py-3 rounded-2xl bg-[#32A8D7] hover:bg-[#2896c2] text-white text-sm font-semibold shadow-sm transition-colors cursor-pointer"
           >
-            Modifier
+            {t("edit")}
           </button>
         )}
       </div>
@@ -576,6 +634,7 @@ interface ModifierOffreViewProps {
 }
 
 function ModifierOffreView({ emploi, onBack, onSave }: ModifierOffreViewProps) {
+  const t = useTranslations("admin.jobs");
   const [titre, setTitre] = useState(emploi.titre);
   const [entreprise, setEntreprise] = useState(emploi.entreprise);
   
@@ -612,45 +671,38 @@ function ModifierOffreView({ emploi, onBack, onSave }: ModifierOffreViewProps) {
 
   const sectionClass = "bg-white rounded-2xl border border-slate-100 shadow-sm p-6";
   const inputClass = "w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-sm text-slate-800 outline-none focus:border-[#32A8D7] focus:bg-white transition-colors";
-  const selectClass = "w-full appearance-none px-3.5 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-sm text-slate-800 outline-none focus:border-[#32A8D7] focus:bg-white transition-colors cursor-pointer";
-  const chevronSVG = (
-    <svg className="w-3.5 h-3.5 text-slate-500 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-    </svg>
-  );
 
   return (
     <form onSubmit={handleSave} className="space-y-4 animate-fade-in-up">
       <nav className="flex items-center gap-1.5 text-xs text-slate-400">
-        <button type="button" onClick={onBack} className="hover:text-[#32A8D7] transition-colors">Accueil</button>
+        <button type="button" onClick={onBack} className="hover:text-[#32A8D7] transition-colors cursor-pointer">{t("home")}</button>
         <ChevronRight size={12} />
-        <button type="button" onClick={onBack} className="hover:text-[#32A8D7] transition-colors">Offres d&apos;emplois</button>
+        <button type="button" onClick={onBack} className="hover:text-[#32A8D7] transition-colors cursor-pointer">{t("jobOffers")}</button>
         <ChevronRight size={12} />
         <span className="text-slate-700 font-medium truncate max-w-[180px]">{emploi.titre}</span>
       </nav>
 
       <div className={sectionClass}>
-        <label className="block text-sm font-bold text-[#32A8D7] mb-3">Intitulé du poste</label>
+        <label className="block text-sm font-bold text-[#32A8D7] mb-3">{t("jobTitleLabel")}</label>
         <input type="text" value={titre} onChange={(e) => setTitre(e.target.value)} className={inputClass} required />
       </div>
 
       <div className={sectionClass}>
-        <label className="block text-sm font-bold text-[#32A8D7] mb-3">Entreprise</label>
+        <label className="block text-sm font-bold text-[#32A8D7] mb-3">{t("companyLabel")}</label>
         <input type="text" value={entreprise} onChange={(e) => setEntreprise(e.target.value)} className={inputClass} required />
       </div>
 
       <div className={sectionClass}>
-        <label className="block text-sm font-bold text-[#32A8D7] mb-3">Type de travail</label>
-        <div className="relative">
-          <select value={typeEmploi} onChange={(e) => setTypeEmploi(e.target.value)} className={selectClass}>
-            <option>CDI</option><option>CDD</option><option>Stage</option><option>Freelance</option><option>Alternance</option>
-          </select>
-          {chevronSVG}
-        </div>
+        <label className="block text-sm font-bold text-[#32A8D7] mb-3">{t("workTypeLabel")}</label>
+        <CustomSelect
+          value={typeEmploi}
+          onChange={(val) => setTypeEmploi(val)}
+          options={["CDI", "CDD", "Stage", "Freelance", "Alternance"]}
+        />
       </div>
 
       <div className={sectionClass}>
-        <label className="block text-sm font-bold text-[#32A8D7] mb-3">Lieu du travail</label>
+        <label className="block text-sm font-bold text-[#32A8D7] mb-3">{t("workLocationLabel")}</label>
         <div className="grid grid-cols-2 gap-3">
           <div className="relative">
             <input 
@@ -659,37 +711,36 @@ function ModifierOffreView({ emploi, onBack, onSave }: ModifierOffreViewProps) {
               value={pays} 
               onChange={(e) => setPays(e.target.value)} 
               className={inputClass} 
-              placeholder="Rechercher un pays"
+              placeholder={t("searchCountry")}
             />
             <datalist id="countries-list">
               {["Bénin","Côte d'Ivoire","Sénégal","Togo","Mali","Cameroun","Burkina Faso","Guinée", "France", "Canada", "États-Unis", "Maroc", "Tunisie"].map(p => <option key={p} value={p} />)}
             </datalist>
           </div>
-          <input type="text" value={ville} onChange={(e) => setVille(e.target.value)} className={inputClass} placeholder="Ville" />
+          <input type="text" value={ville} onChange={(e) => setVille(e.target.value)} className={inputClass} placeholder={t("city")} />
         </div>
       </div>
 
       <div className={sectionClass}>
-        <label className="block text-sm font-bold text-[#32A8D7] mb-3">Mode de travail</label>
-        <div className="relative">
-          <select value={modeTravail} onChange={(e) => setModeTravail(e.target.value)} className={selectClass}>
-            <option>Temps plein</option><option>Temps partiel</option><option>Remote</option><option>Hybride</option>
-          </select>
-          {chevronSVG}
-        </div>
+        <label className="block text-sm font-bold text-[#32A8D7] mb-3">{t("workModeLabel")}</label>
+        <CustomSelect
+          value={modeTravail}
+          onChange={(val) => setModeTravail(val)}
+          options={["Temps plein", "Temps partiel", "Remote", "Hybride"]}
+        />
       </div>
 
       <div className={sectionClass}>
-        <label className="block text-sm font-bold text-[#32A8D7] mb-3">Description de l&apos;offre</label>
-        <textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={6} className={`${inputClass} resize-none`} placeholder="Décrivez l'offre..." required />
+        <label className="block text-sm font-bold text-[#32A8D7] mb-3">{t("jobDescLabel")}</label>
+        <textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={6} className={`${inputClass} resize-none`} placeholder={t("jobDescEditPlaceholder")} required />
       </div>
 
       <div className="flex gap-3 pt-2">
-        <button type="button" onClick={onBack} className="flex-1 py-3 rounded-xl border border-slate-200 text-sm font-semibold text-slate-600 hover:bg-slate-50 transition-colors">
-          Annuler
+        <button type="button" onClick={onBack} className="flex-1 py-3 rounded-xl border border-slate-200 text-sm font-semibold text-slate-600 hover:bg-slate-50 transition-colors cursor-pointer">
+          {t("cancel")}
         </button>
-        <button type="submit" className="flex-1 py-3 rounded-xl bg-[#32A8D7] hover:bg-[#2896c2] text-white text-sm font-semibold shadow-sm transition-colors flex items-center justify-center gap-2">
-          <Save size={15} /> Enregistrer les modifications
+        <button type="submit" className="flex-1 py-3 rounded-xl bg-[#32A8D7] hover:bg-[#2896c2] text-white text-sm font-semibold shadow-sm transition-colors flex items-center justify-center gap-2 cursor-pointer">
+          <Save size={15} /> {t("saveChanges")}
         </button>
       </div>
     </form>
@@ -704,6 +755,7 @@ interface PublierModalProps {
 }
 
 function PublierModal({ onClose, onPublish }: PublierModalProps) {
+  const t = useTranslations("admin.jobs");
   const [titre, setTitre] = useState("");
   const [entreprise, setEntreprise] = useState("");
   const [pays, setPays] = useState("Bénin");
@@ -738,92 +790,83 @@ function PublierModal({ onClose, onPublish }: PublierModalProps) {
       }
     } catch (error) {
       console.error(error);
-      alert("Une erreur inattendue est survenue.");
+      alert(t("unexpectedError"));
     }
   };
 
-  const selectClass = "w-full appearance-none px-3.5 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-sm text-slate-800 outline-none focus:border-[#32A8D7] focus:bg-white transition-colors cursor-pointer";
   const inputClass = "w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-sm text-slate-800 outline-none focus:border-[#32A8D7] focus:bg-white transition-colors";
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[92vh] overflow-y-auto animate-fade-in-up">
-        <div className="flex items-center justify-between p-6 border-b border-slate-100">
-          <div>
-            <h3 className="text-lg font-bold text-slate-900">Publier une offre</h3>
-            <p className="text-xs text-slate-400 mt-0.5">Remplissez les informations de votre offre d&apos;emploi</p>
-          </div>
-          <button onClick={onClose} className="p-2 hover:bg-slate-100 rounded-xl text-slate-400 transition-colors">
-            <X size={18} />
-          </button>
+    <Modal
+      isOpen={true}
+      onClose={onClose}
+      title={t("publishModalTitle")}
+      description={t("publishModalDesc")}
+      maxWidth="max-w-lg"
+    >
+      <form onSubmit={handleSubmit} className="space-y-4 pt-1 text-left">
+        <div>
+          <label className="block text-sm font-bold text-[#32A8D7] mb-2">{t("jobTitleLabel")}</label>
+          <input required type="text" value={titre} onChange={(e) => setTitre(e.target.value)} className={inputClass} placeholder={t("jobTitlePlaceholder")} />
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-5 text-left">
-          <div>
-            <label className="block text-sm font-bold text-[#32A8D7] mb-2">Intitulé du poste</label>
-            <input required type="text" value={titre} onChange={(e) => setTitre(e.target.value)} className={inputClass} placeholder="Ex: Développeur Front-end" />
-          </div>
+        <div>
+          <label className="block text-sm font-bold text-[#32A8D7] mb-2">{t("companyLabel")}</label>
+          <input type="text" value={entreprise} onChange={(e) => setEntreprise(e.target.value)} className={inputClass} placeholder={t("companyNamePlaceholder")} />
+        </div>
 
-          <div>
-            <label className="block text-sm font-bold text-[#32A8D7] mb-2">Entreprise</label>
-            <input type="text" value={entreprise} onChange={(e) => setEntreprise(e.target.value)} className={inputClass} placeholder="Nom de l'entreprise (Défaut: Netacuv)" />
-          </div>
+        <div>
+          <label className="block text-sm font-bold text-[#32A8D7] mb-2">{t("workTypeLabel")}</label>
+          <CustomSelect
+            value={typeEmploi}
+            onChange={(val) => setTypeEmploi(val)}
+            options={["CDI", "CDD", "Stage", "Freelance", "Alternance"]}
+          />
+        </div>
 
-          <div>
-            <label className="block text-sm font-bold text-[#32A8D7] mb-2">Type de travail</label>
+        <div>
+          <label className="block text-sm font-bold text-[#32A8D7] mb-2">{t("workLocationLabel")}</label>
+          <div className="grid grid-cols-2 gap-3">
             <div className="relative">
-              <select value={typeEmploi} onChange={(e) => setTypeEmploi(e.target.value)} className={selectClass}>
-                <option>CDI</option><option>CDD</option><option>Stage</option><option>Freelance</option><option>Alternance</option>
-              </select>
-              <svg className="w-3.5 h-3.5 text-slate-500 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
+              <input 
+                type="text"
+                list="countries-list"
+                value={pays} 
+                onChange={(e) => setPays(e.target.value)} 
+                className={inputClass} 
+                placeholder={t("searchCountry")}
+              />
+              <datalist id="countries-list">
+                {["Bénin","Côte d'Ivoire","Sénégal","Togo","Mali","Cameroun","Burkina Faso","Guinée", "France", "Canada", "États-Unis", "Maroc", "Tunisie"].map(p => <option key={p} value={p} />)}
+              </datalist>
             </div>
+            <input type="text" value={ville} onChange={(e) => setVille(e.target.value)} className={inputClass} placeholder={t("city")} />
           </div>
+        </div>
 
-          <div>
-            <label className="block text-sm font-bold text-[#32A8D7] mb-2">Lieu du travail</label>
-            <div className="grid grid-cols-2 gap-3">
-              <div className="relative">
-                <input 
-                  type="text"
-                  list="countries-list"
-                  value={pays} 
-                  onChange={(e) => setPays(e.target.value)} 
-                  className={inputClass} 
-                  placeholder="Rechercher un pays"
-                />
-                <datalist id="countries-list">
-                  {["Bénin","Côte d'Ivoire","Sénégal","Togo","Mali","Cameroun","Burkina Faso","Guinée", "France", "Canada", "États-Unis", "Maroc", "Tunisie"].map(p => <option key={p} value={p} />)}
-                </datalist>
-              </div>
-              <input type="text" value={ville} onChange={(e) => setVille(e.target.value)} className={inputClass} placeholder="Ville" />
-            </div>
-          </div>
+        <div>
+          <label className="block text-sm font-bold text-[#32A8D7] mb-2">{t("workModeLabel")}</label>
+          <CustomSelect
+            value={modeTravail}
+            onChange={(val) => setModeTravail(val)}
+            options={["Temps plein", "Temps partiel", "Remote", "Hybride"]}
+          />
+        </div>
 
-          <div>
-            <label className="block text-sm font-bold text-[#32A8D7] mb-2">Mode de travail</label>
-            <div className="relative">
-              <select value={modeTravail} onChange={(e) => setModeTravail(e.target.value)} className={selectClass}>
-                <option>Temps plein</option><option>Temps partiel</option><option>Remote</option><option>Hybride</option>
-              </select>
-              <svg className="w-3.5 h-3.5 text-slate-500 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
-            </div>
-          </div>
+        <div>
+          <label className="block text-sm font-bold text-[#32A8D7] mb-2">{t("jobDescLabel")}</label>
+          <textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={4} className={`${inputClass} resize-none`} placeholder={t("jobDescPlaceholder")} />
+        </div>
 
-          <div>
-            <label className="block text-sm font-bold text-[#32A8D7] mb-2">Description de l&apos;offre</label>
-            <textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={5} className={`${inputClass} resize-none`} placeholder="Décrivez le poste, les missions, le profil recherché..." />
-          </div>
-
-          <div className="flex gap-3 pt-2">
-            <button type="button" onClick={onClose} className="flex-1 py-2.5 rounded-xl border border-slate-200 text-sm font-semibold text-slate-600 hover:bg-slate-50 transition-colors">
-              Annuler
-            </button>
-            <button type="submit" className="flex-1 py-2.5 rounded-xl bg-[#32A8D7] hover:bg-[#2896c2] text-white text-sm font-semibold shadow-sm transition-colors flex items-center justify-center gap-2">
-              <Save size={15} /> Publier l&apos;offre
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
+        <div className="flex gap-3 pt-3">
+          <button type="button" onClick={onClose} className="flex-1 py-2.5 rounded-xl border border-slate-200 text-sm font-semibold text-slate-600 hover:bg-slate-50 transition-colors cursor-pointer">
+            {t("cancel")}
+          </button>
+          <button type="submit" className="flex-1 py-2.5 rounded-xl bg-[#32A8D7] hover:bg-[#2896c2] text-white text-sm font-semibold shadow-sm transition-colors flex items-center justify-center gap-2 cursor-pointer">
+            <Save size={15} /> {t("publishOffer")}
+          </button>
+        </div>
+      </form>
+    </Modal>
   );
 }

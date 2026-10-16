@@ -5,7 +5,6 @@ import useSWR from "swr";
 import { 
   Flag, 
   Search, 
-  Filter, 
   CheckCircle2, 
   XCircle, 
   Trash2, 
@@ -18,6 +17,9 @@ import {
   RefreshCw
 } from "lucide-react";
 import toast from "react-hot-toast";
+import { useTranslations } from "next-intl";
+import { CustomSelect } from "@/components/ui/CustomSelect";
+import { EmptyState } from "@/components/ui/EmptyState";
 
 const fetcher = (url: string) => fetch(url).then(res => res.json());
 
@@ -34,6 +36,7 @@ interface Report {
 }
 
 export default function AdminSignalements() {
+  const t = useTranslations("admin.reports");
   const { data: reports = [], error, isLoading, mutate } = useSWR<Report[]>("/api/reports", fetcher);
   const [filterStatus, setFilterStatus] = useState<string>("ALL");
   const [filterType, setFilterType] = useState<string>("ALL");
@@ -49,32 +52,32 @@ export default function AdminSignalements() {
         body: JSON.stringify({ id, status: newStatus }),
       });
       if (res.ok) {
-        toast.success(newStatus === "RESOLVED" ? "Signalement marqué comme résolu" : "Signalement rejeté");
+        toast.success(newStatus === "RESOLVED" ? t("toastResolved") : t("toastRejected"));
         mutate();
       } else {
-        toast.error("Erreur lors de la mise à jour");
+        toast.error(t("toastUpdateError"));
       }
     } catch {
-      toast.error("Erreur réseau");
+      toast.error(t("toastNetworkError"));
     } finally {
       setUpdatingId(null);
     }
   };
 
   const handleDelete = async (id: string) => {
-    if (!window.confirm("Supprimer définitivement ce signalement ?")) return;
+    if (!window.confirm(t("confirmDelete"))) return;
     try {
       const res = await fetch(`/api/reports?id=${id}`, {
         method: "DELETE",
       });
       if (res.ok) {
-        toast.success("Signalement supprimé");
+        toast.success(t("toastDeleted"));
         mutate();
       } else {
-        toast.error("Erreur lors de la suppression");
+        toast.error(t("toastDeleteError"));
       }
     } catch {
-      toast.error("Erreur réseau");
+      toast.error(t("toastNetworkError"));
     }
   };
 
@@ -104,9 +107,9 @@ export default function AdminSignalements() {
               <Flag size={20} />
             </div>
             <div>
-              <h1 className="text-2xl font-black text-slate-900 tracking-tight">Signalements & Modération</h1>
+              <h1 className="text-2xl font-black text-slate-900 tracking-tight">{t("title")}</h1>
               <p className="text-sm text-slate-500 font-medium">
-                Gérez les signalements reçus des utilisateurs concernant des offres suspectes ou des profils frauduleux.
+                {t("subtitle")}
               </p>
             </div>
           </div>
@@ -114,10 +117,10 @@ export default function AdminSignalements() {
 
         <button
           onClick={() => mutate()}
-          className="self-start md:self-auto px-4 py-2.5 bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 rounded-xl text-xs font-bold transition-all shadow-xs flex items-center gap-2"
+          className="self-start md:self-auto px-4 py-2.5 bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 rounded-xl text-xs font-bold transition-all shadow-xs flex items-center gap-2 cursor-pointer"
         >
           <RefreshCw size={14} className={isLoading ? "animate-spin text-[#32A8D7]" : ""} />
-          <span>Actualiser</span>
+          <span>{t("refresh")}</span>
         </button>
       </div>
 
@@ -128,8 +131,8 @@ export default function AdminSignalements() {
             {reports.length}
           </div>
           <div>
-            <div className="text-xs font-bold text-slate-400 uppercase tracking-wider">Total reçus</div>
-            <div className="text-xl font-black text-slate-900">{reports.length} signalements</div>
+            <div className="text-xs font-bold text-slate-400 uppercase tracking-wider">{t("totalReceived")}</div>
+            <div className="text-xl font-black text-slate-900">{t("totalReports", { count: reports.length })}</div>
           </div>
         </div>
 
@@ -138,8 +141,8 @@ export default function AdminSignalements() {
             <AlertTriangle size={22} />
           </div>
           <div>
-            <div className="text-xs font-bold text-amber-500 uppercase tracking-wider">À traiter</div>
-            <div className="text-xl font-black text-amber-700">{pendingCount} en attente</div>
+            <div className="text-xs font-bold text-amber-500 uppercase tracking-wider">{t("toHandle")}</div>
+            <div className="text-xl font-black text-amber-700">{t("pendingCount", { count: pendingCount })}</div>
           </div>
         </div>
 
@@ -148,8 +151,8 @@ export default function AdminSignalements() {
             <CheckCircle2 size={22} />
           </div>
           <div>
-            <div className="text-xs font-bold text-emerald-500 uppercase tracking-wider">Traités</div>
-            <div className="text-xl font-black text-emerald-700">{resolvedCount} résolus</div>
+            <div className="text-xs font-bold text-emerald-500 uppercase tracking-wider">{t("handled")}</div>
+            <div className="text-xl font-black text-emerald-700">{t("resolvedCount", { count: resolvedCount })}</div>
           </div>
         </div>
       </div>
@@ -162,7 +165,7 @@ export default function AdminSignalements() {
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Rechercher par titre, motif ou détails..."
+            placeholder={t("searchPlaceholder")}
             className="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#32A8D7]"
           />
         </div>
@@ -172,41 +175,44 @@ export default function AdminSignalements() {
           <div className="flex items-center gap-1 bg-slate-50 p-1 rounded-xl border border-slate-200 text-xs font-semibold">
             <button
               onClick={() => setFilterStatus("ALL")}
-              className={`px-3 py-1.5 rounded-lg transition-all ${filterStatus === "ALL" ? "bg-white text-slate-900 shadow-xs font-bold" : "text-slate-500 hover:text-slate-700"}`}
+              className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${filterStatus === "ALL" ? "bg-white text-slate-900 shadow-xs font-bold" : "text-slate-500 hover:text-slate-700"}`}
             >
-              Tous
+              {t("all")}
             </button>
             <button
               onClick={() => setFilterStatus("PENDING")}
-              className={`px-3 py-1.5 rounded-lg transition-all ${filterStatus === "PENDING" ? "bg-amber-500 text-white font-bold" : "text-slate-500 hover:text-slate-700"}`}
+              className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${filterStatus === "PENDING" ? "bg-amber-500 text-white font-bold" : "text-slate-500 hover:text-slate-700"}`}
             >
-              En attente ({pendingCount})
+              {t("pendingBtn", { count: pendingCount })}
             </button>
             <button
               onClick={() => setFilterStatus("RESOLVED")}
-              className={`px-3 py-1.5 rounded-lg transition-all ${filterStatus === "RESOLVED" ? "bg-emerald-600 text-white font-bold" : "text-slate-500 hover:text-slate-700"}`}
+              className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${filterStatus === "RESOLVED" ? "bg-emerald-600 text-white font-bold" : "text-slate-500 hover:text-slate-700"}`}
             >
-              Résolus
+              {t("resolvedBtn")}
             </button>
             <button
               onClick={() => setFilterStatus("DISMISSED")}
-              className={`px-3 py-1.5 rounded-lg transition-all ${filterStatus === "DISMISSED" ? "bg-slate-700 text-white font-bold" : "text-slate-500 hover:text-slate-700"}`}
+              className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${filterStatus === "DISMISSED" ? "bg-slate-700 text-white font-bold" : "text-slate-500 hover:text-slate-700"}`}
             >
-              Rejetés
+              {t("dismissedBtn")}
             </button>
           </div>
 
           {/* Type selector */}
-          <select
-            value={filterType}
-            onChange={(e) => setFilterType(e.target.value)}
-            className="px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-700 focus:outline-none"
-          >
-            <option value="ALL">Tous les types</option>
-            <option value="JOB_OFFER">Offres d'emploi</option>
-            <option value="TALENT">Profils talents</option>
-            <option value="RECRUITER">Comptes recruteurs</option>
-          </select>
+          <div className="w-48">
+            <CustomSelect
+              size="sm"
+              value={filterType}
+              onChange={(val) => setFilterType(val)}
+              options={[
+                { label: t("allTypes"), value: "ALL" },
+                { label: t("jobOffers"), value: "JOB_OFFER" },
+                { label: t("talentProfiles"), value: "TALENT" },
+                { label: t("recruiterAccounts"), value: "RECRUITER" },
+              ]}
+            />
+          </div>
         </div>
       </div>
 
@@ -215,18 +221,18 @@ export default function AdminSignalements() {
         {isLoading ? (
           <div className="p-12 text-center text-slate-400 bg-white rounded-2xl border border-slate-100">
             <RefreshCw size={24} className="animate-spin mx-auto text-[#32A8D7] mb-2" />
-            <p className="text-xs font-semibold">Chargement des signalements...</p>
+            <p className="text-xs font-semibold">{t("loadingReports")}</p>
           </div>
         ) : filteredReports.length === 0 ? (
-          <div className="p-12 text-center bg-white rounded-2xl border border-dashed border-slate-200">
-            <CheckCircle2 size={36} className="mx-auto text-emerald-400 mb-2" />
-            <h3 className="text-sm font-bold text-slate-800">Aucun signalement trouvé</h3>
-            <p className="text-xs text-slate-400 mt-1">
-              {reports.length === 0
-                ? "Aucun signalement n'a été soumis par les utilisateurs pour le moment."
-                : "Aucun signalement ne correspond aux filtres appliqués."}
-            </p>
-          </div>
+          <EmptyState
+            type="generic"
+            title={t("emptyTitle")}
+            description={
+              reports.length === 0
+                ? t("emptyDescAll")
+                : t("emptyDescFiltered")
+            }
+          />
         ) : (
           filteredReports.map((report) => {
             const isJob = report.targetType === "JOB_OFFER";
@@ -255,7 +261,7 @@ export default function AdminSignalements() {
                         : "bg-emerald-50 text-emerald-700 border border-emerald-200"
                     }`}>
                       {isJob ? <Briefcase size={12} /> : isTalent ? <User size={12} /> : <Building2 size={12} />}
-                      {isJob ? "Offre d'emploi" : isTalent ? "Profil Candidat" : "Compte Recruteur"}
+                      {isJob ? t("badgeJob") : isTalent ? t("badgeTalent") : t("badgeRecruiter")}
                     </span>
 
                     {/* Badge status */}
@@ -269,11 +275,19 @@ export default function AdminSignalements() {
                       {report.status === "PENDING" && <Clock size={11} />}
                       {report.status === "RESOLVED" && <CheckCircle2 size={11} />}
                       {report.status === "DISMISSED" && <XCircle size={11} />}
-                      {report.status === "PENDING" ? "En attente" : report.status === "RESOLVED" ? "Résolu" : "Rejeté"}
+                      {report.status === "PENDING" ? t("pending") : report.status === "RESOLVED" ? t("resolved") : t("rejected")}
                     </span>
 
                     <span className="text-[11px] text-slate-400">
-                      Soumis le {new Date(report.createdAt).toLocaleDateString("fr-FR", { day: "2-digit", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit" })}
+                      {t("submittedOn", {
+                        date: new Date(report.createdAt).toLocaleDateString("fr-FR", {
+                          day: "2-digit",
+                          month: "long",
+                          year: "numeric",
+                          hour: "2-digit",
+                          minute: "2-digit"
+                        })
+                      })}
                     </span>
                   </div>
 
@@ -284,26 +298,26 @@ export default function AdminSignalements() {
                         <button
                           disabled={updatingId === report.id}
                           onClick={() => handleUpdateStatus(report.id, "RESOLVED")}
-                          className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold transition-all shadow-xs flex items-center gap-1.5 disabled:opacity-50"
+                          className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold transition-all shadow-xs flex items-center gap-1.5 disabled:opacity-50 cursor-pointer"
                         >
                           <CheckCircle2 size={13} />
-                          <span>Marquer résolu</span>
+                          <span>{t("markResolved")}</span>
                         </button>
                         <button
                           disabled={updatingId === report.id}
                           onClick={() => handleUpdateStatus(report.id, "DISMISSED")}
-                          className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 disabled:opacity-50"
+                          className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 disabled:opacity-50 cursor-pointer"
                         >
                           <XCircle size={13} />
-                          <span>Rejeter</span>
+                          <span>{t("reject")}</span>
                         </button>
                       </>
                     )}
 
                     <button
                       onClick={() => handleDelete(report.id)}
-                      className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors"
-                      title="Supprimer ce signalement"
+                      className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
+                      title={t("deleteReportTitle")}
                     >
                       <Trash2 size={15} />
                     </button>
@@ -313,16 +327,16 @@ export default function AdminSignalements() {
                 {/* Content details */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">Élément signalé</div>
+                    <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">{t("reportedElement")}</div>
                     <div className="flex items-center gap-2">
-                      <h4 className="font-bold text-slate-900 text-sm">{report.targetTitle || "Sans titre"}</h4>
+                      <h4 className="font-bold text-slate-900 text-sm">{report.targetTitle || t("untitled")}</h4>
                       <a
                         href={targetHref}
                         target="_blank"
                         rel="noreferrer"
-                        className="inline-flex items-center gap-1 text-[11px] font-bold text-[#32A8D7] hover:underline"
+                        className="inline-flex items-center gap-1 text-[11px] font-bold text-[#32A8D7] hover:underline cursor-pointer"
                       >
-                        <span>Examiner</span>
+                        <span>{t("inspect")}</span>
                         <ExternalLink size={11} />
                       </a>
                     </div>
@@ -330,7 +344,7 @@ export default function AdminSignalements() {
                   </div>
 
                   <div>
-                    <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">Motif du signalement</div>
+                    <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">{t("reportReason")}</div>
                     <div className="text-xs font-bold text-rose-600 bg-rose-50/70 border border-rose-100 px-3 py-1.5 rounded-xl inline-block">
                       {report.reason}
                     </div>
@@ -339,7 +353,7 @@ export default function AdminSignalements() {
 
                 {report.details && (
                   <div className="bg-slate-50 border border-slate-100 rounded-xl p-3 text-xs text-slate-700 leading-relaxed">
-                    <span className="font-bold text-slate-800">Précisions du déclarant : </span>
+                    <span className="font-bold text-slate-800">{t("reporterDetails")}</span>
                     {report.details}
                   </div>
                 )}

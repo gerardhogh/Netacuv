@@ -17,10 +17,16 @@ import TalentCard from "@/app/components/TalentCard";
 import { useAuth } from "@/app/context/AuthContext";
 import { ConfirmModal } from "../components/Modals";
 import NotificationBell from "@/app/components/NotificationBell";
+import { CustomSelect } from "@/components/ui/CustomSelect";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { useTranslations, useLocale } from "next-intl";
 
 // No MOCK_TALENTS anymore
 
 export default function RechercheProfil() {
+  const tSearch = useTranslations("recruiter.search");
+  const tNav = useTranslations("nav");
+  const locale = useLocale();
   const [searchQuery, setSearchQuery] = useState("");
   const [filterDegree, setFilterDegree] = useState("");
   const [filterGender, setFilterGender] = useState("");
@@ -87,10 +93,10 @@ export default function RechercheProfil() {
     const strId = String(id);
     if (favorites.includes(strId)) {
       setFavorites(favorites.filter((f) => f !== strId));
-      showToast("Profil retiré des favoris.");
+      showToast(tSearch("profileRemoved"));
     } else {
       setFavorites([...favorites, strId]);
-      showToast("Profil ajouté aux favoris !");
+      showToast(tSearch("profileAdded"));
     }
   };
 
@@ -106,9 +112,9 @@ export default function RechercheProfil() {
       {/* Premium Reminder Modal */}
       {showPremiumModal && (
         <ConfirmModal
-          title="Accès Restreint"
-          message="Pour voir les profils et contacter les talents, vous devez activer l'offre Premium."
-          confirmLabel="J'ai compris"
+          title={locale === "en" ? "Restricted Access" : "Accès Restreint"}
+          message={locale === "en" ? "To view complete profiles and contact talents, you must subscribe to the Premium plan." : "Pour voir les profils et contacter les talents, vous devez activer l'offre Premium."}
+          confirmLabel={locale === "en" ? "I understand" : "J'ai compris"}
           onConfirm={() => setShowPremiumModal(false)}
           onCancel={() => setShowPremiumModal(false)}
         />
@@ -126,26 +132,26 @@ export default function RechercheProfil() {
             {isMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
           </button>
           <h1 className="text-xl sm:text-2xl font-bold text-[#232323] tracking-tight">
-            Recherche <span className="text-[#32A8D7]">profil</span>
+            {locale === "en" ? <>Talent <span className="text-[#32A8D7]">Search</span></> : <>Recherche <span className="text-[#32A8D7]">profil</span></>}
           </h1>
 
           {/* Navigation Dropdown Menu */}
           {isMenuOpen && (
             <div className="absolute top-12 left-0 mt-3 w-52 bg-white rounded-2xl shadow-2xl border border-slate-100 py-2 z-30 animate-fade-in">
               <Link href="/" className="w-full text-left px-5 py-2.5 text-[13px] text-slate-700 hover:bg-slate-50 font-semibold flex items-center transition-colors">
-                Accueil
+                {tNav("home")}
               </Link>
               <Link href="/dashboard/recruteur" className="w-full text-left px-5 py-2.5 text-[13px] text-slate-700 hover:bg-slate-50 font-semibold flex items-center transition-colors">
-                Tableau de bord
+                {tNav("dashboard")}
               </Link>
               <Link href="/dashboard/recruteur/recherche" className="w-full text-left px-5 py-2.5 text-[13px] text-[#32A8D7] bg-sky-50/50 font-bold flex items-center transition-colors">
-                Recherche Profils
+                {tNav("searchTalents")}
               </Link>
               
               <div className="my-1 border-t border-slate-100 mx-5"></div>
               
               <Link href="/dashboard/recruteur" className="w-full text-left px-5 py-2.5 text-[13px] text-[#32A8D7] hover:bg-blue-50 font-bold flex items-center justify-between transition-colors">
-                Mon Espace
+                {tNav("dashboard")}
                 <ArrowRight className="w-4 h-4" />
               </Link>
             </div>
@@ -156,12 +162,11 @@ export default function RechercheProfil() {
           <NotificationBell align="right" />
           <div className="flex items-center gap-2 cursor-pointer hover:bg-slate-50 p-1 pr-2 rounded-full transition-colors border border-transparent hover:border-slate-200">
             <div className="w-8 h-8 rounded-full overflow-hidden bg-slate-200 relative">
-                <Image
+                <img
                   src={user?.avatar || "/assets/avatar_africain.jpg"}
                   alt="Profile"
                   width={32}
                   height={32}
-                  priority
                   onError={(e) => {
                     (e.target as HTMLImageElement).src = "/assets/avatar_africain.jpg";
                   }}
@@ -185,7 +190,7 @@ export default function RechercheProfil() {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="flex-1 outline-hidden text-slate-800 bg-transparent text-sm placeholder:text-slate-400 font-medium"
-              placeholder="Rechercher par compétences, métier..."
+              placeholder={tSearch("placeholder")}
             />
             {searchQuery && (
               <button 
@@ -206,7 +211,7 @@ export default function RechercheProfil() {
             onClick={() => fetchTalents()}
             className="px-6 py-2.5 bg-[#32A8D7] hover:bg-[#2896c2] text-white rounded-md text-sm font-semibold transition-colors shadow-xs hover:shadow"
           >
-            Rechercher
+            {tSearch("btn")}
           </button>
         </div>
 
@@ -219,111 +224,100 @@ export default function RechercheProfil() {
             >
               <div className="bg-white/95 px-4 py-2.5 rounded-full shadow-sm border border-amber-100 flex items-center gap-2">
                 <Crown className="w-4 h-4 text-amber-500" />
-                <span className="text-sm font-semibold text-slate-800">Filtres avancés réservés aux membres Premium</span>
+                <span className="text-sm font-semibold text-slate-800">
+                  {locale === "en" ? "Advanced filters reserved for Premium members" : "Filtres avancés réservés aux membres Premium"}
+                </span>
               </div>
             </div>
           )}
           <div className={`grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 ${!isPremiumRecruiter ? 'pointer-events-none opacity-60' : ''}`}>
-            <div className="relative">
-            <select 
-              value={filterDegree} 
-              onChange={(e) => {
-                setFilterDegree(e.target.value);
-                fetchTalents(searchQuery, e.target.value, filterGender, filterCountry, filterCity);
+            <CustomSelect
+              value={filterDegree}
+              onChange={(val) => {
+                setFilterDegree(val);
+                fetchTalents(searchQuery, val, filterGender, filterCountry, filterCity);
               }}
-              className="w-full appearance-none bg-slate-100 hover:bg-slate-200/70 border border-slate-200/80 rounded-md py-2.5 pl-4 pr-9 text-sm font-medium text-slate-700 outline-hidden hover:border-slate-300 focus:border-[#32A8D7] focus:bg-white cursor-pointer transition-colors"
-            >
-              <option value="">Toutes les licenses</option>
-              {["Licence Pro", "Master / Ingénieur", "Doctorat", "Certifié Netacuv"].map(opt => (
-                <option key={opt} value={opt}>{opt}</option>
-              ))}
-            </select>
-            <ChevronDown className="w-4 h-4 text-slate-500 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
-          </div>
+              placeholder={locale === "en" ? "All degrees" : "Toutes les licences"}
+              options={[
+                { label: locale === "en" ? "All degrees" : "Toutes les licences", value: "" },
+                { label: locale === "en" ? "Bachelor's Degree" : "Licence Pro", value: "Licence Pro" },
+                { label: locale === "en" ? "Master / Engineering" : "Master / Ingénieur", value: "Master / Ingénieur" },
+                { label: locale === "en" ? "PhD / Doctorate" : "Doctorat", value: "Doctorat" },
+                { label: locale === "en" ? "Netacuv Certified" : "Certifié Netacuv", value: "Certifié Netacuv" },
+              ]}
+            />
 
-          <div className="relative">
-            <select 
-              value={filterGender} 
-              onChange={(e) => {
-                setFilterGender(e.target.value);
-                fetchTalents(searchQuery, filterDegree, e.target.value, filterCountry, filterCity);
+            <CustomSelect
+              value={filterGender}
+              onChange={(val) => {
+                setFilterGender(val);
+                fetchTalents(searchQuery, filterDegree, val, filterCountry, filterCity);
               }}
-              className="w-full appearance-none bg-slate-100 hover:bg-slate-200/70 border border-slate-200/80 rounded-md py-2.5 pl-4 pr-9 text-sm font-medium text-slate-700 outline-hidden hover:border-slate-300 focus:border-[#32A8D7] focus:bg-white cursor-pointer transition-colors"
-            >
-              <option value="">Tous les genres</option>
-              {["Femme", "Homme"].map(opt => (
-                <option key={opt} value={opt}>{opt}</option>
-              ))}
-            </select>
-            <ChevronDown className="w-4 h-4 text-slate-500 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
-          </div>
+              placeholder={locale === "en" ? "All genders" : "Tous les genres"}
+              options={[
+                { label: locale === "en" ? "All genders" : "Tous les genres", value: "" },
+                { label: locale === "en" ? "Female" : "Femme", value: "Femme" },
+                { label: locale === "en" ? "Male" : "Homme", value: "Homme" },
+              ]}
+            />
 
-          <div className="relative">
-            <select 
-              value={filterCountry} 
-              onChange={(e) => {
-                setFilterCountry(e.target.value);
-                fetchTalents(searchQuery, filterDegree, filterGender, e.target.value, filterCity);
+            <CustomSelect
+              value={filterCountry}
+              onChange={(val) => {
+                setFilterCountry(val);
+                fetchTalents(searchQuery, filterDegree, filterGender, val, filterCity);
               }}
-              className="w-full appearance-none bg-slate-100 hover:bg-slate-200/70 border border-slate-200/80 rounded-md py-2.5 pl-4 pr-9 text-sm font-medium text-slate-700 outline-hidden hover:border-slate-300 focus:border-[#32A8D7] focus:bg-white cursor-pointer transition-colors"
-            >
-              <option value="">Tous les pays</option>
-              {["Bénin", "Côte d'Ivoire", "Sénégal", "Togo", "Cameroun", "France"].map(opt => (
-                <option key={opt} value={opt}>{opt}</option>
-              ))}
-            </select>
-            <ChevronDown className="w-4 h-4 text-slate-500 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
-          </div>
+              placeholder={locale === "en" ? "All countries" : "Tous les pays"}
+              options={[
+                { label: locale === "en" ? "All countries" : "Tous les pays", value: "" },
+                ...["Bénin", "Côte d'Ivoire", "Sénégal", "Togo", "Cameroun", "France"].map((c) => ({
+                  label: c,
+                  value: c,
+                })),
+              ]}
+            />
 
-          <div className="relative">
-            <select 
-              value={filterCity} 
-              onChange={(e) => {
-                setFilterCity(e.target.value);
-                fetchTalents(searchQuery, filterDegree, filterGender, filterCountry, e.target.value);
+            <CustomSelect
+              value={filterCity}
+              onChange={(val) => {
+                setFilterCity(val);
+                fetchTalents(searchQuery, filterDegree, filterGender, filterCountry, val);
               }}
-              className="w-full appearance-none bg-slate-100 hover:bg-slate-200/70 border border-slate-200/80 rounded-md py-2.5 pl-4 pr-9 text-sm font-medium text-slate-700 outline-hidden hover:border-slate-300 focus:border-[#32A8D7] focus:bg-white cursor-pointer transition-colors"
-            >
-              <option value="">Toutes les villes</option>
-              {["Cotonou", "Porto-Novo", "Abidjan", "Dakar", "Lomé", "Douala", "Paris"].map(opt => (
-                <option key={opt} value={opt}>{opt}</option>
-              ))}
-            </select>
-            <ChevronDown className="w-4 h-4 text-slate-500 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+              placeholder={locale === "en" ? "All cities" : "Toutes les villes"}
+              options={[
+                { label: locale === "en" ? "All cities" : "Toutes les villes", value: "" },
+                ...["Cotonou", "Porto-Novo", "Abidjan", "Dakar", "Lomé", "Douala", "Paris"].map((city) => ({
+                  label: city,
+                  value: city,
+                })),
+              ]}
+            />
           </div>
-        </div>
         </div>
 
         {/* Talent Grid */}
         {loading ? (
           <div className="flex justify-center p-12">
-            <p className="text-slate-500 font-medium">Recherche en cours...</p>
+            <p className="text-slate-500 font-medium">
+              {locale === "en" ? "Searching talents..." : "Recherche en cours..."}
+            </p>
           </div>
         ) : talents.length === 0 ? (
-          <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-12 text-center my-6">
-            <div className="flex flex-col items-center justify-center">
-              <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mb-4">
-                <Search size={32} className="text-slate-300" />
-              </div>
-              <h3 className="text-xl font-bold text-slate-800 mb-2">Aucun talent trouvé</h3>
-              <p className="text-slate-500 text-sm max-w-md mx-auto mb-6">
-                Nous n'avons trouvé aucun profil correspondant à vos critères de recherche.
-                Essayez d'élargir votre recherche en modifiant les mots-clés ou les filtres.
-              </p>
-              <button
-                onClick={() => {
-                  setSearchQuery("");
-                  setFilterDegree("");
-                  setFilterGender("");
-                  setFilterCountry("");
-                  setFilterCity("");
-                  fetchTalents("", "", "", "", "");
-                }}
-                className="px-5 py-2.5 border border-slate-200 text-slate-600 hover:bg-slate-50 rounded-xl text-sm font-semibold transition-all"
-              >
-                Réinitialiser la recherche
-              </button>
-            </div>
+          <div className="my-6">
+            <EmptyState
+              type="talents"
+              title={tSearch("noTalentTitle")}
+              description={tSearch("noTalentDesc")}
+              actionLabel={locale === "en" ? "Reset filters" : "Réinitialiser les filtres"}
+              onAction={() => {
+                setSearchQuery("");
+                setFilterDegree("");
+                setFilterGender("");
+                setFilterCountry("");
+                setFilterCity("");
+                fetchTalents("", "", "", "", "");
+              }}
+            />
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5 sm:gap-6">
@@ -361,19 +355,19 @@ export default function RechercheProfil() {
               className="flex items-center gap-2 px-4 py-2 border border-slate-200 rounded-md text-sm font-medium text-slate-400 bg-slate-50 cursor-not-allowed"
             >
               <ArrowLeft className="w-4 h-4" />
-              Page précédente
+              {tSearch("prevPage")}
             </button>
             <button 
               type="button"
               className="flex items-center gap-2 px-5 py-2 bg-[#32A8D7] hover:bg-[#2896c2] text-white rounded-md text-sm font-semibold transition-colors shadow-xs"
             >
-              Page suivante
+              {tSearch("nextPage")}
               <ArrowRight className="w-4 h-4" />
             </button>
           </div>
           
           <div className="text-sm text-slate-500 font-medium">
-            Page 1 de 26
+            {tSearch("pageOf", { current: 1, total: 26 })}
           </div>
         </div>
 

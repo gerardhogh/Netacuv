@@ -30,7 +30,7 @@ export async function GET(req: NextRequest) {
       name: user.name,
       email: user.email,
       avatar: user.image?.startsWith("data:image")
-        ? `/api/users/${user.id}/avatar`
+        ? `/api/users/${user.id}/avatar?v=${user.updatedAt ? user.updatedAt.getTime() : Date.now()}`
         : (user.image || "/assets/avatar_africain.jpg"),
       isPremium: user.isPremium,
       recruiterProfile: user.recruiterProfile || {}

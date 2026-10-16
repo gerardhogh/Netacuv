@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { ChevronDown, Check, Globe } from "lucide-react";
+import { ChevronDown, Check } from "lucide-react";
 import { useLocale } from "next-intl";
 
 export type Locale = "fr" | "en";
@@ -28,6 +28,31 @@ export interface LanguageSwitcherProps {
   onSelect?: () => void;
 }
 
+/**
+ * Remplace ou ajoute le préfixe de langue dans l'URL.
+ * Exemples :
+ * - "/fr/jobs" avec target "en" -> "/en/jobs"
+ * - "/en/jobs" avec target "fr" -> "/fr/jobs"
+ * - "/fr" avec target "en"      -> "/en"
+ * - "/jobs" avec target "en"    -> "/en/jobs"
+ * - "/" avec target "en"        -> "/en"
+ */
+export function switchLocaleInPath(pathname: string, targetLocale: Locale): string {
+  if (!pathname || pathname === "/") {
+    return `/${targetLocale}`;
+  }
+
+  const localeRegex = /^\/(fr|en)(\/.*)?$/;
+  const match = pathname.match(localeRegex);
+
+  if (match) {
+    const remainder = match[2] || "";
+    return `/${targetLocale}${remainder}`;
+  }
+
+  return `/${targetLocale}${pathname.startsWith("/") ? pathname : `/${pathname}`}`;
+}
+
 export default function LanguageSwitcher({
   showLabel,
   align = "right",
@@ -42,29 +67,23 @@ export default function LanguageSwitcher({
   const [open, setOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  // 1. Détection de la langue actuelle :
-  // Priorité 1 : Préfixe dans l'URL (/fr/... ou /en/...)
-  // Priorité 2 : Hook useLocale() de next-intl
-  // Fallback   : "fr"
-  const getDetectedLocale = (): Locale => {
-    if (pathname.startsWith("/en/") || pathname === "/en") return "en";
-    if (pathname.startsWith("/fr/") || pathname === "/fr") return "fr";
-    if (intlLocale === "en" || intlLocale === "fr") return intlLocale;
-    return "fr";
-  };
+  // Détection de la langue active : URL > next-intl useLocale > Fallback 'fr'
+  const currentLocale: Locale = pathname.startsWith("/en")
+    ? "en"
+    : pathname.startsWith("/fr")
+    ? "fr"
+    : intlLocale === "en" || intlLocale === "fr"
+    ? intlLocale
+    : "fr";
 
-  const currentLocale = getDetectedLocale();
   const currentItem = LOCALES.find((l) => l.code === currentLocale) || LOCALES[0];
 
   const isResponsive = variant === "responsive";
   const isMobile = variant === "mobile";
   const isDesktop = variant === "desktop";
+  const shouldShowLabel = showLabel !== undefined ? showLabel : !isDesktop;
 
-  // Décision d'affichage du libellé texte
-  const shouldShowLabel =
-    showLabel !== undefined ? showLabel : !isDesktop;
-
-  // Fermer le menu lors d'un clic en dehors
+  // Fermer le menu lors d'un clic extérieur
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
@@ -75,32 +94,21 @@ export default function LanguageSwitcher({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // 2. Changement de langue avec mise à jour d'URL et cookie NEXT_LOCALE
-  const changeLanguage = (newCode: Locale) => {
-    if (newCode === currentLocale) {
+  // Changement de langue : cookie NEXT_LOCALE + remplacement dans l'URL + router.push
+  const handleSelectLanguage = (newLocale: Locale) => {
+    if (newLocale === currentLocale) {
       setOpen(false);
       return;
     }
 
-    // A. Écriture du cookie NEXT_LOCALE (persistance pour la prochaine visite)
-    const isLocalhost =
-      typeof window !== "undefined" &&
-      (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1");
-    const domainPart = isLocalhost ? "" : "; domain=.netacuv.com";
-    document.cookie = `NEXT_LOCALE=${newCode}; path=/; max-age=31536000${domainPart}; SameSite=Lax`;
+    // 1. Mettre à jour le cookie NEXT_LOCALE
+    const isNetacuv =
+      typeof window !== "undefined" && window.location.hostname.endsWith("netacuv.com");
+    const domainPart = isNetacuv ? "; domain=.netacuv.com" : "";
+    document.cookie = `NEXT_LOCALE=${newLocale}; path=/; max-age=31536000${domainPart}; SameSite=Lax`;
 
-    // B. Remplacement ou ajout du préfixe de langue dans l'URL actuelle
-    let newPath = pathname;
-    if (pathname.startsWith("/fr/") || pathname === "/fr") {
-      newPath = pathname.replace(/^\/fr(\/|$)/, `/${newCode}$1`);
-    } else if (pathname.startsWith("/en/") || pathname === "/en") {
-      newPath = pathname.replace(/^\/en(\/|$)/, `/${newCode}$1`);
-    } else {
-      // Pas encore de préfixe dans l'URL : on ajoute le nouveau préfixe
-      newPath = `/${newCode}${pathname === "/" ? "" : pathname}`;
-    }
-
-    // Conserver les query parameters et hash s'ils existent
+    // 2. Remplacer le code de langue dans l'URL actuelle
+    const newPath = switchLocaleInPath(pathname, newLocale);
     const search = typeof window !== "undefined" ? window.location.search : "";
     const hash = typeof window !== "undefined" ? window.location.hash : "";
     const targetUrl = `${newPath}${search}${hash}`;
@@ -108,9 +116,13 @@ export default function LanguageSwitcher({
     setOpen(false);
     if (onSelect) onSelect();
 
-    // C. Redirection avec router.push() et rafraîchissement
-    router.push(targetUrl);
-    router.refresh();
+    // 3. Rechargement complet pour que le layout racine et next-intl chargent le nouveau dictionnaire
+    if (typeof window !== "undefined") {
+      window.location.href = targetUrl;
+    } else {
+      router.push(targetUrl);
+      router.refresh();
+    }
   };
 
   return (
@@ -194,7 +206,7 @@ export default function LanguageSwitcher({
                   <li key={loc.code} role="option" aria-selected={isSelected}>
                     <button
                       type="button"
-                      onClick={() => changeLanguage(loc.code)}
+                      onClick={() => handleSelectLanguage(loc.code)}
                       className={`w-full text-left px-2.5 py-2 rounded-xl text-sm transition-all flex items-center justify-between cursor-pointer ${
                         isSelected
                           ? isDark
@@ -209,12 +221,7 @@ export default function LanguageSwitcher({
                         <span className="text-base select-none leading-none" role="img" aria-hidden="true">
                           {loc.flag}
                         </span>
-                        <div className="flex flex-col">
-                          <span className="text-xs font-semibold leading-tight">{loc.label}</span>
-                          <span className="text-[10px] text-slate-400 leading-none">
-                            {loc.countryCode}
-                          </span>
-                        </div>
+                        <span className="text-xs font-semibold leading-tight">{loc.label}</span>
                       </div>
                       {isSelected && (
                         <Check

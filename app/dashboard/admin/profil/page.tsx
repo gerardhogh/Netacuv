@@ -3,8 +3,10 @@ import React, { useState, useEffect, useRef } from "react";
 import { User, Mail, CheckCircle, Loader2, Camera } from "lucide-react";
 import { useAuth } from "../../../context/AuthContext";
 import Image from "next/image";
+import { useTranslations } from "next-intl";
 
 export default function AdminProfil() {
+  const t = useTranslations("admin.profilePage");
   const { user: authUser, updateUser } = useAuth();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -56,12 +58,12 @@ export default function AdminProfil() {
       try {
         data = JSON.parse(text);
       } catch (e) {
-        throw new Error(`Erreur serveur (${res.status}): ${text.substring(0, 80)}`);
+        throw new Error(`Server error (${res.status}): ${text.substring(0, 80)}`);
       }
       
-      if (!res.ok) throw new Error(data?.error || "Erreur de mise à jour");
+      if (!res.ok) throw new Error(data?.error || t("toastUpdateError"));
       
-      showToast("Profil mis à jour avec succès");
+      showToast(t("toastProfileSuccess"));
       
       // Notify AdminLayout to update navbar immediately
       if (typeof window !== "undefined") {
@@ -72,7 +74,7 @@ export default function AdminProfil() {
         updateUser({ user: { name } });
       }
     } catch (e: any) {
-      showToast(e.message || "Erreur de mise à jour");
+      showToast(e.message || t("toastUpdateError"));
     } finally {
       setLoading(false);
     }
@@ -83,11 +85,11 @@ export default function AdminProfil() {
     if (!file) return;
 
     if (!file.type.startsWith("image/")) {
-      showToast("Veuillez sélectionner un fichier image valide.");
+      showToast(t("toastInvalidImage"));
       return;
     }
 
-    showToast("Mise à jour de la photo en cours...");
+    showToast(t("toastUpdatingPhoto"));
 
     const reader = new FileReader();
     reader.readAsDataURL(file);
@@ -109,9 +111,9 @@ export default function AdminProfil() {
 
         const data = await res.json();
 
-        if (!res.ok) throw new Error(data.error || "Erreur lors de l'upload");
+        if (!res.ok) throw new Error(data.error || t("toastUpdateError"));
 
-        showToast("Photo de profil mise à jour avec succès !");
+        showToast(t("toastAvatarSuccess"));
         await fetchProfile();
         
         // Notify AdminLayout to update navbar immediately
@@ -124,11 +126,11 @@ export default function AdminProfil() {
         }
       } catch (err: any) {
         console.error("Erreur sauvegarde avatar", err);
-        showToast(err.message || "Une erreur s'est produite lors de la sauvegarde de la photo.");
+        showToast(err.message || t("toastUpdateError"));
       }
     };
     reader.onerror = () => {
-      showToast("Erreur lors de la lecture du fichier.");
+      showToast(t("toastReadFileError"));
     };
   };
 
@@ -165,7 +167,7 @@ export default function AdminProfil() {
           <div
             onClick={() => avatarInputRef.current?.click()}
             className="w-32 h-32 rounded-full bg-blue-50 border-4 border-white shadow-md mb-4 relative cursor-pointer group transition-all"
-            title="Cliquer pour modifier la photo de profil"
+            title={t("editAvatarTooltip")}
           >
             <div className="w-full h-full rounded-full overflow-hidden relative">
               <img
@@ -177,7 +179,7 @@ export default function AdminProfil() {
             
             <div className="absolute inset-0 rounded-full bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center text-white text-[12px] font-bold">
               <Camera size={24} className="mb-1" />
-              <span>Modifier</span>
+              <span>{t("modify")}</span>
             </div>
 
             <div className="absolute bottom-1 right-1 w-9 h-9 rounded-full bg-[#008de4] text-white flex items-center justify-center shadow-md border-2 border-white group-hover:bg-blue-600 transition-colors">
@@ -189,26 +191,26 @@ export default function AdminProfil() {
             {name || "Admin"}
           </h2>
           <p className="text-sm text-slate-500 font-medium">
-            Super Administrateur
+            {t("superAdmin")}
           </p>
         </div>
 
         {/* Right Content - Form */}
         <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 sm:p-8">
           <div className="mb-6 border-b border-slate-100 pb-4">
-            <h2 className="text-xl font-bold text-slate-800">Informations personnelles</h2>
-            <p className="text-sm text-slate-500 mt-1">Gérez vos informations de compte</p>
+            <h2 className="text-xl font-bold text-slate-800">{t("personalInfoTitle")}</h2>
+            <p className="text-sm text-slate-500 mt-1">{t("personalInfoSubtitle")}</p>
           </div>
 
           <form onSubmit={handleUpdate} className="space-y-6">
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Nom complet</label>
+              <label className="block text-sm font-medium text-slate-700 mb-1">{t("fullNameLabel")}</label>
               <div className="relative">
                 <input 
                   type="text" 
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  placeholder="Votre nom" 
+                  placeholder={t("fullNamePlaceholder")} 
                   required
                   className="w-full bg-[#f8f9fa] border border-slate-200 rounded-lg py-3 px-4 pl-11 text-sm focus:ring-2 focus:ring-[#1e8ae9] focus:bg-white outline-none transition-all"
                 />
@@ -217,19 +219,19 @@ export default function AdminProfil() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Adresse Email</label>
+              <label className="block text-sm font-medium text-slate-700 mb-1">{t("emailLabel")}</label>
               <div className="relative">
                 <input 
                   type="email" 
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="votre@email.com" 
+                  placeholder={t("emailPlaceholder")} 
                   required
                   className="w-full bg-[#f8f9fa] border border-slate-200 rounded-lg py-3 px-4 pl-11 text-sm focus:ring-2 focus:ring-[#1e8ae9] focus:bg-white outline-none transition-all"
                 />
                 <Mail size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
               </div>
-              <p className="text-xs text-slate-500 mt-2">Cette adresse email est utilisée pour la connexion au panneau d'administration.</p>
+              <p className="text-xs text-slate-500 mt-2">{t("emailHelp")}</p>
             </div>
 
             <div className="pt-4 flex justify-end">
@@ -239,7 +241,7 @@ export default function AdminProfil() {
                 className="px-6 py-3 bg-[#008de4] text-white font-bold rounded-lg text-sm hover:bg-blue-600 transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-md shadow-blue-500/20"
               >
                 {loading ? <Loader2 size={16} className="animate-spin" /> : <CheckCircle size={16} />}
-                Enregistrer les modifications
+                {t("saveBtn")}
               </button>
             </div>
           </form>

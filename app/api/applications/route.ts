@@ -20,6 +20,10 @@ export async function GET(req: Request) {
     const { searchParams } = new URL(req.url);
     const jobOfferId = searchParams.get("jobOfferId");
     const requestedRole = searchParams.get("role");
+    const page = Math.max(1, parseInt(searchParams.get("page") || "1", 10) || 1);
+    const limit = Math.max(1, parseInt(searchParams.get("limit") || "20", 10) || 20);
+    const skip = (page - 1) * limit;
+    const take = limit;
     
     // Determine effective role: if requestedRole is 'recruiter', and the user has a recruiter profile, we act as recruiter.
     // Otherwise fallback to session.user.role
@@ -35,16 +39,34 @@ export async function GET(req: Request) {
       });
 
       if (!talentProfile) {
-        return NextResponse.json([]);
+        return NextResponse.json({
+          applications: [],
+          totalCount: 0,
+          totalPages: 0,
+          page,
+          limit,
+        });
       }
 
-      const applications = await prisma.application.findMany({
-        where: { talentId: talentProfile.id },
-        include: { jobOffer: true },
-        orderBy: { createdAt: "desc" },
-      });
+      const where = { talentId: talentProfile.id };
+      const [applications, totalCount] = await Promise.all([
+        prisma.application.findMany({
+          where,
+          include: { jobOffer: true },
+          orderBy: { createdAt: "desc" },
+          skip,
+          take,
+        }),
+        prisma.application.count({ where }),
+      ]);
 
-      return NextResponse.json(applications);
+      return NextResponse.json({
+        applications,
+        totalCount,
+        totalPages: Math.ceil(totalCount / limit),
+        page,
+        limit,
+      });
     }
 
     // 2. RECRUITER : ne voit que les candidatures sur ses offres
@@ -54,7 +76,13 @@ export async function GET(req: Request) {
       });
 
       if (!recruiterProfile) {
-        return NextResponse.json([]);
+        return NextResponse.json({
+          applications: [],
+          totalCount: 0,
+          totalPages: 0,
+          page,
+          limit,
+        });
       }
 
       const whereClause: any = {
@@ -67,28 +95,56 @@ export async function GET(req: Request) {
         whereClause.jobOfferId = jobOfferId;
       }
 
-      const applications = await prisma.application.findMany({
-        where: whereClause,
-        include: { 
-          talent: {
-            include: { user: true }
-          }, 
-          jobOffer: true 
-        },
-        orderBy: { createdAt: "desc" },
-      });
+      const [applications, totalCount] = await Promise.all([
+        prisma.application.findMany({
+          where: whereClause,
+          include: { 
+            talent: {
+              include: { user: true }
+            }, 
+            jobOffer: true 
+          },
+          orderBy: { createdAt: "desc" },
+          skip,
+          take,
+        }),
+        prisma.application.count({ where: whereClause }),
+      ]);
 
-      return NextResponse.json(applications);
+      return NextResponse.json({
+        applications,
+        totalCount,
+        totalPages: Math.ceil(totalCount / limit),
+        page,
+        limit,
+      });
     }
 
     // 3. ADMIN : accès global
     if (["SUPER ADMIN", "ADMIN RH / MODÉRATEUR", "MANAGER IA & CERTIFICATION", "GESTIONNAIRE FINANCIER", "SUPPORT CLIENT", "ADMIN"].includes(effectiveRole?.toUpperCase() || "")) {
-      const applications = await prisma.application.findMany({
-        include: { talent: true, jobOffer: true },
-        orderBy: { createdAt: "desc" },
-      });
+      const whereClause: any = {};
+      if (jobOfferId) {
+        whereClause.jobOfferId = jobOfferId;
+      }
 
-      return NextResponse.json(applications);
+      const [applications, totalCount] = await Promise.all([
+        prisma.application.findMany({
+          where: whereClause,
+          include: { talent: true, jobOffer: true },
+          orderBy: { createdAt: "desc" },
+          skip,
+          take,
+        }),
+        prisma.application.count({ where: whereClause }),
+      ]);
+
+      return NextResponse.json({
+        applications,
+        totalCount,
+        totalPages: Math.ceil(totalCount / limit),
+        page,
+        limit,
+      });
     }
 
     return NextResponse.json({ error: "Rôle non autorisé." }, { status: 403 });

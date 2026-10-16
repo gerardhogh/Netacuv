@@ -5,7 +5,7 @@ import { authOptions } from "@/lib/auth";
 
 export const dynamic = 'force-dynamic';
 
-export async function GET() {
+export async function GET(req: Request) {
   try {
     const session = await getServerSession(authOptions);
     const role = (session?.user as any)?.role?.toUpperCase() || "";
@@ -15,23 +15,39 @@ export async function GET() {
       return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
     }
 
-    const jobs = await prisma.jobOffer.findMany({
-      include: {
-        recruiter: {
-          include: { 
-            user: {
-              include: { role: true }
-            }
-          }
-        },
-        applications: true
-      },
-      orderBy: {
-        createdAt: "desc"
-      }
-    });
+    const { searchParams } = new URL(req.url);
+    const page = Math.max(1, parseInt(searchParams.get("page") || "1", 10) || 1);
+    const limit = Math.max(1, parseInt(searchParams.get("limit") || "20", 10) || 20);
+    const skip = (page - 1) * limit;
 
-    return NextResponse.json(jobs);
+    const [jobs, totalCount] = await Promise.all([
+      prisma.jobOffer.findMany({
+        include: {
+          recruiter: {
+            include: { 
+              user: {
+                include: { role: true }
+              }
+            }
+          },
+          applications: true
+        },
+        orderBy: {
+          createdAt: "desc"
+        },
+        skip,
+        take: limit,
+      }),
+      prisma.jobOffer.count(),
+    ]);
+
+    return NextResponse.json({
+      jobs,
+      totalCount,
+      totalPages: Math.ceil(totalCount / limit),
+      page,
+      limit,
+    });
   } catch (error) {
     console.error("Erreur GET /api/admin/jobs:", error);
     return NextResponse.json({ error: "Erreur serveur" }, { status: 500 });

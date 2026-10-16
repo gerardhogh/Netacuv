@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { GoogleGenAI, Type } from "@google/genai";
 import { prisma } from "@/lib/prisma";
+import { getToken } from "next-auth/jwt";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
 
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
@@ -13,6 +16,8 @@ export async function POST(req: NextRequest) {
       candidateName = "Candidat",
       interviewSessionId = null,
       videoUrl = null,
+      userId = null,
+      locale = "fr",
     } = body;
 
     if (!Array.isArray(history) || history.length === 0) {
@@ -22,31 +27,70 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const systemPrompt = `Tu es le Directeur du Recrutement & Évaluateur IA Principal de la plateforme Netacuv.
-Ton rôle est d'analyser l'intégralité d'un entretien vidéo passé par un talent et de fournir un rapport d'évaluation impartial, approfondi et directement exploitable par les recruteurs.
+    const isEn = locale === "en";
+    const systemPrompt = isEn
+      ? `You are an Executive Recruitment Director & Senior HR Headhunter for the Netacuv platform.
+Your task is to analyze the entire video interview completed by the candidate and produce a rigorous, objective, insightful HR and technical evaluation immediately actionable by hiring executives and recruiters.
+
+JOB SPECIFICATION / EVALUATION CRITERIA:
+"""
+${jobDescription || "Versatile professional profile: domain mastery, autonomy, concrete problem-solving ability (STAR method), clear spoken communication, teamwork adaptability, and professional maturity."}
+"""
+
+CANDIDATE: ${candidateName}
+
+INTERVIEW PROCEEDINGS (Questions asked, duration, and candidate's transcribed answers):
+${JSON.stringify(history, null, 2)}
+
+EVALUATION RUBRIC:
+1. CLARITY & COMMUNICATION (Pitch, eloquence, synthesis capability, structured expression).
+2. SUBSTANCE & ADDED VALUE (Real-world examples, tangible facts, STAR method: Situation, Task, Action, Result). Penalize vague, generic, or hollow answers.
+3. ADAPTABILITY & SOFT SKILLS (Team spirit, conflict resolution, awareness of weaknesses, stress management).
+4. OVERALL SCORE CALIBRATION (overallScore out of 100):
+   - 85 to 100: Outstanding performance, concrete examples, structured speech -> "SHORTLIST".
+   - 65 to 84: Solid and promising profile, but some answers lack depth or specifics -> "REVIEW".
+   - 45 to 64: Hesitant, overly generic or incomplete answers -> "REVIEW" or "REJECT".
+   - < 45: Missing, inaudible, extremely brief, or irrelevant answers -> "REJECT".
+
+OUTPUT REQUIREMENTS (ALL TEXT MUST BE IN ENGLISH):
+- overallScore: Integer score out of 100.
+- summary: Impactful 3-5 sentence summary written by a senior recruiter, highlighting the candidate's strengths and market fit.
+- strengths: 2 to 4 specific, demonstrated strengths from the interview.
+- areasForImprovement: 2 to 4 actionable, constructive areas for improvement.
+- skillMatching: 3 to 5 key competencies (e.g., Communication & Pitch, Problem Solving, Teamwork, etc.) with a score (0-100) and targeted comment.
+- recommendation: Must be strictly "SHORTLIST", "REVIEW", or "REJECT".`
+      : `Tu es un Directeur du Recrutement & Senior Headhunter RH Expert pour la plateforme Netacuv.
+Ton rôle est d'analyser l'intégralité de l'entretien vidéo passé par le talent et de produire une évaluation RH et technique rigoureuse, objective, perspicace et immédiatement exploitable par un comité de direction ou des recruteurs exigeants.
 
 FICHE DE POSTE / CRITÈRES D'ÉVALUATION :
 """
-${jobDescription || "Développeur Fullstack / Profil SaaS Tech polyvalent : maîtrise de Next.js/React, TypeScript, bases de données, capacité de résolution de problèmes et clarté d'expression."}
+${jobDescription || "Profil professionnel polyvalent : maîtrise de son domaine d'expertise, autonomie, capacité de résolution de problèmes concrets (méthode STAR), clarté d'expression orale, adaptabilité d'équipe et maturité professionnelle."}
 """
 
 CANDIDAT : ${candidateName}
 
-DÉROULÉ COMPLET DE L'ENTRETIEN (Questions posées et réponses transcrites) :
+DÉROULÉ DE L'ENTRETIEN (Questions posées, durées et transcriptions des réponses) :
 ${JSON.stringify(history, null, 2)}
 
-DIRECTIVES D'ÉVALUATION :
-1. Évalue la cohérence, la précision technique, les exemples concrets apportés et la communication globale.
-2. overallScore : Note globale sur 100 reflétant le niveau d'adéquation et la maturité professionnelle.
-3. strengths : 2 à 4 points forts majeurs observés lors des réponses.
-4. areasForImprovement : 2 à 4 axes d'amélioration précis et constructifs.
-5. skillMatching : Évalue individuellement les compétences clés identifiées dans la fiche de poste avec un score (0-100) et un commentaire concis.
-6. recommendation : Choisis obligatoirement l'une des 3 valeurs :
-   - "SHORTLIST" : Profil solide, pertinent, recommandé pour la phase finale d'embauche.
-   - "REVIEW" : Profil intéressant mais nécessitant une vérification complémentaire ou un test pratique.
-   - "REJECT" : Profil ne correspondant pas aux exigences du poste ou réponses trop incomplètes.`;
+GRILLE D'ÉVALUATION D'UN RECRUTEUR EXPERT :
+1. CLARTÉ & COMMUNICATION (Pitch, éloquence, capacité de synthèse, structuration des propos).
+2. FOND & VALEUR AJOUTÉE (Exemples réels vécus, faits tangibles, méthode STAR : Situation, Tâche, Action, Résultat). Attention aux réponses vagues, génériques ou creuses.
+3. ADAPTABILITÉ & SOFT SKILLS (Esprit d'équipe, gestion des désaccords, lucidité sur ses faiblesses, réaction sous pression).
+4. CALIBRATION DU SCORE GLOBAL (overallScore sur 100) :
+   - 85 à 100 : Prestation remarquable, exemples concrets, discours structuré et pertinent -> "SHORTLIST".
+   - 65 à 84 : Profil solide et prometteur, mais quelques réponses manquent de profondeur ou de précision -> "REVIEW".
+   - 45 à 64 : Réponses hésitantes, trop génériques ou lacunaires -> "REVIEW" ou "REJECT".
+   - < 45 : Réponses absentes, inaudibles, extrêmement brèves ou hors-sujet -> "REJECT".
 
-    // Appel à Gemini 1.5 Pro avec Structured Outputs
+DIRECTIVES DE RESTITUTION :
+- overallScore : Note entière sur 100.
+- summary : Synthèse percutante de 3 à 5 phrases rédigée par un recruteur senior, mettant en exergue le positionnement du candidat et son adéquation avec les attentes du marché.
+- strengths : 2 à 4 points forts précis et étayés démontrés pendant l'échange.
+- areasForImprovement : 2 à 4 axes d'amélioration constructifs et actionnables pour progresser.
+- skillMatching : Évalue 3 à 5 compétences clés (ex: Communication & Pitch, Résolution de problème, Esprit d'équipe, etc.) avec un score (0-100) et un commentaire ciblé.
+- recommendation : Obligatoirement "SHORTLIST", "REVIEW", ou "REJECT".`;
+
+    // Appel à Gemini avec Structured Outputs
     const evaluationSchema = {
       type: Type.OBJECT,
       properties: {
@@ -97,7 +141,12 @@ DIRECTIVES D'ÉVALUATION :
     };
 
     // Modèles testés par ordre de priorité
-    const candidateModels = ["gemini-flash-latest", "gemini-1.5-pro", "gemini-3-flash-preview"];
+    const candidateModels = [
+      "gemini-2.5-flash",
+      "gemini-2.0-flash",
+      "gemini-flash-latest",
+      "gemini-1.5-pro",
+    ];
     let responseText = "";
 
     for (const model of candidateModels) {
@@ -125,19 +174,69 @@ DIRECTIVES D'ÉVALUATION :
 
     const evaluationResult = JSON.parse(responseText);
 
-    // Si un interviewSessionId Prisma est fourni, mettre à jour la session dans PostgreSQL
-    if (interviewSessionId) {
+    // Identifier l'utilisateur pour sauvegarder l'évaluation et la vidéo dans son profil
+    let targetUserId = userId || null;
+    if (!targetUserId) {
       try {
-        await prisma.interviewSession.update({
-          where: { id: interviewSessionId },
-          data: {
-            aiScore: evaluationResult.overallScore,
-            aiFeedback: JSON.stringify(evaluationResult),
-            ...(videoUrl ? { videoUrl } : {}),
-          },
+        const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET });
+        if (token?.sub) targetUserId = token.sub;
+      } catch (e) {}
+    }
+    if (!targetUserId) {
+      try {
+        const session = await getServerSession(authOptions);
+        if ((session?.user as any)?.id) targetUserId = (session?.user as any).id;
+      } catch (e) {}
+    }
+
+    if (targetUserId) {
+      try {
+        const talentProf = await prisma.talentProfile.findUnique({
+          where: { userId: targetUserId },
+          include: {
+            interviewSessions: {
+              orderBy: { createdAt: "desc" },
+              take: 1,
+            }
+          }
         });
-      } catch (dbErr) {
-        console.warn("Avertissement: Impossible de synchroniser la session Prisma:", dbErr);
+        if (talentProf) {
+          if (videoUrl) {
+            await prisma.talentProfile.update({
+              where: { id: talentProf.id },
+              data: { videoUrl }
+            });
+          }
+
+          const existingSessionId = interviewSessionId || talentProf.interviewSessions?.[0]?.id;
+          if (existingSessionId) {
+            await prisma.interviewSession.update({
+              where: { id: existingSessionId },
+              data: {
+                aiScore: evaluationResult.overallScore,
+                aiFeedback: JSON.stringify(evaluationResult),
+                ...(videoUrl ? { videoRecordings: videoUrl } : {}),
+                status: "COMPLETED",
+              },
+            });
+          } else {
+            const defaultInterview = await prisma.aIInterview.findFirst();
+            if (defaultInterview) {
+              await prisma.interviewSession.create({
+                data: {
+                  interviewId: defaultInterview.id,
+                  talentId: talentProf.id,
+                  aiScore: evaluationResult.overallScore,
+                  aiFeedback: JSON.stringify(evaluationResult),
+                  videoRecordings: videoUrl || "",
+                  status: "COMPLETED",
+                }
+              });
+            }
+          }
+        }
+      } catch (err) {
+        console.warn("Could not sync talentProfile and interviewSession in evaluate:", err);
       }
     }
 

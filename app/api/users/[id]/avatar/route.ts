@@ -18,7 +18,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
     if (!user || !user.image) {
       return NextResponse.redirect(new URL('/assets/avatar_africain.jpg', req.url), {
         headers: {
-          'Cache-Control': 'public, max-age=86400, stale-while-revalidate=604800',
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
         }
       });
     }
@@ -31,7 +31,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
         status: 304,
         headers: {
           'ETag': etag,
-          'Cache-Control': 'public, max-age=86400, stale-while-revalidate=604800',
+          'Cache-Control': 'no-cache, must-revalidate',
         },
       });
     }
@@ -39,7 +39,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
     if (user.image.startsWith("http")) {
       return NextResponse.redirect(user.image, {
         headers: {
-          'Cache-Control': 'public, max-age=86400, stale-while-revalidate=604800',
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
         }
       });
     }
@@ -57,7 +57,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
       return new NextResponse(buffer, {
         headers: {
           'Content-Type': mimeType,
-          'Cache-Control': 'public, max-age=86400, stale-while-revalidate=604800',
+          'Cache-Control': 'no-cache, must-revalidate',
           'ETag': etag,
         },
       });
@@ -65,7 +65,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
 
     return NextResponse.redirect(new URL('/assets/avatar_africain.jpg', req.url), {
       headers: {
-        'Cache-Control': 'public, max-age=86400, stale-while-revalidate=604800',
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
       }
     });
 

@@ -126,6 +126,18 @@ export async function POST(req: NextRequest) {
             status: "COMPLETED",
           },
         });
+      } else {
+        const defaultInterview = await prisma.aIInterview.findFirst();
+        if (defaultInterview) {
+          await prisma.interviewSession.create({
+            data: {
+              interviewId: defaultInterview.id,
+              talentId: talentProfile.id,
+              videoRecordings: fileUrl,
+              status: "COMPLETED",
+            }
+          });
+        }
       }
     } catch (sessionErr) {
       console.warn("Could not sync interviewSession:", sessionErr);

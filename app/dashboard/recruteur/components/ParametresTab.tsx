@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Bell,
   MessageSquare,
@@ -17,6 +17,7 @@ import { useTranslations, useLocale } from "next-intl";
 import LanguageSwitcher, { LOCALES, Locale } from "@/app/components/LanguageSwitcher";
 import { useRouter, usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
+import { CustomSelect } from "@/components/ui/CustomSelect";
 
 export default function ParametresTab() {
   const pathname = usePathname() || "/";
@@ -26,7 +27,28 @@ export default function ParametresTab() {
 
   // Notifications
   const [emailNotif, setEmailNotif] = useState(true);
-  const [smsNotif, setSmsNotif] = useState(false);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const savedNotif = localStorage.getItem("recruiter_email_notif");
+      if (savedNotif !== null) {
+        setEmailNotif(savedNotif === "true");
+      }
+    }
+  }, []);
+
+  const handleToggleEmailNotif = () => {
+    const nextVal = !emailNotif;
+    setEmailNotif(nextVal);
+    if (typeof window !== "undefined") {
+      localStorage.setItem("recruiter_email_notif", String(nextVal));
+    }
+    if (nextVal) {
+      showToast("Notifications par email activées");
+    } else {
+      showToast("Notifications par email désactivées");
+    }
+  };
 
   // Password
   const [currentPwd, setCurrentPwd] = useState("");
@@ -52,14 +74,14 @@ export default function ParametresTab() {
   const handleSavePassword = (e: React.FormEvent) => {
     e.preventDefault();
     if (newPwd !== confirmPwd) {
-      showToast("Les mots de passe ne correspondent pas.");
+      showToast(t("settings.pwdMismatch"));
       return;
     }
     if (newPwd.length < 8) {
-      showToast("Le mot de passe doit contenir au moins 8 caractères.");
+      showToast(t("settings.pwdMinLength"));
       return;
     }
-    showToast("Mot de passe mis à jour avec succès !");
+    showToast(t("settings.pwdSuccess"));
     setCurrentPwd(""); setNewPwd(""); setConfirmPwd("");
   };
 
@@ -104,50 +126,28 @@ export default function ParametresTab() {
           <div className="w-8 h-8 rounded-xl bg-sky-50 flex items-center justify-center">
             <Bell size={15} className="text-[#32A8D7]" />
           </div>
-          <h3 className="font-bold text-slate-900 text-sm">Préférences de notifications</h3>
+          <h3 className="font-bold text-slate-900 text-sm">{t("settings.notifications")}</h3>
         </div>
 
         <div className="space-y-4">
           {/* Email notifications */}
-          <div className="flex items-center justify-between py-3 border-b border-slate-50">
+          <div className="flex items-center justify-between py-3">
             <div className="flex items-center gap-3">
-              <Bell size={16} className="text-slate-400" />
+              <Bell size={16} className="text-[#32A8D7]" />
               <div>
-                <p className="text-sm font-semibold text-slate-800">Notifications par email</p>
-                <p className="text-xs text-slate-400 mt-0.5">Recevez des mises à jour par email</p>
+                <p className="text-sm font-semibold text-slate-800">{t("settings.emailNotif")}</p>
+                <p className="text-xs text-slate-400 mt-0.5">{t("settings.emailNotifDesc")}</p>
               </div>
             </div>
             <button
               type="button"
-              onClick={() => setEmailNotif(!emailNotif)}
-              className={`relative w-11 h-6 rounded-full transition-colors duration-300 ${emailNotif ? "bg-[#32A8D7]" : "bg-slate-200"}`}
+              onClick={handleToggleEmailNotif}
+              className={`relative w-11 h-6 rounded-full transition-colors duration-300 cursor-pointer ${emailNotif ? "bg-[#32A8D7]" : "bg-slate-200"}`}
               aria-label="Toggle email notifications"
             >
               <span
                 className="absolute top-0.5 w-5 h-5 bg-white rounded-full shadow-md transition-all duration-300"
                 style={{ left: emailNotif ? "22px" : "2px" }}
-              />
-            </button>
-          </div>
-
-          {/* SMS notifications */}
-          <div className="flex items-center justify-between py-3">
-            <div className="flex items-center gap-3">
-              <MessageSquare size={16} className="text-slate-400" />
-              <div>
-                <p className="text-sm font-semibold text-slate-800">Notifications par SMS</p>
-                <p className="text-xs text-slate-400 mt-0.5">Recevez des alertes par SMS</p>
-              </div>
-            </div>
-            <button
-              type="button"
-              onClick={() => setSmsNotif(!smsNotif)}
-              className={`relative w-11 h-6 rounded-full transition-colors duration-300 ${smsNotif ? "bg-[#32A8D7]" : "bg-slate-200"}`}
-              aria-label="Toggle SMS notifications"
-            >
-              <span
-                className="absolute top-0.5 w-5 h-5 bg-white rounded-full shadow-md transition-all duration-300"
-                style={{ left: smsNotif ? "22px" : "2px" }}
               />
             </button>
           </div>
@@ -160,13 +160,13 @@ export default function ParametresTab() {
           <div className="w-8 h-8 rounded-xl bg-slate-100 flex items-center justify-center">
             <Lock size={15} className="text-slate-600" />
           </div>
-          <h3 className="font-bold text-slate-900 text-sm">Changer le mot de passe</h3>
+          <h3 className="font-bold text-slate-900 text-sm">{t("settings.changePassword")}</h3>
         </div>
 
         <form onSubmit={handleSavePassword} className="space-y-4">
           {/* Current password */}
           <div>
-            <label className="block text-xs font-semibold text-slate-700 mb-1.5">Mot de passe actuel</label>
+            <label className="block text-xs font-semibold text-slate-700 mb-1.5">{t("settings.currentPassword")}</label>
             <div className="relative">
               <input
                 type={showCurrent ? "text" : "password"}
@@ -187,14 +187,14 @@ export default function ParametresTab() {
 
           {/* New password */}
           <div>
-            <label className="block text-xs font-semibold text-slate-700 mb-1.5">Nouveau mot de passe</label>
+            <label className="block text-xs font-semibold text-slate-700 mb-1.5">{t("settings.newPassword")}</label>
             <div className="relative">
               <input
                 type={showNew ? "text" : "password"}
                 value={newPwd}
                 onChange={(e) => setNewPwd(e.target.value)}
                 className="w-full px-4 py-3 pr-11 rounded-xl border border-slate-200 bg-slate-50 text-sm text-slate-800 outline-none focus:border-[#32A8D7] focus:bg-white transition-colors"
-                placeholder="Minimum 8 caractères"
+                placeholder={t("settings.pwdHint")}
               />
               <button
                 type="button"
@@ -222,7 +222,7 @@ export default function ParametresTab() {
 
           {/* Confirm password */}
           <div>
-            <label className="block text-xs font-semibold text-slate-700 mb-1.5">Confirmer le nouveau mot de passe</label>
+            <label className="block text-xs font-semibold text-slate-700 mb-1.5">{t("settings.confirmPassword")}</label>
             <div className="relative">
               <input
                 type={showConfirm ? "text" : "password"}
@@ -244,7 +244,7 @@ export default function ParametresTab() {
               </button>
             </div>
             {confirmPwd && confirmPwd !== newPwd && (
-              <p className="text-xs text-red-500 mt-1">Les mots de passe ne correspondent pas.</p>
+              <p className="text-xs text-red-500 mt-1">{t("settings.pwdMismatch")}</p>
             )}
           </div>
 
@@ -252,7 +252,7 @@ export default function ParametresTab() {
             type="submit"
             className="w-full py-3 rounded-xl bg-[#32A8D7] hover:bg-[#2896c2] text-white text-sm font-semibold shadow-sm hover:shadow-md transition-all"
           >
-            Mettre à jour le mot de passe
+            {t("settings.updatePassword")}
           </button>
         </form>
       </div>
@@ -266,39 +266,40 @@ export default function ParametresTab() {
           <h3 className="font-bold text-slate-900 text-sm">{t("settings.language")}</h3>
         </div>
 
-        <div className="relative">
-          <select
-            value={locale}
-            onChange={(e) => {
-              const newLocale = e.target.value as Locale;
-              const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-              const domainPart = isLocalhost ? '' : '; domain=.netacuv.com';
-              document.cookie = `NEXT_LOCALE=${newLocale}; path=/; max-age=31536000${domainPart}; SameSite=Lax`;
+        <CustomSelect
+          value={locale}
+          onChange={(newLocale) => {
+            const isNetacuv = typeof window !== "undefined" && window.location.hostname.endsWith("netacuv.com");
+            const domainPart = isNetacuv ? "; domain=.netacuv.com" : "";
+            document.cookie = `NEXT_LOCALE=${newLocale}; path=/; max-age=31536000${domainPart}; SameSite=Lax`;
 
-              let newPath = pathname;
-              if (pathname.startsWith('/fr/') || pathname === '/fr') {
-                newPath = pathname.replace(/^\/fr(\/|$)/, `/${newLocale}$1`);
-              } else if (pathname.startsWith('/en/') || pathname === '/en') {
-                newPath = pathname.replace(/^\/en(\/|$)/, `/${newLocale}$1`);
-              } else {
-                newPath = `/${newLocale}${pathname === '/' ? '' : pathname}`;
-              }
+            let newPath = pathname;
+            if (pathname.startsWith('/fr/') || pathname === '/fr') {
+              newPath = pathname.replace(/^\/fr(\/|$)/, `/${newLocale}$1`);
+            } else if (pathname.startsWith('/en/') || pathname === '/en') {
+              newPath = pathname.replace(/^\/en(\/|$)/, `/${newLocale}$1`);
+            } else {
+              newPath = `/${newLocale}${pathname === '/' ? '' : pathname}`;
+            }
 
-              const label = LOCALES.find((l) => l.code === newLocale)?.label ?? newLocale;
-              showToast(`${t("settings.languageUpdated")} : ${label}`);
-              router.push(newPath);
+            const label = LOCALES.find((l) => l.code === newLocale)?.label ?? newLocale;
+            showToast(`${t("settings.languageUpdated")} : ${label}`);
+            const search = typeof window !== "undefined" ? window.location.search : "";
+            const hash = typeof window !== "undefined" ? window.location.hash : "";
+            const targetUrl = `${newPath}${search}${hash}`;
+            if (typeof window !== "undefined") {
+              window.location.href = targetUrl;
+            } else {
+              router.push(targetUrl);
               router.refresh();
-            }}
-            className="w-full appearance-none px-4 py-3 rounded-xl border border-slate-200 bg-slate-50 text-sm text-slate-800 font-medium outline-none focus:border-[#32A8D7] focus:bg-white transition-colors cursor-pointer"
-          >
-            {LOCALES.map(({ code, label, flag, countryCode }) => (
-              <option key={code} value={code}>
-                {flag} {label} ({countryCode})
-              </option>
-            ))}
-          </select>
-          <ChevronDown size={15} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
-        </div>
+            }
+          }}
+          options={LOCALES.map(({ code, label, flag }) => ({
+            value: code,
+            label: `${flag} ${label}`,
+          }))}
+          className="w-full"
+        />
       </div>
 
       {/* ── Supprimer le compte ───────────────────────────────────────────── */}
@@ -308,15 +309,15 @@ export default function ParametresTab() {
             <AlertTriangle size={15} className="text-red-500" />
           </div>
           <div className="flex-1">
-            <h3 className="font-bold text-red-700 text-sm mb-1">Zone de danger</h3>
+            <h3 className="font-bold text-red-700 text-sm mb-1">{t("settings.dangerZone")}</h3>
             <p className="text-xs text-red-500 leading-relaxed mb-4">
-              La suppression de votre compte est définitive. Toutes vos données seront effacées et vous devrez créer un nouveau compte si vous souhaitez revenir.
+              {t("settings.deactivateDesc")}
             </p>
             <button
               onClick={() => setShowDeleteModal(true)}
               className="px-5 py-2.5 rounded-xl bg-red-500 hover:bg-red-600 text-white text-xs font-bold shadow-sm transition-colors"
             >
-              Supprimer mon compte
+              {t("settings.deactivateBtn")}
             </button>
           </div>
         </div>

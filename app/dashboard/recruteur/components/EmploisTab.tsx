@@ -22,10 +22,14 @@ import {
   Mail,
   Bookmark,
 } from "lucide-react";
+import { useTranslations, useLocale } from "next-intl";
 import { ConfirmModal, SuccessModal } from "./Modals";
 import useSWR from "swr";
 import { useAuth } from "../../../context/AuthContext";
 import PremiumRequiredModal from "../../../components/PremiumRequiredModal";
+import { CustomSelect } from "@/components/ui/CustomSelect";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { Pagination } from "@/components/ui/Pagination";
 
 const fetcher = (url: string) => fetch(url, { headers: { 'Cache-Control': 'no-cache' } }).then(res => res.json());
 
@@ -46,6 +50,7 @@ interface Emploi {
   candidatures: number;
   datePublication: string;
   status: "Active" | "Inactive" | "PUBLISHED" | "CLOSED" | string;
+  expiresAt?: string | null;
   _count?: { applications: number };
 }
 
@@ -62,6 +67,7 @@ const MOCK_CANDIDATES: any[] = [];
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
 function CandidateCard({ c }: { c: typeof MOCK_CANDIDATES[number] }) {
+  const t = useTranslations("recruiter.jobsTab");
   const { user } = useAuth();
   const [showPremiumModal, setShowPremiumModal] = useState(false);
   return (
@@ -69,12 +75,10 @@ function CandidateCard({ c }: { c: typeof MOCK_CANDIDATES[number] }) {
       <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden flex flex-col">
       {/* Photo */}
       <div className="relative w-full aspect-[4/3] bg-pink-100">
-        <Image
+        <img
           src={c.avatar}
           alt={c.nom}
-          fill
-          sizes="(max-width: 640px) 100vw, 33vw"
-          className={`object-cover object-top ${!user?.isPremium ? 'blur-md select-none' : ''}`}
+          className={`object-cover object-top w-full h-full ${!user?.isPremium ? 'blur-md select-none' : ''}`}
           onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
         />
         {c.certifie && (
@@ -87,10 +91,10 @@ function CandidateCard({ c }: { c: typeof MOCK_CANDIDATES[number] }) {
       <div className="p-3 flex-1">
         <div className="flex items-start justify-between gap-1">
           <div>
-            <p className={`font-bold text-slate-900 text-sm ${!user?.isPremium ? 'blur-sm select-none' : ''}`}>{!user?.isPremium ? "Profil Confidentiel" : c.nom}</p>
-            <p className={`text-[11px] text-slate-400 ${!user?.isPremium ? 'blur-sm select-none' : ''}`}>{!user?.isPremium ? "Localisation Masquée" : c.localisation}</p>
+            <p className={`font-bold text-slate-900 text-sm ${!user?.isPremium ? 'blur-sm select-none' : ''}`}>{!user?.isPremium ? t("confidentialProfile") : c.nom}</p>
+            <p className={`text-[11px] text-slate-400 ${!user?.isPremium ? 'blur-sm select-none' : ''}`}>{!user?.isPremium ? t("hiddenLocation") : c.localisation}</p>
             <p className="text-[11px] text-slate-500 mt-0.5">
-              <span className="font-semibold">Profession :</span> {c.profession}
+              <span className="font-semibold">{t("professionLabel")}</span> {c.profession}
             </p>
           </div>
           <button className="text-slate-300 hover:text-[#32A8D7] transition-colors">
@@ -115,10 +119,10 @@ function CandidateCard({ c }: { c: typeof MOCK_CANDIDATES[number] }) {
                 : 'border-slate-200 text-slate-600 hover:bg-slate-50'
             }`}
           >
-            <Mail size={11} /> Envoyer un mail
+            <Mail size={11} /> {t("sendEmail")}
           </button>
           <button className="flex-1 py-1.5 rounded-lg bg-[#32A8D7] hover:bg-[#2896c2] text-white text-[11px] font-semibold transition-colors">
-            Voir profil
+            {t("viewProfile")}
           </button>
         </div>
       </div>
@@ -127,7 +131,7 @@ function CandidateCard({ c }: { c: typeof MOCK_CANDIDATES[number] }) {
       {showPremiumModal && (
         <PremiumRequiredModal 
           onClose={() => setShowPremiumModal(false)} 
-          message="Passez au plan Premium pour contacter ce talent et consulter son profil complet."
+          message={t("premiumRequiredCandidate")}
         />
       )}
     </>
@@ -142,6 +146,7 @@ interface PublierModalProps {
 }
 
 function PublierModal({ onClose, onPublish }: PublierModalProps) {
+  const t = useTranslations("recruiter.jobsTab");
   const [titre, setTitre] = useState("");
   const [entreprise, setEntreprise] = useState("");
   const [pays, setPays] = useState("Bénin");
@@ -149,16 +154,31 @@ function PublierModal({ onClose, onPublish }: PublierModalProps) {
   const [typeEmploi, setTypeEmploi] = useState("CDI");
   const [modeTravail, setModeTravail] = useState("Temps plein");
   const [description, setDescription] = useState("");
+  const [dureePublication, setDureePublication] = useState("30 jours (Recommandé)");
+  const [dateExpiration, setDateExpiration] = useState("");
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
+      let validityDays: number | undefined = undefined;
+      let expiresAt: string | undefined = undefined;
+
+      if (dureePublication.startsWith("15")) validityDays = 15;
+      else if (dureePublication.startsWith("30")) validityDays = 30;
+      else if (dureePublication.startsWith("60")) validityDays = 60;
+      else if (dureePublication.startsWith("90")) validityDays = 90;
+      else if (dureePublication === "Date personnalisée" && dateExpiration) {
+        expiresAt = new Date(dateExpiration).toISOString();
+      }
+
       const payload = {
         title: titre,
         description: `Mode de travail : ${modeTravail}\n\n${description}`,
         location: `${ville}, ${pays}`,
         contractType: typeEmploi,
         entreprise: entreprise, // Utilisé pour auto-créer le profil si inexistant
+        validityDays,
+        expiresAt,
       };
 
       const res = await fetch("/api/jobs", {
@@ -171,11 +191,11 @@ function PublierModal({ onClose, onPublish }: PublierModalProps) {
         onPublish(newJob);
       } else {
         const errorData = await res.json();
-        alert(`Erreur : ${errorData.error || "Impossible de publier l'offre"}`);
+        alert(`Erreur : ${errorData.error || t("errorPublish")}`);
       }
     } catch (error) {
       console.error(error);
-      alert("Une erreur inattendue est survenue.");
+      alert(t("errorUnexpected"));
     }
     onClose();
   };
@@ -189,8 +209,8 @@ function PublierModal({ onClose, onPublish }: PublierModalProps) {
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-slate-100">
           <div>
-            <h3 className="text-lg font-bold text-slate-900">Publier une offre</h3>
-            <p className="text-xs text-slate-400 mt-0.5">Remplissez les informations de votre offre d&apos;emploi</p>
+            <h3 className="text-lg font-bold text-slate-900">{t("publishTitle")}</h3>
+            <p className="text-xs text-slate-400 mt-0.5">{t("publishDesc")}</p>
           </div>
           <button onClick={onClose} className="p-2 hover:bg-slate-100 rounded-xl text-slate-400 transition-colors">
             <X size={18} />
@@ -201,30 +221,30 @@ function PublierModal({ onClose, onPublish }: PublierModalProps) {
         <form onSubmit={handleSubmit} className="p-6 space-y-5">
           {/* Intitulé */}
           <div>
-            <label className="block text-sm font-bold text-[#32A8D7] mb-2">Intitulé du poste</label>
-            <input required type="text" value={titre} onChange={(e) => setTitre(e.target.value)} className={inputClass} placeholder="Ex: Développeur Front-end" />
+            <label className="block text-sm font-bold text-[#32A8D7] mb-2">{t("jobTitle")}</label>
+            <input required type="text" value={titre} onChange={(e) => setTitre(e.target.value)} className={inputClass} placeholder={t("jobTitlePlaceholder")} />
           </div>
 
           {/* Entreprise */}
           <div>
-            <label className="block text-sm font-bold text-[#32A8D7] mb-2">Entreprise</label>
-            <input required type="text" value={entreprise} onChange={(e) => setEntreprise(e.target.value)} className={inputClass} placeholder="Nom de l'entreprise" />
+            <label className="block text-sm font-bold text-[#32A8D7] mb-2">{t("company")}</label>
+            <input required type="text" value={entreprise} onChange={(e) => setEntreprise(e.target.value)} className={inputClass} placeholder={t("companyPlaceholder")} />
           </div>
 
           {/* Type de travail */}
           <div>
-            <label className="block text-sm font-bold text-[#32A8D7] mb-2">Type de travail</label>
-            <div className="relative">
-              <select value={typeEmploi} onChange={(e) => setTypeEmploi(e.target.value)} className={selectClass}>
-                <option>CDI</option><option>CDD</option><option>Stage</option><option>Freelance</option><option>Alternance</option>
-              </select>
-              <svg className="w-3.5 h-3.5 text-slate-500 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
-            </div>
+            <label className="block text-sm font-bold text-[#32A8D7] mb-2">{t("contractType")}</label>
+            <CustomSelect
+              value={typeEmploi}
+              onChange={setTypeEmploi}
+              options={["CDI", "CDD", "Stage", "Freelance", "Alternance"]}
+              className="w-full"
+            />
           </div>
 
           {/* Lieu du travail */}
           <div>
-            <label className="block text-sm font-bold text-[#32A8D7] mb-2">Lieu du travail</label>
+            <label className="block text-sm font-bold text-[#32A8D7] mb-2">{t("workLocation")}</label>
             <div className="grid grid-cols-2 gap-3">
               <div className="relative">
                 <input 
@@ -233,40 +253,72 @@ function PublierModal({ onClose, onPublish }: PublierModalProps) {
                   value={pays} 
                   onChange={(e) => setPays(e.target.value)} 
                   className={inputClass} 
-                  placeholder="Rechercher un pays"
+                  placeholder={t("searchCountry")}
                 />
                 <datalist id="recruiter-countries-list">
                   {["Bénin","Côte d'Ivoire","Sénégal","Togo","Mali","Cameroun","Burkina Faso","Guinée", "France", "Canada", "États-Unis", "Maroc", "Tunisie"].map(p => <option key={p} value={p} />)}
                 </datalist>
               </div>
-              <input type="text" value={ville} onChange={(e) => setVille(e.target.value)} className={inputClass} placeholder="Ville" />
+              <input type="text" value={ville} onChange={(e) => setVille(e.target.value)} className={inputClass} placeholder={t("city")} />
             </div>
           </div>
 
           {/* Mode de travail */}
           <div>
-            <label className="block text-sm font-bold text-[#32A8D7] mb-2">Mode de travail</label>
-            <div className="relative">
-              <select value={modeTravail} onChange={(e) => setModeTravail(e.target.value)} className={selectClass}>
-                <option>Temps plein</option><option>Temps partiel</option><option>Remote</option><option>Hybride</option>
-              </select>
-              <svg className="w-3.5 h-3.5 text-slate-500 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
-            </div>
+            <label className="block text-sm font-bold text-[#32A8D7] mb-2">{t("workMode")}</label>
+            <CustomSelect
+              value={modeTravail}
+              onChange={setModeTravail}
+              options={["Temps plein", "Temps partiel", "Remote", "Hybride"]}
+              className="w-full"
+            />
+          </div>
+
+          {/* Durée de validité & Clôture automatique */}
+          <div>
+            <label className="block text-sm font-bold text-[#32A8D7] mb-2">
+              Validité de l'offre (Clôture automatique)
+            </label>
+            <CustomSelect
+              value={dureePublication}
+              onChange={setDureePublication}
+              options={[
+                "30 jours (Recommandé)",
+                "15 jours",
+                "60 jours",
+                "90 jours",
+                "Date personnalisée",
+                "Illimitée (Clôture manuelle)",
+              ]}
+              className="w-full"
+            />
+            {dureePublication === "Date personnalisée" && (
+              <div className="mt-2.5">
+                <input
+                  type="date"
+                  min={new Date(Date.now() + 86400000).toISOString().split('T')[0]}
+                  value={dateExpiration}
+                  onChange={(e) => setDateExpiration(e.target.value)}
+                  className={inputClass}
+                  required
+                />
+              </div>
+            )}
           </div>
 
           {/* Description */}
           <div>
-            <label className="block text-sm font-bold text-[#32A8D7] mb-2">Description de l&apos;offre</label>
-            <textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={5} className={`${inputClass} resize-none`} placeholder="Décrivez le poste, les missions, le profil recherché..." />
+            <label className="block text-sm font-bold text-[#32A8D7] mb-2">{t("descriptionLabel")}</label>
+            <textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={5} className={`${inputClass} resize-none`} placeholder={t("descriptionPlaceholder")} />
           </div>
 
           {/* Buttons */}
           <div className="flex gap-3 pt-2">
             <button type="button" onClick={onClose} className="flex-1 py-2.5 rounded-xl border border-slate-200 text-sm font-semibold text-slate-600 hover:bg-slate-50 transition-colors">
-              Annuler
+              {t("cancel")}
             </button>
             <button type="submit" className="flex-1 py-2.5 rounded-xl bg-[#32A8D7] hover:bg-[#2896c2] text-white text-sm font-semibold shadow-sm transition-colors flex items-center justify-center gap-2">
-              <Save size={15} /> Publier l&apos;offre
+              <Save size={15} /> {t("publishSubmit")}
             </button>
           </div>
         </form>
@@ -283,14 +335,17 @@ interface DetailOffreViewProps {
   onModifier: () => void;
   onSupprimer: () => void;
   onCloturer: () => void;
+  onProlonger: () => void;
 }
 
-function DetailOffreView({ emploi, onBack, onModifier, onSupprimer, onCloturer }: DetailOffreViewProps) {
+function DetailOffreView({ emploi, onBack, onModifier, onSupprimer, onCloturer, onProlonger }: DetailOffreViewProps) {
+  const t = useTranslations("recruiter.jobsTab");
+  const locale = useLocale();
   const { data: applications = [] } = useSWR(`/api/applications?role=recruiter&jobOfferId=${emploi.id}`, fetcher);
   const candidates = Array.isArray(applications) ? applications.map((app: any) => ({
     id: app.talent?.userId || app.id,
     nom: app.talent?.user?.name || "Talent sans nom",
-    localisation: "Non spécifié",
+    localisation: t("unspecified"),
     profession: app.talent?.profession || "Candidat",
     avatar: app.talent?.user?.image || `https://ui-avatars.com/api/?name=${encodeURIComponent(app.talent?.user?.name || "T")}&background=random`,
     certifie: true,
@@ -300,9 +355,9 @@ function DetailOffreView({ emploi, onBack, onModifier, onSupprimer, onCloturer }
     <div className="space-y-5">
       {/* Breadcrumb */}
       <nav className="flex items-center gap-1.5 text-xs text-slate-400">
-        <button onClick={onBack} className="hover:text-[#32A8D7] transition-colors">Accueil</button>
+        <button onClick={onBack} className="hover:text-[#32A8D7] transition-colors">{t("home")}</button>
         <ChevronRight size={12} />
-        <button onClick={onBack} className="hover:text-[#32A8D7] transition-colors">Offres d&apos;emplois</button>
+        <button onClick={onBack} className="hover:text-[#32A8D7] transition-colors">{t("jobOffers")}</button>
         <ChevronRight size={12} />
         <span className="text-slate-700 font-medium truncate max-w-[180px]">{emploi.titre || (emploi as any).title}</span>
       </nav>
@@ -312,14 +367,15 @@ function DetailOffreView({ emploi, onBack, onModifier, onSupprimer, onCloturer }
         <div className="flex items-start justify-between gap-4 mb-3">
           <div>
             <p className="text-xs text-slate-400 mb-1">
-              Publié le : <span className="font-semibold">{emploi.datePublication || (emploi as any).createdAt ? new Date((emploi as any).createdAt).toLocaleDateString("fr-FR") : "Récent"}</span>
+              {t("publishedOn")}{" "}
+              <span className="font-semibold">{emploi.datePublication || ((emploi as any).createdAt ? new Date((emploi as any).createdAt).toLocaleDateString(locale === "en" ? "en-US" : "fr-FR") : t("recent"))}</span>
               &nbsp;·&nbsp;
-              <span className="font-bold text-slate-700">{emploi._count?.applications || emploi.candidatures || 0} candidats</span>
+              <span className="font-bold text-slate-700">{emploi._count?.applications || emploi.candidatures || 0} {t("candidates")}</span>
             </p>
             <h2 className="text-2xl font-extrabold text-[#32A8D7]">{emploi.titre || (emploi as any).title}</h2>
             <p className="text-sm text-slate-700 mt-0.5">
-              <span className="font-semibold">Entreprise :</span> {emploi.entreprise || (emploi as any).recruiter?.companyName}&nbsp;&nbsp;
-              <span className="font-semibold">– Localisation :</span> {emploi.lieu || (emploi as any).location}
+              <span className="font-semibold">{t("company")} :</span> {emploi.entreprise || (emploi as any).recruiter?.companyName}&nbsp;&nbsp;
+              <span className="font-semibold">{t("locationLabel")}</span> {emploi.lieu || (emploi as any).location}
             </p>
           </div>
           <button className="p-2.5 rounded-xl border border-slate-200 text-slate-400 hover:text-[#32A8D7] hover:border-[#32A8D7] transition-colors shrink-0">
@@ -328,39 +384,67 @@ function DetailOffreView({ emploi, onBack, onModifier, onSupprimer, onCloturer }
         </div>
 
         <div className="mt-3 space-y-1 text-sm text-slate-600">
-          <p>{emploi.modeTravail || "Non précisé"}</p>
-          <p>{emploi.taille || "Non précisé"}</p>
-          <p>Type de Contrat : {emploi.typeEmploi || (emploi as any).contractType} (Contrat à Durée Indéterminée)</p>
+          <p>{emploi.modeTravail || t("unspecified")}</p>
+          <p>{emploi.taille || t("unspecified")}</p>
+          <p>{t("contractType")} : {emploi.typeEmploi || (emploi as any).contractType}</p>
           <p>
             Compétences : {(emploi.competences || []).slice(0, 3).join(", ")}
-            {(emploi.competences || []).length > 3 && ` et ${(emploi.competences || []).length - 3} en plus`}
+            {(emploi.competences || []).length > 3 && ` ${t("andMore", { count: (emploi.competences || []).length - 3 })}`}
           </p>
         </div>
 
-        <div className="flex items-center justify-between mt-5">
-          <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold ${
-            (emploi.status === "Active" || emploi.status === "PUBLISHED") ? "bg-amber-50 text-amber-600 border border-amber-200" : "bg-slate-100 text-slate-500"
-          }`}>
-            {(emploi.status === "Active" || emploi.status === "PUBLISHED") ? (
-              <><span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />Offre en cours</>
-            ) : (
-              <><Clock size={11} />Offre clôturée</>
-            )}
-          </span>
-          {(emploi.status === "Active" || emploi.status === "PUBLISHED") && (
-            <button
-              onClick={onCloturer}
-              className="px-4 py-2 bg-[#32A8D7] hover:bg-[#2896c2] text-white text-sm font-semibold rounded-xl transition-colors"
-            >
-              Cloturer
-            </button>
-          )}
-        </div>
+        {/* Status and Action Buttons */}
+        {(() => {
+          const isExpired = emploi.expiresAt && new Date(emploi.expiresAt) < new Date();
+          const isClosed = emploi.status === "CLOSED" || isExpired;
+          return (
+            <div className="flex flex-wrap items-center justify-between gap-3 mt-5 pt-4 border-t border-slate-100">
+              <div className="flex flex-wrap items-center gap-2.5">
+                <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold ${
+                  !isClosed ? "bg-emerald-50 text-emerald-700 border border-emerald-200" : "bg-slate-100 text-slate-600 border border-slate-200"
+                }`}>
+                  {!isClosed ? (
+                    <><span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />Offre en cours</>
+                  ) : (
+                    <><Clock size={11} />Offre clôturée</>
+                  )}
+                </span>
+                {emploi.expiresAt && (
+                  <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${
+                    isExpired ? "bg-red-50 text-red-600 border border-red-200" : "bg-sky-50 text-[#0071a2] border border-sky-100"
+                  }`}>
+                    {isExpired 
+                      ? `Clôturée auto le ${new Date(emploi.expiresAt).toLocaleDateString("fr-FR")}` 
+                      : `Clôture auto le ${new Date(emploi.expiresAt).toLocaleDateString("fr-FR")}`}
+                  </span>
+                )}
+              </div>
+
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={onProlonger}
+                  className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs sm:text-sm font-semibold rounded-xl transition-colors flex items-center gap-1.5 shadow-sm cursor-pointer"
+                >
+                  <Clock size={14} />
+                  {isClosed ? "Prolonger & Réactiver" : "Prolonger l'offre"}
+                </button>
+                {!isClosed && (
+                  <button
+                    onClick={onCloturer}
+                    className="px-4 py-2 bg-slate-100 hover:bg-red-50 hover:text-red-600 text-slate-700 text-xs sm:text-sm font-semibold rounded-xl transition-colors border border-slate-200 cursor-pointer"
+                  >
+                    Clôturer définitivement
+                  </button>
+                )}
+              </div>
+            </div>
+          );
+        })()}
       </div>
 
       {/* Description */}
       <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6">
-        <h3 className="text-base font-bold text-[#32A8D7] mb-4">Description de l&apos;Offre</h3>
+        <h3 className="text-base font-bold text-[#32A8D7] mb-4">{t("descriptionLabel")}</h3>
         <div className="text-sm text-slate-600 leading-relaxed whitespace-pre-line">
           {emploi.description}
         </div>
@@ -368,13 +452,13 @@ function DetailOffreView({ emploi, onBack, onModifier, onSupprimer, onCloturer }
 
       {/* Candidats postulés */}
       <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6">
-        <h3 className="text-base font-bold text-[#32A8D7] mb-1">Candidats postulés</h3>
-        <p className="text-sm text-slate-500 mb-5">{emploi._count?.applications || emploi.candidatures || 0} candidatures reçues</p>
+        <h3 className="text-base font-bold text-[#32A8D7] mb-1">{t("candidates")}</h3>
+        <p className="text-sm text-slate-500 mb-5">{t("candidaturesReceived", { count: emploi._count?.applications || emploi.candidatures || 0 })}</p>
         {candidates.length === 0 ? (
           <div className="text-center py-8">
             <Users size={32} className="text-slate-300 mx-auto mb-3" />
-            <p className="text-sm font-medium text-slate-600">Aucun candidat</p>
-            <p className="text-xs text-slate-400">Aucun talent n'a encore postulé à cette offre.</p>
+            <p className="text-sm font-medium text-slate-600">{t("noCandidates")}</p>
+            <p className="text-xs text-slate-400">{t("noCandidatesDesc")}</p>
           </div>
         ) : (
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
@@ -391,13 +475,13 @@ function DetailOffreView({ emploi, onBack, onModifier, onSupprimer, onCloturer }
           onClick={onSupprimer}
           className="flex-1 py-3 rounded-2xl border border-slate-200 text-sm font-semibold text-slate-600 hover:bg-red-50 hover:text-red-500 hover:border-red-200 transition-colors"
         >
-          Supprimer
+          {t("delete")}
         </button>
         <button
           onClick={onModifier}
           className="flex-1 py-3 rounded-2xl bg-[#32A8D7] hover:bg-[#2896c2] text-white text-sm font-semibold shadow-sm transition-colors"
         >
-          Modifier
+          {t("edit")}
         </button>
       </div>
     </div>
@@ -413,6 +497,7 @@ interface ModifierOffreViewProps {
 }
 
 function ModifierOffreView({ emploi, onBack, onSave }: ModifierOffreViewProps) {
+  const t = useTranslations("recruiter.jobsTab");
   const [titre, setTitre] = useState(emploi.titre || (emploi as any).title);
   const [entreprise, setEntreprise] = useState(emploi.entreprise || (emploi as any).recruiter?.companyName);
   const [pays, setPays] = useState(emploi.pays || "Bénin");
@@ -428,85 +513,79 @@ function ModifierOffreView({ emploi, onBack, onSave }: ModifierOffreViewProps) {
 
   const sectionClass = "bg-white rounded-2xl border border-slate-100 shadow-sm p-6";
   const inputClass = "w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-sm text-slate-800 outline-none focus:border-[#32A8D7] focus:bg-white transition-colors";
-  const selectClass = "w-full appearance-none px-3.5 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-sm text-slate-800 outline-none focus:border-[#32A8D7] focus:bg-white transition-colors cursor-pointer";
-  const chevronSVG = (
-    <svg className="w-3.5 h-3.5 text-slate-500 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-    </svg>
-  );
 
   return (
     <form onSubmit={handleSave} className="space-y-4">
       {/* Breadcrumb */}
       <nav className="flex items-center gap-1.5 text-xs text-slate-400">
-        <button type="button" onClick={onBack} className="hover:text-[#32A8D7] transition-colors">Accueil</button>
+        <button type="button" onClick={onBack} className="hover:text-[#32A8D7] transition-colors">{t("home")}</button>
         <ChevronRight size={12} />
-        <button type="button" onClick={onBack} className="hover:text-[#32A8D7] transition-colors">Offres d&apos;emplois</button>
+        <button type="button" onClick={onBack} className="hover:text-[#32A8D7] transition-colors">{t("jobOffers")}</button>
         <ChevronRight size={12} />
         <span className="text-slate-700 font-medium truncate max-w-[180px]">{emploi.titre}</span>
       </nav>
 
       {/* Intitulé */}
       <div className={sectionClass}>
-        <label className="block text-sm font-bold text-[#32A8D7] mb-3">Intitulé du poste</label>
+        <label className="block text-sm font-bold text-[#32A8D7] mb-3">{t("jobTitle")}</label>
         <input type="text" value={titre} onChange={(e) => setTitre(e.target.value)} className={inputClass} required />
       </div>
 
       {/* Entreprise */}
       <div className={sectionClass}>
-        <label className="block text-sm font-bold text-[#32A8D7] mb-3">Entreprise</label>
+        <label className="block text-sm font-bold text-[#32A8D7] mb-3">{t("company")}</label>
         <input type="text" value={entreprise} onChange={(e) => setEntreprise(e.target.value)} className={inputClass} required />
       </div>
 
       {/* Type de travail */}
       <div className={sectionClass}>
-        <label className="block text-sm font-bold text-[#32A8D7] mb-3">Type de travail</label>
-        <div className="relative">
-          <select value={typeEmploi} onChange={(e) => setTypeEmploi(e.target.value)} className={selectClass}>
-            <option>CDI</option><option>CDD</option><option>Stage</option><option>Freelance</option><option>Alternance</option>
-          </select>
-          {chevronSVG}
-        </div>
+        <label className="block text-sm font-bold text-[#32A8D7] mb-3">{t("contractType")}</label>
+        <CustomSelect
+          value={typeEmploi}
+          onChange={setTypeEmploi}
+          options={["CDI", "CDD", "Stage", "Freelance", "Alternance"]}
+          className="w-full"
+        />
       </div>
 
       {/* Lieu */}
       <div className={sectionClass}>
-        <label className="block text-sm font-bold text-[#32A8D7] mb-3">Lieu du travail</label>
+        <label className="block text-sm font-bold text-[#32A8D7] mb-3">{t("workLocation")}</label>
         <div className="grid grid-cols-2 gap-3">
-          <div className="relative">
-            <select value={pays} onChange={(e) => setPays(e.target.value)} className={selectClass}>
-              {["Bénin","Côte d'Ivoire","Sénégal","Togo","Mali","Cameroun","Burkina Faso","Guinée"].map(p => <option key={p}>{p}</option>)}
-            </select>
-            {chevronSVG}
-          </div>
-          <input type="text" value={ville} onChange={(e) => setVille(e.target.value)} className={inputClass} placeholder="Ville" />
+          <CustomSelect
+            value={pays}
+            onChange={setPays}
+            options={["Bénin","Côte d'Ivoire","Sénégal","Togo","Mali","Cameroun","Burkina Faso","Guinée", "France", "Canada"]}
+            className="w-full"
+          />
+          <input type="text" value={ville} onChange={(e) => setVille(e.target.value)} className={inputClass} placeholder={t("city")} />
         </div>
       </div>
 
       {/* Mode de travail */}
       <div className={sectionClass}>
-        <label className="block text-sm font-bold text-[#32A8D7] mb-3">Mode de travail</label>
-        <div className="relative">
-          <select value={modeTravail} onChange={(e) => setModeTravail(e.target.value)} className={selectClass}>
-            <option>Temps plein</option><option>Temps partiel</option><option>Remote</option><option>Hybride</option>
-          </select>
-          {chevronSVG}
-        </div>
+        <label className="block text-sm font-bold text-[#32A8D7] mb-3">{t("workMode")}</label>
+        <CustomSelect
+          value={modeTravail}
+          onChange={setModeTravail}
+          options={["Temps plein", "Temps partiel", "Remote", "Hybride"]}
+          className="w-full"
+        />
       </div>
 
       {/* Description */}
       <div className={sectionClass}>
-        <label className="block text-sm font-bold text-[#32A8D7] mb-3">Description de l&apos;offre</label>
+        <label className="block text-sm font-bold text-[#32A8D7] mb-3">{t("descriptionLabel")}</label>
         <textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={6} className={`${inputClass} resize-none`} />
       </div>
 
       {/* Buttons */}
       <div className="flex gap-3 pb-4">
         <button type="button" onClick={onBack} className="flex-1 py-3 rounded-2xl border border-slate-200 text-sm font-semibold text-slate-600 hover:bg-slate-50 transition-colors">
-          Annuler
+          {t("cancel")}
         </button>
         <button type="submit" className="flex-1 py-3 rounded-2xl bg-[#32A8D7] hover:bg-[#2896c2] text-white text-sm font-semibold shadow-sm transition-colors">
-          Enregistrer les informations
+          {t("publishSave")}
         </button>
       </div>
     </form>
@@ -518,9 +597,15 @@ function ModifierOffreView({ emploi, onBack, onSave }: ModifierOffreViewProps) {
 type EmploisView = "grid" | "detail" | "modifier";
 
 export default function EmploisTab() {
+  const t = useTranslations("recruiter.jobsTab");
+  const locale = useLocale();
   const { user } = useAuth();
-  const { data: emploisFetched = [], error, mutate } = useSWR("/api/jobs?mine=true", fetcher);
-  const emplois = Array.isArray(emploisFetched) ? emploisFetched : (emploisFetched.jobs || []);
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 20;
+  const { data: emploisFetched, error, mutate } = useSWR(`/api/jobs?mine=true&page=${currentPage}&limit=${pageSize}`, fetcher);
+  const emplois = Array.isArray(emploisFetched) ? emploisFetched : (emploisFetched?.jobs || []);
+  const totalCount = emploisFetched?.totalCount ?? emploisFetched?.total ?? emplois.length;
+  const totalPages = emploisFetched?.totalPages ?? Math.max(1, Math.ceil(totalCount / pageSize));
   const [view, setView] = useState<EmploisView>("grid");
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [showModal, setShowModal] = useState(false);
@@ -540,6 +625,9 @@ export default function EmploisTab() {
   // Confirmation modals
   const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null);
   const [confirmCloturerId, setConfirmCloturerId] = useState<number | null>(null);
+  const [prolongerJobId, setProlongerJobId] = useState<number | null>(null);
+  const [prolongDays, setProlongDays] = useState<string>("30");
+  const [prolongCustomDate, setProlongCustomDate] = useState<string>("");
   const [showPublishedSuccess, setShowPublishedSuccess] = useState(false);
   const [justPublishedId, setJustPublishedId] = useState<number | null>(null);
 
@@ -551,11 +639,8 @@ export default function EmploisTab() {
   };
 
   const handlePublish = (data: Partial<Emploi>) => {
-    // La route POST a déjà été appelée dans PublierModal
-    // On refetch simplement la liste des offres
     mutate();
     setJustPublishedId((data as any).id || Date.now()); 
-
     setShowPublishedSuccess(true);
   };
 
@@ -566,18 +651,18 @@ export default function EmploisTab() {
       if (res.ok) {
         mutate();
         setConfirmDeleteId(null);
-        showToast("Offre supprimée.");
+        showToast(t("jobDeletedToast"));
         if (view === "detail" || view === "modifier") {
           setView("grid");
           setSelectedId(null);
         }
       } else {
-        showToast("Erreur lors de la suppression.");
+        showToast(t("errorDeleteToast"));
         setConfirmDeleteId(null);
       }
     } catch (error) {
       console.error(error);
-      showToast("Erreur lors de la suppression.");
+      showToast(t("errorDeleteToast"));
       setConfirmDeleteId(null);
     }
   };
@@ -592,15 +677,43 @@ export default function EmploisTab() {
       if (res.ok) {
         mutate();
         setConfirmCloturerId(null);
-        showToast("Offre clôturée.");
+        showToast(t("jobClosedToast") || "Offre clôturée définitivement.");
       } else {
-        showToast("Erreur lors de la clôture.");
+        showToast(t("errorCloseToast") || "Erreur lors de la clôture.");
         setConfirmCloturerId(null);
       }
     } catch (error) {
       console.error(error);
-      showToast("Erreur lors de la clôture.");
+      showToast(t("errorCloseToast") || "Erreur lors de la clôture.");
       setConfirmCloturerId(null);
+    }
+  };
+
+  const confirmProlonger = async (id: number) => {
+    try {
+      const body: any = {};
+      if (prolongDays === "custom" && prolongCustomDate) {
+        body.expiresAt = new Date(prolongCustomDate).toISOString();
+      } else {
+        body.extendDays = parseInt(prolongDays) || 30;
+      }
+      body.status = "PUBLISHED";
+
+      const res = await fetch(`/api/jobs/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+
+      if (res.ok) {
+        mutate();
+        setProlongerJobId(null);
+        showToast("Offre prolongée et réactivée avec succès !");
+      } else {
+        showToast("Erreur lors de la prolongation de l'offre.");
+      }
+    } catch (e) {
+      showToast("Erreur lors de la prolongation.");
     }
   };
 
@@ -613,14 +726,14 @@ export default function EmploisTab() {
       });
       if (res.ok) {
         mutate();
-        showToast("Offre mise à jour !");
+        showToast(t("jobUpdatedToast"));
         setView("detail");
       } else {
-        showToast("Erreur lors de la mise à jour.");
+        showToast(t("errorUpdateToast"));
       }
     } catch (error) {
       console.error(error);
-      showToast("Erreur lors de la mise à jour.");
+      showToast(t("errorUpdateToast"));
     }
   };
 
@@ -637,13 +750,13 @@ export default function EmploisTab() {
         });
         if (res.ok) {
           mutate();
-          showToast("Offre réactivée.");
+          showToast(t("jobReactivatedToast"));
         } else {
-          showToast("Erreur lors de la réactivation.");
+          showToast(t("errorReactivateToast"));
         }
       } catch (error) {
         console.error(error);
-        showToast("Erreur lors de la réactivation.");
+        showToast(t("errorReactivateToast"));
       }
     }
     setOpenMenuId(null);
@@ -676,10 +789,10 @@ export default function EmploisTab() {
       {/* ── Limit Modal ── */}
       {showLimitModal && (
         <ConfirmModal
-          title="Limite d'offres atteinte"
-          message="Vous avez atteint la limite d'offres gratuites (1). Veuillez souscrire à l'offre Premium pour publier des offres en illimité."
-          confirmLabel="J'ai compris"
-          cancelLabel="Annuler"
+          title={t("limitModalTitle")}
+          message={t("limitModalMessage")}
+          confirmLabel={t("understood")}
+          cancelLabel={t("cancel")}
           onConfirm={() => setShowLimitModal(false)}
           onCancel={() => setShowLimitModal(false)}
         />
@@ -688,10 +801,10 @@ export default function EmploisTab() {
       {/* ── Confirmation: Supprimer offre ── */}
       {confirmDeleteId !== null && (
         <ConfirmModal
-          title="Confirmer la suppression"
-          message="Êtes-vous sûr de vouloir supprimer cette offre ?"
-          confirmLabel="Oui, supprimer"
-          cancelLabel="Non, continuer"
+          title={t("deleteModalTitle")}
+          message={t("deleteModalMessage")}
+          confirmLabel={t("yesDelete")}
+          cancelLabel={t("noContinue")}
           isDanger
           onConfirm={() => confirmDelete(confirmDeleteId)}
           onCancel={() => setConfirmDeleteId(null)}
@@ -701,23 +814,111 @@ export default function EmploisTab() {
       {/* ── Confirmation: Clôturer offre ── */}
       {confirmCloturerId !== null && (
         <ConfirmModal
-          title="Confirmer la clôture"
-          message="Êtes-vous sûr de vouloir clôturer cette offre ?"
-          confirmLabel="Oui, clôturer"
-          cancelLabel="Non, continuer"
+          title={t("closeModalTitle")}
+          message={t("closeModalMessage")}
+          confirmLabel={t("yesClose")}
+          cancelLabel={t("noContinue")}
           isDanger
           onConfirm={() => confirmCloturer(confirmCloturerId)}
           onCancel={() => setConfirmCloturerId(null)}
         />
       )}
 
+      {/* ── Modal: Prolonger l'offre ── */}
+      {prolongerJobId !== null && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-xs p-4 animate-in fade-in duration-200">
+          <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-100 flex flex-col gap-4">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-xl bg-sky-50 text-[#32A8D7] flex items-center justify-center font-bold">
+                  <Calendar size={18} />
+                </div>
+                <div>
+                  <h3 className="font-bold text-slate-900 text-base">Prolonger la validité</h3>
+                  <p className="text-xs text-slate-400">Définissez une nouvelle durée pour cette offre</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setProlongerJobId(null)}
+                className="p-1 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <div className="space-y-3 py-1">
+              <label className="text-xs font-bold text-slate-700 block">
+                Ajouter une période de validité :
+              </label>
+              <div className="grid grid-cols-2 gap-2">
+                {[
+                  { label: "+15 jours", val: "15" },
+                  { label: "+30 jours (1 mois)", val: "30" },
+                  { label: "+60 jours (2 mois)", val: "60" },
+                  { label: "+90 jours (3 mois)", val: "90" },
+                ].map((opt) => (
+                  <button
+                    key={opt.val}
+                    type="button"
+                    onClick={() => {
+                      setProlongDays(opt.val);
+                      setProlongCustomDate("");
+                    }}
+                    className={`p-2.5 text-xs font-semibold rounded-xl border text-left transition-all ${
+                      prolongDays === opt.val
+                        ? "border-[#32A8D7] bg-sky-50/50 text-[#0071a2]"
+                        : "border-slate-200 hover:border-slate-300 text-slate-600"
+                    }`}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+
+              <div className="pt-2">
+                <label className="text-xs font-medium text-slate-500 block mb-1.5">
+                  Ou choisir une date limite précise :
+                </label>
+                <input
+                  type="date"
+                  value={prolongCustomDate}
+                  min={new Date().toISOString().split("T")[0]}
+                  onChange={(e) => {
+                    setProlongCustomDate(e.target.value);
+                    setProlongDays("custom");
+                  }}
+                  className="w-full text-xs font-medium px-3 py-2 rounded-xl border border-slate-200 focus:outline-hidden focus:border-[#32A8D7]"
+                />
+              </div>
+            </div>
+
+            <div className="flex gap-2.5 pt-2">
+              <button
+                type="button"
+                onClick={() => setProlongerJobId(null)}
+                className="flex-1 py-2.5 rounded-xl border border-slate-200 text-xs font-semibold text-slate-600 hover:bg-slate-50 transition-colors"
+              >
+                Annuler
+              </button>
+              <button
+                type="button"
+                onClick={() => confirmProlonger(prolongerJobId)}
+                className="flex-1 py-2.5 rounded-xl bg-[#32A8D7] hover:bg-[#2896c2] text-white text-xs font-semibold shadow-sm transition-colors"
+              >
+                Confirmer la prolongation
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* ── Success: Offre publiée ── */}
       {showPublishedSuccess && (
         <SuccessModal
-          title="Offre publiée"
-          message="Votre offre a été publié avec succès"
-          primaryLabel="Voir l&apos;offre"
-          secondaryLabel="Retour"
+          title={t("jobPublishedSuccess")}
+          message={t("jobPublishedSuccessDesc")}
+          primaryLabel={t("viewJob")}
+          secondaryLabel={t("back")}
           onSecondary={() => setShowPublishedSuccess(false)}
           onPrimary={() => {
             setShowPublishedSuccess(false);
@@ -735,7 +936,7 @@ export default function EmploisTab() {
               onClick={backToGrid}
               className="flex items-center gap-1.5 text-sm text-slate-500 hover:text-[#32A8D7] transition-colors"
             >
-              <ArrowLeft size={16} /> Retour
+              <ArrowLeft size={16} /> {t("back")}
             </button>
           </div>
           <DetailOffreView
@@ -744,6 +945,7 @@ export default function EmploisTab() {
             onModifier={openModifier}
             onSupprimer={() => setConfirmDeleteId(selectedEmploi.id)}
             onCloturer={() => setConfirmCloturerId(selectedEmploi.id)}
+            onProlonger={() => setProlongerJobId(selectedEmploi.id)}
           />
         </>
       )}
@@ -756,7 +958,7 @@ export default function EmploisTab() {
               onClick={() => setView("detail")}
               className="flex items-center gap-1.5 text-sm text-slate-500 hover:text-[#32A8D7] transition-colors"
             >
-              <ArrowLeft size={16} /> Retour au détail
+              <ArrowLeft size={16} /> {t("backToDetail")}
             </button>
           </div>
           <ModifierOffreView
@@ -773,37 +975,27 @@ export default function EmploisTab() {
           {/* Header */}
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Emplois créés</p>
+              <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">{t("createdJobs")}</p>
               <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-sky-50 text-[#0071a2] text-xs font-bold rounded-full">
                 <Briefcase size={11} />
-                {emplois.length} emplois au total
+                {t("totalJobs", { count: emplois.length })}
               </span>
             </div>
             <button
               onClick={handleCreateClick}
               className="flex items-center gap-2 px-5 py-2.5 bg-[#32A8D7] hover:bg-[#2896c2] text-white rounded-xl text-sm font-semibold shadow-sm hover:shadow-md transition-all"
             >
-              <Plus size={16} /> Publier une offre
+              <Plus size={16} /> {t("publishJob")}
             </button>
           </div>
 
           {/* Grid */}
           {emplois.length === 0 ? (
-            <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-12 text-center">
-              <div className="flex flex-col items-center justify-center">
-                <Briefcase size={48} className="text-slate-300 mb-4" />
-                <h3 className="text-lg font-bold text-slate-700 mb-2">Aucune offre publiée</h3>
-                <p className="text-slate-500 text-sm max-w-md mx-auto mb-6">
-                  Vous n'avez pas encore publié d'offres d'emploi. Publiez votre première offre pour commencer à recevoir des candidatures.
-                </p>
-                <button
-                  onClick={handleCreateClick}
-                  className="flex items-center gap-2 px-5 py-2.5 bg-[#32A8D7] hover:bg-[#2896c2] text-white rounded-xl text-sm font-semibold shadow-sm hover:shadow-md transition-all"
-                >
-                  <Plus size={16} /> Publier une offre
-                </button>
-              </div>
-            </div>
+            <EmptyState
+              type="offres"
+              actionLabel={t("publishJob")}
+              onAction={handleCreateClick}
+            />
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
               {emplois.map((emploi: any) => (
@@ -817,7 +1009,7 @@ export default function EmploisTab() {
                       (emploi.status === "Active" || emploi.status === "PUBLISHED") ? "bg-green-50 text-green-600" : "bg-slate-100 text-slate-500"
                     }`}>
                       {(emploi.status === "Active" || emploi.status === "PUBLISHED") ? <CheckCircle2 size={10} /> : <Clock size={10} />}
-                      {emploi.status === "PUBLISHED" ? "Active" : emploi.status}
+                      {emploi.status === "PUBLISHED" || emploi.status === "Active" ? t("active") : t("inactive")}
                     </span>
 
                     {/* More menu */}
@@ -829,16 +1021,19 @@ export default function EmploisTab() {
                         <MoreHorizontal size={16} />
                       </button>
                       {openMenuId === emploi.id && (
-                        <div className="absolute right-0 top-full mt-1 w-40 bg-white rounded-xl shadow-xl border border-slate-100 py-1 z-20">
+                        <div className="absolute right-0 top-full mt-1 w-44 bg-white rounded-xl shadow-xl border border-slate-100 py-1 z-20">
                           <button onClick={() => toggleStatus(emploi.id)} className="w-full text-left px-3.5 py-2 text-xs font-medium text-slate-600 hover:bg-slate-50 flex items-center gap-2">
                             {(emploi.status === "Active" || emploi.status === "PUBLISHED") ? <Clock size={13} /> : <CheckCircle2 size={13} />}
-                            {(emploi.status === "Active" || emploi.status === "PUBLISHED") ? "Clôturer l'offre" : "Réactiver l'offre"}
+                            {(emploi.status === "Active" || emploi.status === "PUBLISHED") ? t("closeOffer") : t("reopenOffer")}
+                          </button>
+                          <button onClick={() => { setProlongerJobId(emploi.id); setOpenMenuId(null); }} className="w-full text-left px-3.5 py-2 text-xs font-medium text-[#0071a2] hover:bg-sky-50 flex items-center gap-2">
+                            <Calendar size={13} /> Prolonger l'offre
                           </button>
                           <button onClick={() => openDetail(emploi.id)} className="w-full text-left px-3.5 py-2 text-xs font-medium text-slate-600 hover:bg-slate-50 flex items-center gap-2">
-                            <Eye size={13} /> Voir détail
+                            <Eye size={13} /> {t("viewDetail")}
                           </button>
                           <button onClick={() => { setConfirmDeleteId(emploi.id); setOpenMenuId(null); }} className="w-full text-left px-3.5 py-2 text-xs font-medium text-red-500 hover:bg-red-50 flex items-center gap-2">
-                            <Trash2 size={13} /> Supprimer
+                            <Trash2 size={13} /> {t("delete")}
                           </button>
                         </div>
                       )}
@@ -857,11 +1052,22 @@ export default function EmploisTab() {
                         <Briefcase size={11} className="shrink-0" /><span>{emploi.typeEmploi || (emploi as any).contractType}</span>
                       </div>
                       <div className="flex items-center gap-1.5 text-[11px] text-slate-400">
-                        <Users size={11} className="shrink-0" /><span>{emploi._count?.applications || emploi.candidatures || 0} candidature{(emploi._count?.applications || emploi.candidatures) !== 1 ? "s" : ""}</span>
+                        <Users size={11} className="shrink-0" /><span>{t("applicationsCount", { count: emploi._count?.applications || emploi.candidatures || 0, s: (emploi._count?.applications || emploi.candidatures) !== 1 ? "s" : "" })}</span>
                       </div>
                       <div className="flex items-center gap-1.5 text-[11px] text-slate-400">
-                        <Calendar size={11} className="shrink-0" /><span>{emploi.datePublication || new Date((emploi as any).createdAt).toLocaleDateString("fr-FR")}</span>
+                        <Calendar size={11} className="shrink-0" /><span>{emploi.datePublication || ((emploi as any).createdAt ? new Date((emploi as any).createdAt).toLocaleDateString(locale === "en" ? "en-US" : "fr-FR") : "")}</span>
                       </div>
+                      {emploi.expiresAt && (
+                        <div className="flex items-center gap-1.5 text-[11px] text-slate-400">
+                          <Clock size={11} className="shrink-0 text-amber-500" />
+                          <span>
+                            Expire le {new Date(emploi.expiresAt).toLocaleDateString(locale === "en" ? "en-US" : "fr-FR")}
+                            {new Date(emploi.expiresAt) < new Date() && (
+                              <span className="ml-1 text-red-500 font-bold">(Expiré)</span>
+                            )}
+                          </span>
+                        </div>
+                      )}
                     </div>
                   </div>
 
@@ -871,13 +1077,24 @@ export default function EmploisTab() {
                       onClick={() => openDetail(emploi.id)}
                       className="w-full py-2.5 rounded-xl bg-[#f0f9ff] hover:bg-[#e0f3fc] text-[#0071a2] text-xs font-semibold border border-sky-100 hover:border-sky-200 transition-colors flex items-center justify-center gap-2"
                     >
-                      <Eye size={13} /> Voir détail
+                      <Eye size={13} /> {t("viewDetail")}
                     </button>
                   </div>
                 </div>
               ))}
             </div>
           )}
+
+          {/* Pagination */}
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            totalCount={totalCount}
+            pageSize={pageSize}
+            itemLabel={t("paginationItemLabel")}
+            onPageChange={(page) => setCurrentPage(page)}
+            className="mt-6 rounded-2xl border border-slate-100 shadow-xs"
+          />
         </>
       )}
     </div>

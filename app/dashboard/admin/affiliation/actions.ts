@@ -7,7 +7,9 @@ import { revalidatePath } from "next/cache";
 
 export async function updateSystemSettings(settings: { key: string, value: string }[]) {
   const session = await getServerSession(authOptions);
-  if (!session || (session.user.role !== "SUPER ADMIN" && session.user.role !== "ADMIN" && !session.user.role?.includes("FINANCIER"))) {
+  const upperRole = (session?.user?.role || "").toUpperCase();
+  const isAllowed = upperRole.includes("ADMIN") || upperRole.includes("FINANCIER");
+  if (!session || !isAllowed) {
     throw new Error("Unauthorized");
   }
 
@@ -25,7 +27,9 @@ export async function updateSystemSettings(settings: { key: string, value: strin
 
 export async function updateUserReferralCode(userId: string, newCode: string) {
   const session = await getServerSession(authOptions);
-  if (!session || (session.user.role !== "SUPER ADMIN" && session.user.role !== "ADMIN" && !session.user.role?.includes("FINANCIER"))) {
+  const upperRole = (session?.user?.role || "").toUpperCase();
+  const isAllowed = upperRole.includes("ADMIN") || upperRole.includes("FINANCIER");
+  if (!session || !isAllowed) {
     throw new Error("Unauthorized");
   }
 

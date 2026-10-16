@@ -4,10 +4,12 @@ import { useState, useEffect } from "react";
 import { X, Sparkles } from "lucide-react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 
 export default function PremiumBanner({ isPremium, onUpgrade }: { isPremium?: boolean; onUpgrade?: () => void }) {
   const { data: session } = useSession();
   const router = useRouter();
+  const t = useTranslations("premiumBanner");
   
   const [isVisible, setIsVisible] = useState(false);
 
@@ -64,12 +66,10 @@ export default function PremiumBanner({ isPremium, onUpgrade }: { isPremium?: bo
           <div className="flex flex-col md:flex-row md:items-center justify-between w-full gap-3 md:gap-6">
             <div>
               <h3 className="font-bold text-base md:text-lg text-yellow-50">
-                Passez à la vitesse supérieure avec le Premium
+                {t("title")}
               </h3>
               <p className="text-blue-100 text-sm mt-0.5 leading-snug">
-                {isTalent 
-                  ? "Postulez en illimité et boostez votre visibilité auprès des meilleurs recruteurs." 
-                  : "Accédez sans limite aux coordonnées et téléchargez les CV de tous les talents."}
+                {isTalent ? t("talentDesc") : t("recruiterDesc")}
               </p>
             </div>
             
@@ -77,7 +77,7 @@ export default function PremiumBanner({ isPremium, onUpgrade }: { isPremium?: bo
               onClick={handleDiscover}
               className="w-fit whitespace-nowrap px-4 py-2 md:px-5 md:py-2 text-sm md:text-base bg-gradient-to-r from-yellow-500 to-yellow-600 hover:from-yellow-400 hover:to-yellow-500 text-slate-900 font-semibold rounded-lg shadow-md transition-all active:scale-95 shrink-0"
             >
-              Découvrir le Premium
+              {t("discover")}
             </button>
           </div>
         </div>

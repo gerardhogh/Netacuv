@@ -55,16 +55,27 @@ export async function POST(req: NextRequest) {
     });
 
 
-    // 4. Appel à Gemini 1.5 Pro
-    const response = await ai.models.generateContent({
-      model: "gemini-1.5-pro",
-      contents: prompt,
-      config: {
-        responseMimeType: "application/json",
-      },
-    });
+    // 4. Appel à Gemini avec résilience multi-modèles
+    const candidateModels = ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-flash-latest", "gemini-1.5-pro"];
+    let aiResponseText = "";
 
-    const aiResponseText = response.text;
+    for (const model of candidateModels) {
+      try {
+        const response = await ai.models.generateContent({
+          model,
+          contents: prompt,
+          config: {
+            responseMimeType: "application/json",
+          },
+        });
+        if (response.text) {
+          aiResponseText = response.text;
+          break;
+        }
+      } catch (err: any) {
+        console.warn(`Tentative evaluate-interview avec ${model} échouée:`, err?.message || err);
+      }
+    }
     let aiEvaluation;
     try {
       aiEvaluation = JSON.parse(aiResponseText!);

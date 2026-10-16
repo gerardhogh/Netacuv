@@ -92,12 +92,14 @@ export async function PUT(req: NextRequest) {
       behance,
       other1,
       other2,
-      username
+      username,
+      videoUrl
     } = data;
 
     // Prepare talent profile data
     const talentData: any = {};
     if (username !== undefined) talentData.username = username;
+    if (videoUrl !== undefined) talentData.videoUrl = videoUrl;
     if (bio !== undefined) talentData.bio = bio;
     if (phone !== undefined) talentData.phone = phone;
     if (city !== undefined) talentData.city = city;

@@ -55,6 +55,39 @@ export async function DELETE(
   }
 }
 
+// GET : Récupérer une offre par son ID
+export async function GET(
+  req: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const { id } = await params;
+  try {
+    const job = await prisma.jobOffer.findUnique({
+      where: { id },
+      include: {
+        recruiter: {
+          select: {
+            id: true,
+            companyName: true,
+            companyLogo: true,
+          }
+        },
+        _count: {
+          select: { applications: true }
+        }
+      }
+    });
+
+    if (!job) {
+      return NextResponse.json({ error: "Offre introuvable." }, { status: 404 });
+    }
+
+    return NextResponse.json(job);
+  } catch (error) {
+    return NextResponse.json({ error: "Erreur lors de la récupération de l'offre." }, { status: 500 });
+  }
+}
+
 export async function PATCH(
   req: Request,
   { params }: { params: Promise<{ id: string }> }
@@ -68,7 +101,7 @@ export async function PATCH(
 
   try {
     const body = await req.json();
-    const { status } = body;
+    const { status, expiresAt, extendDays } = body;
 
     const job = await prisma.jobOffer.findUnique({ where: { id }, include: { recruiter: true } });
     if (!job) return NextResponse.json({ error: "Offre introuvable." }, { status: 404 });
@@ -80,9 +113,24 @@ export async function PATCH(
       return NextResponse.json({ error: "Interdit" }, { status: 403 });
     }
 
+    const dataToUpdate: any = {};
+    if (status !== undefined) {
+      dataToUpdate.status = status;
+    }
+
+    if (extendDays) {
+      const baseDate = job.expiresAt && new Date(job.expiresAt) > new Date() 
+        ? new Date(job.expiresAt) 
+        : new Date();
+      dataToUpdate.expiresAt = new Date(baseDate.getTime() + parseInt(extendDays) * 24 * 60 * 60 * 1000);
+      dataToUpdate.status = "PUBLISHED";
+    } else if (expiresAt !== undefined) {
+      dataToUpdate.expiresAt = expiresAt ? new Date(expiresAt) : null;
+    }
+
     const updated = await prisma.jobOffer.update({
       where: { id },
-      data: { status }
+      data: dataToUpdate
     });
 
     return NextResponse.json(updated);
