@@ -1,92 +1,133 @@
 import { NextRequest, NextResponse } from "next/server";
-import crypto from "crypto";
-
-// In-memory store (replace with Prisma in production)
-// Shape: { [reference]: { userId, amount, method, status, isPremium } }
-const transactionStore: Record<string, {
-  userId: string;
-  amount: number;
-  method: string;
-  status: "PENDING" | "SUCCESS" | "FAILED";
-  phone: string;
-  createdAt: string;
-}> = {};
-
-// Export so webhook can access it
-export { transactionStore };
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
+import { prisma } from "@/lib/prisma";
+import { createFedaPayTransaction, formatFedaPayPhone } from "@/lib/fedapay";
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
-    const { userId, method, phone, amount = 700 } = body;
+    const session = await getServerSession(authOptions);
+    const body = await request.json().catch(() => ({}));
+    const { method = "fedapay", phone = "" } = body;
 
-    if (!userId || !method || !phone) {
+    const sessionUserId = session?.user?.id;
+    const targetUserId = body.userId || sessionUserId;
+
+    if (!targetUserId) {
       return NextResponse.json(
-        { error: "Paramètres manquants: userId, method, phone sont requis." },
-        { status: 400 }
+        { error: "Utilisateur non identifié. Veuillez vous connecter." },
+        { status: 401 }
       );
     }
 
-    const reference = `CKV-${Date.now().toString().slice(-6)}-${crypto.randomUUID().slice(0, 4).toUpperCase()}`;
+    const user = await prisma.user.findUnique({
+      where: { id: targetUserId },
+      include: { role: true },
+    });
 
-    // Store the pending transaction
-    transactionStore[reference] = {
-      userId,
-      amount,
-      method,
-      status: "PENDING",
-      phone,
-      createdAt: new Date().toISOString(),
+    if (!user) {
+      return NextResponse.json(
+        { error: "Utilisateur introuvable." },
+        { status: 404 }
+      );
+    }
+
+    const isRecruiter = user.role?.name === "RECRUTEUR";
+    const amount = body.amount ? Number(body.amount) : isRecruiter ? 1000 : 700;
+    const planName = isRecruiter ? "Abonnement Recruteur Premium" : "Abonnement Talent Premium";
+
+    // Create pending transaction in Prisma database
+    const dbTx = await prisma.transaction.create({
+      data: {
+        userId: user.id,
+        amount,
+        currency: "CFA",
+        type: "SUBSCRIPTION_PREMIUM",
+        status: "PENDING",
+        paymentMethod: method ? `FEDAPAY_${method.toUpperCase()}` : "FEDAPAY",
+      },
+    });
+
+    // App base URL for callback
+    const reqOrigin = request.headers.get("origin") || request.nextUrl.origin;
+    const appUrl = process.env.NEXTAUTH_URL || reqOrigin || "http://localhost:3000";
+    const callbackUrl = `${appUrl}/api/payments/callback?db_id=${dbTx.id}`;
+
+    // Prepare customer information
+    const fullName = user.name || "Client Netacuv";
+    const nameParts = fullName.trim().split(" ");
+    const firstname = nameParts[0] || "Client";
+    const lastname = nameParts.slice(1).join(" ") || "Netacuv";
+
+    const customerPayload: any = {
+      firstname,
+      lastname,
+      email: user.email,
     };
 
-    // --- In a real scenario, call payment gateway API here ---
-    // Example with FedaPay/KKiaPay/CinetPay:
-    //
-    // const GATEWAY_API_KEY = process.env.PAYMENT_GATEWAY_API_KEY;
-    // const GATEWAY_URL = process.env.PAYMENT_GATEWAY_URL;
-    //
-    // const gatewayResponse = await fetch(GATEWAY_URL + "/collections", {
-    //   method: "POST",
-    //   headers: { Authorization: `Bearer ${GATEWAY_API_KEY}`, "Content-Type": "application/json" },
-    //   body: JSON.stringify({
-    //     amount,
-    //     currency: "XOF",
-    //     description: "Abonnement Talent Premium Netacuv",
-    //     callback_url: `${process.env.NEXT_PUBLIC_APP_URL}/api/payments/webhook`,
-    //     customer: { phone_number: { number: phone, prefix: method === "wave" ? "+221" : "+229" } },
-    //     reference,
-    //   }),
-    // });
-    // const gatewayData = await gatewayResponse.json();
-    // transactionStore[reference].gatewayId = gatewayData.id;
-    // --------------------------------------------------------
+    if (phone && phone.trim().length >= 8) {
+      customerPayload.phone_number = formatFedaPayPhone(phone.trim());
+    }
+
+    // Call FedaPay to create transaction
+    const fedaPayTx = await createFedaPayTransaction({
+      amount,
+      description: `${planName} - Netacuv`,
+      callbackUrl,
+      customer: customerPayload,
+      customMetadata: {
+        userId: user.id,
+        dbTransactionId: dbTx.id,
+        role: user.role?.name || "TALENT",
+      },
+    });
 
     return NextResponse.json({
       success: true,
-      reference,
-      message: "Paiement initialisé. En attente de validation USSD.",
+      paymentUrl: fedaPayTx.paymentUrl,
+      paymentToken: fedaPayTx.paymentToken,
+      fedaPayId: fedaPayTx.id,
+      reference: fedaPayTx.reference,
+      dbTransactionId: dbTx.id,
+      message: "Transaction FedaPay initialisée avec succès.",
     });
-  } catch (error) {
-    console.error("Payment initialization error:", error);
+  } catch (error: any) {
+    console.error("Erreur initialisation paiement FedaPay:", error);
     return NextResponse.json(
-      { error: "Erreur interne du serveur." },
+      {
+        error: error.message || "Erreur lors de l'initialisation du paiement avec FedaPay.",
+      },
       { status: 500 }
     );
   }
 }
 
-// GET: Polling endpoint – client calls this to check transaction status
+// GET: Polling status endpoint
 export async function GET(request: NextRequest) {
-  const reference = request.nextUrl.searchParams.get("reference");
+  try {
+    const dbId = request.nextUrl.searchParams.get("db_id");
+    const userId = request.nextUrl.searchParams.get("user_id");
 
-  if (!reference) {
-    return NextResponse.json({ error: "Référence manquante." }, { status: 400 });
+    if (dbId) {
+      const tx = await prisma.transaction.findUnique({
+        where: { id: dbId },
+      });
+      if (!tx) {
+        return NextResponse.json({ error: "Transaction introuvable" }, { status: 404 });
+      }
+      return NextResponse.json({ status: tx.status, transaction: tx });
+    }
+
+    if (userId) {
+      const lastTx = await prisma.transaction.findFirst({
+        where: { userId },
+        orderBy: { createdAt: "desc" },
+      });
+      return NextResponse.json({ transaction: lastTx, status: lastTx?.status || "NONE" });
+    }
+
+    return NextResponse.json({ error: "Paramètre manquant (db_id ou user_id)" }, { status: 400 });
+  } catch (error) {
+    return NextResponse.json({ error: "Erreur serveur" }, { status: 500 });
   }
-
-  const tx = transactionStore[reference];
-  if (!tx) {
-    return NextResponse.json({ error: "Transaction introuvable." }, { status: 404 });
-  }
-
-  return NextResponse.json({ status: tx.status, reference });
 }

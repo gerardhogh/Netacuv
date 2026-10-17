@@ -33,7 +33,9 @@ export default function TalentPremium({ isPremium: propIsPremium }: { isPremium?
 
   const bgClass = "min-h-screen bg-[#fafbfc] pt-12 pb-24 px-4 sm:px-6 lg:px-8";
 
-  const handleCheckout = async () => {
+  const [useSimulation, setUseSimulation] = useState(false);
+
+  const handleSimulate = async () => {
     setStep("processing");
     setError(null);
     try {
@@ -47,13 +49,47 @@ export default function TalentPremium({ isPremium: propIsPremium }: { isPremium?
         router.refresh();
         setTimeout(() => window.location.reload(), 300);
       } else {
-        setError(data.error || "Impossible de simuler le paiement");
+        setError(data.error || "Impossible d'activer le mode simulation");
         setStep("plan");
       }
     } catch (e) {
       console.error("Erreur réseau paiement:", e);
       setError(t("networkError"));
       setStep("plan");
+    }
+  };
+
+  const handleCheckout = async () => {
+    setStep("processing");
+    setError(null);
+
+    if (useSimulation) {
+      return handleSimulate();
+    }
+
+    try {
+      const res = await fetch("/api/payments/initialize", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          method,
+          phone: method === "card" ? "" : `${prefix}${phone}`,
+          amount: 700,
+        }),
+      });
+      const data = await res.json();
+      
+      if (res.ok && data.success && data.paymentUrl) {
+        // Redirection vers le portail sécurisé FedaPay
+        window.location.href = data.paymentUrl;
+      } else {
+        setError(data.error || "Impossible d'initialiser le paiement FedaPay. Vous pouvez utiliser le mode simulation en attendant l'activation de votre compte.");
+        setStep("input");
+      }
+    } catch (e) {
+      console.error("Erreur réseau paiement:", e);
+      setError(t("networkError"));
+      setStep("input");
     }
   };
 
@@ -233,18 +269,37 @@ export default function TalentPremium({ isPremium: propIsPremium }: { isPremium?
               <div className="flex justify-between"><span className="text-slate-500">{t("methodLabel")}</span><span className="font-bold">{selectedMethod.label}</span></div>
             </div>
 
+            {error && (
+              <div className="p-4 bg-amber-50 border border-amber-200 rounded-xl text-amber-800 text-xs space-y-2">
+                <p className="font-semibold">{error}</p>
+                <button
+                  type="button"
+                  onClick={handleSimulate}
+                  className="w-full py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-lg font-bold text-xs transition shadow-sm cursor-pointer"
+                >
+                  ⚡ Activer immédiatement (Mode Test en attendant l'activation FedaPay)
+                </button>
+              </div>
+            )}
+
             <button
               disabled={phone.length < 8}
               onClick={handleCheckout}
-              className="w-full py-3.5 rounded-xl bg-[#008de4] hover:bg-blue-600 text-white font-bold text-sm transition-colors shadow-lg shadow-blue-500/20 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+              className="w-full py-3.5 rounded-xl bg-[#008de4] hover:bg-blue-600 text-white font-bold text-sm transition-colors shadow-lg shadow-blue-500/20 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer flex items-center justify-center gap-2"
             >
+              <CreditCard size={16} />
               {t("confirmPay")}
             </button>
           </div>
 
-          <p className="text-center text-xs text-slate-400">
-            {t("securePaymentNotice")}
-          </p>
+          <div className="text-center space-y-1">
+            <p className="text-xs text-slate-500 font-medium">
+              🔒 Passerelle sécurisée certifiée FedaPay
+            </p>
+            <p className="text-[11px] text-slate-400">
+              {t("securePaymentNotice")}
+            </p>
+          </div>
         </div>
       )}
 

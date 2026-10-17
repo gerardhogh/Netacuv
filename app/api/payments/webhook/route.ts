@@ -1,69 +1,113 @@
 import { NextRequest, NextResponse } from "next/server";
-import { transactionStore } from "../initialize/route";
+import { prisma } from "@/lib/prisma";
+import { getFedaPayTransaction } from "@/lib/fedapay";
+import { createNotification } from "@/lib/notifications";
 
 /**
  * POST /api/payments/webhook
- *
- * This endpoint receives payment gateway callbacks.
- * It validates the webhook signature and updates the transaction status.
- *
- * In production, uncomment and configure:
- *   - Webhook secret validation (HMAC)
- *   - Prisma DB update for User.isPremium = true
+ * Receives asynchronous webhook callbacks from FedaPay.
  */
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
+    const body = await request.json().catch(() => null);
 
-    // --- Validate webhook signature ---
-    // const signature = request.headers.get("x-gateway-signature");
-    // const expectedSig = createHmac("sha256", process.env.PAYMENT_WEBHOOK_SECRET!)
-    //   .update(JSON.stringify(body))
-    //   .digest("hex");
-    // if (signature !== expectedSig) {
-    //   return NextResponse.json({ error: "Invalid signature" }, { status: 401 });
-    // }
-
-    const { reference, status } = body;
-
-    if (!reference || !status) {
-      return NextResponse.json({ error: "Paramètres manquants." }, { status: 400 });
+    if (!body) {
+      return NextResponse.json({ error: "Corps de requête vide." }, { status: 400 });
     }
 
-    const tx = transactionStore[reference];
-    if (!tx) {
-      return NextResponse.json({ error: "Transaction introuvable." }, { status: 404 });
+    const eventName = body.name || body.event;
+    const entity = body.entity || body.data || body;
+    const fedaPayId = entity.id;
+
+    if (!fedaPayId) {
+      return NextResponse.json({ error: "ID de transaction FedaPay introuvable." }, { status: 400 });
     }
 
-    // Map gateway status to our status
-    const normalizedStatus = status === "approved" ? "SUCCESS" :
-      status === "declined" ? "FAILED" : "PENDING";
+    // Verify transaction authenticity directly with FedaPay
+    const verifiedTx = await getFedaPayTransaction(fedaPayId);
+    if (!verifiedTx) {
+      return NextResponse.json({ error: "Impossible de vérifier la transaction auprès de FedaPay." }, { status: 404 });
+    }
 
-    transactionStore[reference].status = normalizedStatus;
+    const status = verifiedTx.status;
+    const customMetadata = verifiedTx.customMetadata || entity.custom_metadata || {};
+    const dbTransactionId = customMetadata.dbTransactionId;
+    const userId = customMetadata.userId;
 
-    // --- Update database with Prisma ---
-    // If payment succeeded, upgrade user to Premium:
-    // if (normalizedStatus === "SUCCESS") {
-    //   await prisma.user.update({
-    //     where: { id: tx.userId },
-    //     data: { isPremium: true, premiumActivatedAt: new Date() },
-    //   });
-    //   await prisma.transaction.create({
-    //     data: {
-    //       userId: tx.userId,
-    //       reference,
-    //       amount: tx.amount,
-    //       paymentMethod: tx.method,
-    //       status: "SUCCESS",
-    //       service: "Abonnement Talent Premium",
-    //     },
-    //   });
-    // }
-    // -----------------------------------------
+    // Locate the database transaction
+    let dbTx = null;
+    if (dbTransactionId) {
+      dbTx = await prisma.transaction.findUnique({
+        where: { id: String(dbTransactionId) },
+        include: { user: { include: { role: true } } },
+      });
+    }
 
-    return NextResponse.json({ success: true, reference, status: normalizedStatus });
+    if (!dbTx && userId) {
+      dbTx = await prisma.transaction.findFirst({
+        where: { userId: String(userId), status: "PENDING" },
+        orderBy: { createdAt: "desc" },
+        include: { user: { include: { role: true } } },
+      });
+    }
+
+    if (status === "approved") {
+      if (dbTx) {
+        await prisma.transaction.update({
+          where: { id: dbTx.id },
+          data: { status: "SUCCESS" },
+        });
+
+        await prisma.user.update({
+          where: { id: dbTx.userId },
+          data: { isPremium: true },
+        });
+
+        try {
+          const isRecruiter = dbTx.user?.role?.name === "RECRUTEUR";
+          await createNotification({
+            userId: dbTx.userId,
+            title: "Paiement Premium confirmé !",
+            message: "Votre paiement a été traité avec succès. Votre compte bénéficie maintenant du statut Premium.",
+            type: "SYSTEM_ALERT",
+            link: isRecruiter ? "/dashboard/recruteur" : "/dashboard/talent",
+          });
+        } catch (e) {
+          console.error("Erreur notification webhook:", e);
+        }
+      } else if (userId) {
+        // Fallback if transaction record was somehow missing
+        await prisma.user.update({
+          where: { id: String(userId) },
+          data: { isPremium: true },
+        });
+        await prisma.transaction.create({
+          data: {
+            userId: String(userId),
+            amount: verifiedTx.amount,
+            currency: "CFA",
+            type: "SUBSCRIPTION_PREMIUM",
+            status: "SUCCESS",
+            paymentMethod: "FEDAPAY_WEBHOOK",
+          },
+        });
+      }
+    } else if (status === "declined" || status === "canceled") {
+      if (dbTx) {
+        await prisma.transaction.update({
+          where: { id: dbTx.id },
+          data: { status: "FAILED" },
+        });
+      }
+    }
+
+    return NextResponse.json({
+      received: true,
+      fedaPayId,
+      status,
+    });
   } catch (error) {
-    console.error("Webhook error:", error);
-    return NextResponse.json({ error: "Erreur interne du serveur." }, { status: 500 });
+    console.error("FedaPay webhook processing error:", error);
+    return NextResponse.json({ error: "Erreur interne webhook" }, { status: 500 });
   }
 }
