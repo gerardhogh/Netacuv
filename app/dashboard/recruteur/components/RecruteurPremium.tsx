@@ -3,108 +3,59 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { CheckCircle, XCircle, CreditCard, ArrowLeft, CheckCheck, Sparkles, Loader2, Check, X } from "lucide-react";
+import { ArrowLeft, CheckCheck, Sparkles, Loader2, Check, X, ShieldCheck } from "lucide-react";
 import { useAuth } from "../../../context/AuthContext";
-import { useSession } from "next-auth/react";
-
-type PayStep = "plan" | "method" | "input" | "processing";
-
-const PAYMENT_METHODS = [
-  { id: "mtn", label: "MTN MoMo", logo: "🟡", prefix: "+229", color: "#FFCC00", textColor: "#000" },
-  { id: "moov", label: "Moov Money", logo: "🔵", prefix: "+229", color: "#0066CC", textColor: "#FFF" },
-  { id: "orange", label: "Orange Money", logo: "🟠", prefix: "+225", color: "#FF6600", textColor: "#FFF" },
-  { id: "wave", label: "Wave", logo: "🐧", prefix: "+225", color: "#00C3FF", textColor: "#FFF" },
-  { id: "card", label: "Carte Bancaire", logo: "💳", prefix: "", color: "#333", textColor: "#FFF" }
-];
 
 export default function RecruteurPremium({ isPremium: propIsPremium }: { isPremium?: boolean }) {
   const t = useTranslations("recruiter.premiumTab");
   const router = useRouter();
   const { user } = useAuth();
-  const { update } = useSession();
   const isPremium = propIsPremium !== undefined ? propIsPremium : user?.isPremium;
-  const [step, setStep] = useState<PayStep>("plan");
-  const [method, setMethod] = useState("");
-  const [phone, setPhone] = useState("");
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  const selectedMethod = PAYMENT_METHODS.find(m => m.id === method);
-  const prefix = selectedMethod?.prefix || "";
 
   const bgClass = "min-h-screen bg-[#fafbfc] pt-12 pb-24 px-4 sm:px-6 lg:px-8";
 
-  const [useSimulation, setUseSimulation] = useState(false);
-
-  const handleSimulate = async () => {
-    setStep("processing");
-    setError(null);
-    try {
-      const res = await fetch("/api/payments/simulate", {
-        method: "POST",
-      });
-      const data = await res.json();
-      
-      if (res.ok && data.success) {
-        await update({ isPremium: true });
-        router.refresh();
-        setTimeout(() => window.location.reload(), 300);
-      } else {
-        setError(data.error || t("errorSimulation"));
-        setStep("plan");
-      }
-    } catch (e) {
-      console.error("Erreur réseau paiement:", e);
-      setError(t("errorServer"));
-      setStep("plan");
-    }
-  };
-
   const handleCheckout = async () => {
-    setStep("processing");
+    setLoading(true);
     setError(null);
-
-    if (useSimulation) {
-      return handleSimulate();
-    }
 
     try {
       const res = await fetch("/api/payments/initialize", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          method,
-          phone: method === "card" ? "" : `${prefix}${phone}`,
           amount: 1000,
+          method: "fedapay",
         }),
       });
+
       const data = await res.json();
-      
+
       if (res.ok && data.success && data.paymentUrl) {
-        // Redirection vers le portail de paiement sécurisé FedaPay
+        // Redirection directe vers la passerelle sécurisée FedaPay
         window.location.href = data.paymentUrl;
       } else {
-        setError(data.error || "Impossible d'initialiser le paiement FedaPay. Vous pouvez utiliser le mode simulation en attendant l'activation de votre compte.");
-        setStep("input");
+        setError(data.error || "Impossible d'initialiser le paiement FedaPay. Veuillez réessayer.");
+        setLoading(false);
       }
     } catch (e) {
-      console.error("Erreur réseau paiement:", e);
-      setError(t("errorServer"));
-      setStep("input");
+      console.error("Erreur paiement:", e);
+      setError("Erreur de connexion au serveur de paiement.");
+      setLoading(false);
     }
   };
 
   return (
     <div className={bgClass}>
       <div className="space-y-8 max-w-7xl mx-auto">
-      {/* STEP: Plan Overview */}
-      {step === "plan" && (
         <div className="bg-white/95 backdrop-blur-xl rounded-[32px] p-8 md:p-12 shadow-[0_8px_30px_rgb(0,0,0,0.1)] max-w-4xl mx-auto border border-white/50 relative overflow-hidden">
           <h2 className="text-3xl font-black text-center text-[#32A8D7] mb-10 relative z-10 drop-shadow-sm">
             {t("heroTitle")}
           </h2>
 
           {error && (
-            <div className="mb-6 p-4 bg-red-50 text-red-600 rounded-xl border border-red-200 text-sm font-medium text-center">
+            <div className="mb-8 p-4 bg-red-50 text-red-600 rounded-xl border border-red-200 text-sm font-medium text-center">
               {error}
             </div>
           )}
@@ -134,7 +85,7 @@ export default function RecruteurPremium({ isPremium: propIsPremium }: { isPremi
                 
                 <button
                   onClick={() => router.push("/dashboard/recruteur")}
-                  className="w-full bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold py-4 rounded-xl transition-all shadow-sm flex items-center justify-center gap-2 mt-auto"
+                  className="w-full bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold py-4 rounded-xl transition-all shadow-sm flex items-center justify-center gap-2 mt-auto cursor-pointer"
                 >
                   <ArrowLeft size={18} /> {t("stayFree")}
                 </button>
@@ -169,21 +120,43 @@ export default function RecruteurPremium({ isPremium: propIsPremium }: { isPremi
                   <li className="flex items-start gap-3"><Check className="text-[#32A8D7] mt-0.5 flex-shrink-0" size={20} /> <span className="text-slate-600 font-bold">{t("support247")}</span></li>
                 </ul>
                 
-                <button
-                  disabled={isPremium}
-                  onClick={() => !isPremium && setStep("method")}
-                  className={`w-full font-bold py-4 rounded-xl transition-all shadow-md flex items-center justify-center gap-2 mt-auto ${
-                    isPremium 
-                      ? "bg-slate-100 text-slate-400 cursor-not-allowed border border-slate-200" 
-                      : "bg-gradient-to-r from-[#32A8D7] to-[#2896c2] hover:from-[#2896c2] hover:to-[#1f7ca4] text-white hover:shadow-lg hover:-translate-y-0.5"
-                  }`}
-                >
-                  {isPremium ? (
-                    <><CheckCheck size={18} /> {t("premiumActivated")}</>
-                  ) : (
-                    <><CreditCard size={18} /> {t("activatePremiumBtn")}</>
-                  )}
-                </button>
+                {isPremium ? (
+                  <div className="w-full bg-slate-100 text-slate-500 font-bold py-4 rounded-xl border border-slate-200 flex items-center justify-center gap-2 mt-auto">
+                    <CheckCheck size={18} className="text-green-500" /> {t("premiumActivated")}
+                  </div>
+                ) : (
+                  <button
+                    disabled={loading}
+                    onClick={handleCheckout}
+                    className="w-full font-bold py-4 rounded-xl transition-all shadow-md flex items-center justify-center gap-2 mt-auto cursor-pointer bg-gradient-to-r from-[#32A8D7] to-[#2896c2] hover:from-[#2896c2] hover:to-[#1f7ca4] text-white hover:shadow-lg hover:-translate-y-0.5 disabled:opacity-60 disabled:cursor-wait"
+                  >
+                    {loading ? (
+                      <>
+                        <Loader2 size={18} className="animate-spin" />
+                        Connexion à FedaPay...
+                      </>
+                    ) : (
+                      <>
+                        <ShieldCheck size={18} />
+                        Payer avec FedaPay (1 000 FCFA)
+                      </>
+                    )}
+                  </button>
+                )}
+
+                {/* Badges de paiement FedaPay */}
+                <div className="mt-4 pt-4 border-t border-slate-100 flex flex-col items-center gap-2">
+                  <div className="flex items-center justify-center gap-2 text-xs text-slate-500 font-medium flex-wrap">
+                    <span className="px-2 py-0.5 bg-slate-100 rounded text-slate-700 font-semibold">MTN MoMo</span>
+                    <span className="px-2 py-0.5 bg-slate-100 rounded text-slate-700 font-semibold">Moov Money</span>
+                    <span className="px-2 py-0.5 bg-slate-100 rounded text-slate-700 font-semibold">Orange Money</span>
+                    <span className="px-2 py-0.5 bg-slate-100 rounded text-slate-700 font-semibold">Wave</span>
+                    <span className="px-2 py-0.5 bg-slate-100 rounded text-slate-700 font-semibold">Carte Visa / Mastercard</span>
+                  </div>
+                  <span className="text-[11px] text-slate-400 font-medium">
+                    🔒 Passerelle de paiement sécurisée certifiée FedaPay
+                  </span>
+                </div>
               </div>
             </div>
           </div>
@@ -194,132 +167,6 @@ export default function RecruteurPremium({ isPremium: propIsPremium }: { isPremi
             </p>
           </div>
         </div>
-      )}
-
-      {/* STEP: Choose Method */}
-      {step === "method" && (
-        <div className="max-w-lg mx-auto space-y-6">
-          <div className="text-center">
-            <h3 className="text-2xl font-black text-slate-900">{t("chooseMethod")}</h3>
-            <p className="text-sm text-slate-500 mt-1">{t("chooseMethodSubtitle")}</p>
-          </div>
-          <div className="grid grid-cols-2 gap-4">
-            {PAYMENT_METHODS.map((pm) => (
-              <button
-                key={pm.id}
-                onClick={() => { setMethod(pm.id); setStep("input"); }}
-                className="flex flex-col items-center gap-3 p-5 rounded-2xl border-2 border-slate-100 hover:border-[#32A8D7] hover:shadow-lg hover:shadow-blue-500/10 transition-all bg-white"
-              >
-                <span className="text-3xl">{pm.logo}</span>
-                <div>
-                  <p className="font-bold text-sm text-slate-800">{pm.id === "card" ? t("bankCard") : pm.label}</p>
-                  <p className="text-xs text-slate-400 mt-0.5">{pm.id === "card" ? t("cardDescription") : t("mobilePayment")}</p>
-                </div>
-                <span
-                  className="px-3 py-1 rounded-full text-xs font-bold"
-                  style={{ background: pm.color, color: pm.textColor }}
-                >
-                  {pm.id === "card" ? t("bankCard") : pm.label}
-                </span>
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* STEP: Enter Number */}
-      {step === "input" && selectedMethod && (
-        <div className="max-w-md mx-auto space-y-6">
-          <div className="text-center">
-            <h3 className="text-2xl font-black text-slate-900">{t("enterNumber")}</h3>
-            <p className="text-sm text-slate-500 mt-1">{t("paymentVia")} <strong>{selectedMethod.id === "card" ? t("bankCard") : selectedMethod.label}</strong></p>
-          </div>
-
-          <div className="bg-white rounded-2xl p-6 border border-slate-100 shadow-sm space-y-5">
-            <div>
-              <label className="block text-sm font-semibold text-slate-600 mb-2">
-                {method === "card" ? t("cardNumber") : t("phoneNumber")}
-              </label>
-              {method !== "card" ? (
-                <div className="flex gap-3">
-                  <div className="flex items-center px-4 py-3 bg-slate-50 border border-slate-200 rounded-lg font-bold text-sm text-slate-700 whitespace-nowrap">
-                    {prefix}
-                  </div>
-                  <input
-                    type="tel"
-                    value={phone}
-                    onChange={(e) => setPhone(e.target.value.replace(/\D/g, ""))}
-                    placeholder="01 23 45 67 89"
-                    maxLength={12}
-                    className="flex-1 bg-[#f8fafc] border border-slate-200 rounded-lg px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-[#32A8D7]"
-                  />
-                </div>
-              ) : (
-                <input
-                  type="text"
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  placeholder="4111 1111 1111 1111"
-                  className="w-full bg-[#f8fafc] border border-slate-200 rounded-lg px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-[#32A8D7]"
-                />
-              )}
-            </div>
-
-            <div className="bg-slate-50 rounded-xl p-4 space-y-2 text-sm">
-              <div className="flex justify-between"><span className="text-slate-500">{t("serviceLabel")}</span><span className="font-bold">{t("serviceValue")}</span></div>
-              <div className="flex justify-between"><span className="text-slate-500">{t("amountLabel")}</span><span className="font-black text-[#32A8D7]">1 000 FCFA</span></div>
-              <div className="flex justify-between"><span className="text-slate-500">{t("methodLabel")}</span><span className="font-bold">{selectedMethod.id === "card" ? t("bankCard") : selectedMethod.label}</span></div>
-            </div>
-
-            {error && (
-              <div className="p-4 bg-amber-50 border border-amber-200 rounded-xl text-amber-800 text-xs space-y-2">
-                <p className="font-semibold">{error}</p>
-                <button
-                  type="button"
-                  onClick={handleSimulate}
-                  className="w-full py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-lg font-bold text-xs transition shadow-sm cursor-pointer"
-                >
-                  ⚡ Activer immédiatement (Mode Test en attendant l'activation FedaPay)
-                </button>
-              </div>
-            )}
-
-            <button
-              disabled={phone.length < 8}
-              onClick={handleCheckout}
-              className="w-full py-3.5 rounded-xl bg-[#32A8D7] hover:bg-[#2896c2] text-white font-bold text-sm transition-colors shadow-lg shadow-[#32A8D7]/20 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer flex items-center justify-center gap-2"
-            >
-              <CreditCard size={16} />
-              {t("confirmAndPay")}
-            </button>
-          </div>
-
-          <div className="text-center space-y-1">
-            <p className="text-xs text-slate-500 font-medium">
-              🔒 Passerelle sécurisée certifiée FedaPay
-            </p>
-            <p className="text-[11px] text-slate-400">
-              {t("securePaymentFooter")}
-            </p>
-          </div>
-        </div>
-      )}
-
-      {/* STEP: Processing */}
-      {step === "processing" && (
-        <div className="max-w-lg mx-auto bg-white/95 backdrop-blur-xl rounded-[32px] p-8 md:p-12 shadow-2xl border border-white/50 text-center relative z-10">
-          <div className="relative w-24 h-24 mx-auto mb-8">
-            <div className="absolute inset-0 bg-[#32A8D7]/10 rounded-full animate-ping"></div>
-            <div className="relative bg-white rounded-full p-4 shadow-lg flex items-center justify-center h-full w-full border border-slate-50">
-              <Loader2 size={40} className="text-[#32A8D7] animate-spin" />
-            </div>
-          </div>
-          <h3 className="text-2xl font-black text-slate-900 mb-3">{t("initPayment")}</h3>
-          <p className="text-slate-500">
-            {t("pleaseWait")}
-          </p>
-        </div>
-      )}
       </div>
     </div>
   );
