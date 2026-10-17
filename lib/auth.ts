@@ -108,123 +108,121 @@ export const authOptions: NextAuthOptions = {
   ],
   callbacks: {
     async signIn({ user, account, profile }) {
-      if (account?.provider === "google") {
-        let authAction = "login";
-        try {
-          const cookieStore = await cookies();
-          authAction = cookieStore.get("netacuv_auth_action")?.value || "login";
-        } catch(e) {}
-        
-        if (user.email) {
-          const existingUser = await prisma.user.findUnique({
-            where: { email: user.email }
-          });
-
-          // If they try to "login" but account doesn't exist, block it.
-          if (authAction === "login" && !existingUser) {
-            return "/connexion?error=Ce+compte+n'existe+pas.+Veuillez+vous+inscrire.";
-          }
-          
-          // If they try to "register" but account DOES exist, block it or maybe let them through?
-          // If they register and it exists, they just log in, which is probably fine.
-        }
-      }
-      return true;
-    },
-    async jwt({ token, user, trigger, session }) {
-      // Si une mise à jour manuelle de la session est déclenchée (update())
-      if (trigger === "update") {
-        if (session?.isPremium !== undefined) token.isPremium = session.isPremium;
-        if (session?.user?.image !== undefined) {
-           if (typeof session.user.image === 'string' && session.user.image.startsWith('data:image')) {
-             token.picture = `/api/users/${token.sub}/avatar?v=${Date.now()}`;
-           } else {
-             token.picture = session.user.image;
-           }
-        }
-        if (session?.user?.name !== undefined) token.name = session.user.name;
-      }
-
-      if (token.sub) {
-        const dbUser = await prisma.user.findUnique({
-          where: { id: token.sub },
-          include: { role: true },
-        });
-        
-        if (!dbUser) {
-          // L'utilisateur n'existe plus en DB, on force la déconnexion
-          return { ...token, error: "DeletedAccount" };
-        }
-
-        if (dbUser.roleId) {
-          // L'utilisateur a déjà un rôle en base → on l'utilise directement.
-          // La vérification du cookie d'intention n'est faite qu'à la première connexion (user défini ci-dessous).
-          token.role = dbUser.role?.name || "TALENT";
-        } else if (user) {
-          // Première connexion (user présent) : lire le cookie pour attribuer le bon rôle
-          let intendedRole = "talent";
+      try {
+        if (account?.provider === "google") {
+          let authAction = "login";
           try {
             const cookieStore = await cookies();
-            intendedRole = cookieStore.get("netacuv_intended_role")?.value || "talent";
+            authAction = cookieStore.get("netacuv_auth_action")?.value || "login";
           } catch(e) {}
           
-          const expectedRoleName = intendedRole.toUpperCase();
-
-          // Nouvel utilisateur sans rôle (via Google par exemple)
-          let role = await prisma.role.findUnique({ where: { name: expectedRoleName } });
-          if (!role) {
-            role = await prisma.role.create({
-              data: {
-                name: expectedRoleName,
-                description: `Rôle par défaut pour les ${expectedRoleName.toLowerCase()}s`,
-                isSystem: true,
-              },
+          if (user.email) {
+            const existingUser = await prisma.user.findUnique({
+              where: { email: user.email }
             });
-          }
-          try {
-            await prisma.user.update({
-              where: { id: token.sub },
-              data: { 
-                roleId: role.id,
-                talentProfile: expectedRoleName === "TALENT" ? { upsert: { create: {}, update: {} } } : undefined,
-                recruiterProfile: expectedRoleName === "RECRUTEUR" ? { upsert: { create: {}, update: {} } } : undefined,
-              }
-            });
-          } catch (updateError) {
-            console.error("Failed to update user or create profile in JWT callback:", updateError);
-          }
-          token.role = expectedRoleName;
-        } else {
-          // Utilisateur sans rôle et pas de première connexion (cas inhabituel)
-          token.role = "TALENT";
-        }
 
-        token.isPremium = dbUser.isPremium || false;
-        
-        // Empêcher l'injection d'une image en Base64 dans le JWT
-        // (Cela crée un cookie gigantesque fragmenté en 45 morceaux et cause l'erreur 494)
-        if (dbUser.image && !dbUser.image.startsWith('data:image')) {
-          token.picture = dbUser.image;
-        } else if (dbUser.image && dbUser.image.startsWith('data:image')) {
-          // Si on n'a pas encore de timestamp, on en rajoute un à la volée. 
-          // Mais attention, on ne veut pas invalider le cache à CHAQUE appel de JWT sinon l'image clignote !
-          // On va d'abord vérifier si token.picture contient déjà la bonne route avec un v=
-          if (token.picture && typeof token.picture === 'string' && token.picture.startsWith(`/api/users/${dbUser.id}/avatar`)) {
-            // on conserve le timestamp existant pour le cache
-            token.picture = token.picture;
-          } else {
-            token.picture = `/api/users/${dbUser.id}/avatar?v=${Date.now()}`; 
+            // If they try to "login" but account doesn't exist, block it.
+            if (authAction === "login" && !existingUser) {
+              return "/connexion?error=Ce+compte+n'existe+pas.+Veuillez+vous+inscrire.";
+            }
           }
-        } else {
-          token.picture = token.picture; // Conserver l'existant s'il y a lieu
         }
-        
-        token.name = dbUser.name || token.name;
-      } else if (user) {
-        token.role = (user as any).role || "TALENT";
-        token.isPremium = (user as any).isPremium || false;
+        return true;
+      } catch (err) {
+        console.error("Erreur dans le callback signIn:", err);
+        return true;
       }
-      return token;
+    },
+    async jwt({ token, user, trigger, session }) {
+      try {
+        // Si une mise à jour manuelle de la session est déclenchée (update())
+        if (trigger === "update") {
+          if (session?.isPremium !== undefined) token.isPremium = session.isPremium;
+          if (session?.user?.image !== undefined) {
+             if (typeof session.user.image === 'string' && session.user.image.startsWith('data:image')) {
+               token.picture = `/api/users/${token.sub}/avatar?v=${Date.now()}`;
+             } else {
+               token.picture = session.user.image;
+             }
+          }
+          if (session?.user?.name !== undefined) token.name = session.user.name;
+        }
+
+        if (token.sub) {
+          const dbUser = await prisma.user.findUnique({
+            where: { id: token.sub },
+            include: { role: true },
+          });
+          
+          if (!dbUser) {
+            // L'utilisateur n'existe plus en DB, on force la déconnexion
+            return { ...token, error: "DeletedAccount" };
+          }
+
+          if (dbUser.roleId) {
+            token.role = dbUser.role?.name || "TALENT";
+          } else if (user) {
+            // Première connexion (user présent) : lire le cookie pour attribuer le bon rôle
+            let intendedRole = "talent";
+            try {
+              const cookieStore = await cookies();
+              intendedRole = cookieStore.get("netacuv_intended_role")?.value || "talent";
+            } catch(e) {}
+            
+            const expectedRoleName = intendedRole.toUpperCase();
+
+            // Nouvel utilisateur sans rôle (via Google par exemple)
+            let role = await prisma.role.findUnique({ where: { name: expectedRoleName } });
+            if (!role) {
+              role = await prisma.role.create({
+                data: {
+                  name: expectedRoleName,
+                  description: `Rôle par défaut pour les ${expectedRoleName.toLowerCase()}s`,
+                  isSystem: true,
+                },
+              });
+            }
+            try {
+              await prisma.user.update({
+                where: { id: token.sub },
+                data: { 
+                  roleId: role.id,
+                  talentProfile: expectedRoleName === "TALENT" ? { upsert: { create: {}, update: {} } } : undefined,
+                  recruiterProfile: expectedRoleName === "RECRUTEUR" ? { upsert: { create: {}, update: {} } } : undefined,
+                }
+              });
+            } catch (updateError) {
+              console.error("Failed to update user or create profile in JWT callback:", updateError);
+            }
+            token.role = expectedRoleName;
+          } else {
+            token.role = "TALENT";
+          }
+
+          token.isPremium = dbUser.isPremium || false;
+          
+          if (dbUser.image && !dbUser.image.startsWith('data:image')) {
+            token.picture = dbUser.image;
+          } else if (dbUser.image && dbUser.image.startsWith('data:image')) {
+            if (token.picture && typeof token.picture === 'string' && token.picture.startsWith(`/api/users/${dbUser.id}/avatar`)) {
+              token.picture = token.picture;
+            } else {
+              token.picture = `/api/users/${dbUser.id}/avatar?v=${Date.now()}`; 
+            }
+          } else {
+            token.picture = token.picture;
+          }
+          
+          token.name = dbUser.name || token.name;
+        } else if (user) {
+          token.role = (user as any).role || "TALENT";
+          token.isPremium = (user as any).isPremium || false;
+        }
+        return token;
+      } catch (jwtErr) {
+        console.error("Erreur dans jwt callback:", jwtErr);
+        return token;
+      }
     },
     async session({ session, token }) {
       if ((token as any).error === "DeletedAccount" || (token as any).error === "AccessDenied") {

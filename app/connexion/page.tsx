@@ -28,7 +28,13 @@ export default function ConnexionPage() {
       const params = new URLSearchParams(window.location.search);
       const errorParam = params.get("error");
       if (errorParam) {
-        setError(errorParam);
+        if (errorParam === "Callback" || errorParam === "OAuthCallback") {
+          setError("La connexion avec Google a échoué. Assurez-vous que l'URL de redirection est configurée dans Google Cloud Console, ou connectez-vous avec votre adresse email et mot de passe.");
+        } else if (errorParam === "OAuthAccountNotLinked") {
+          setError("Cet email est déjà lié à un compte existant. Connectez-vous avec votre mot de passe.");
+        } else {
+          setError(errorParam);
+        }
       }
       const messageParam = params.get("message");
       if (messageParam) {
