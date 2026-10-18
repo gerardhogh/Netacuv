@@ -1,6 +1,6 @@
 "use client";
 import React, { useState } from "react";
-import { Search, LayoutList, LayoutGrid } from "lucide-react";
+import { Search, LayoutList, LayoutGrid, AlertCircle } from "lucide-react";
 import { TalentDetails } from "../components/TalentDetails";
 import { CustomSelect } from "../components/CustomSelect";
 import { Modal } from "@/app/components/ui/Modal";
@@ -9,7 +9,14 @@ import TalentCard from "@/app/components/TalentCard";
 import useSWR from "swr";
 import { useTranslations } from "next-intl";
 
-const fetcher = (url: string) => fetch(url).then(res => res.json());
+const fetcher = async (url: string) => {
+  const res = await fetch(url);
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => ({}));
+    throw new Error(errorData.error || `Erreur ${res.status}`);
+  }
+  return res.json();
+};
 
 interface TalentData {
   id: string;
@@ -54,7 +61,7 @@ export default function AdminTalents() {
   const [selectedTalent, setSelectedTalent] = useState<TalentData | null>(null);
   const [confirmAction, setConfirmAction] = useState<{ id: string, type: 'activate' | 'suspend' | 'delete' } | null>(null);
 
-  const { data: talentsRaw, isLoading: loading, mutate } = useSWR("/api/talents", fetcher);
+  const { data: talentsRaw, error, isLoading: loading, mutate } = useSWR("/api/talents", fetcher);
 
   const talents: TalentData[] = Array.isArray(talentsRaw) ? talentsRaw : (talentsRaw?.talents || []);
 
@@ -183,11 +190,11 @@ export default function AdminTalents() {
               onClick={() => setStatusFilter("Tous")}
               className={`px-3 py-1.5 text-sm font-semibold rounded-full transition-all cursor-pointer ${
                 statusFilter === "Tous"
-                  ? "bg-[#32A8D7] text-white shadow-xs"
+                   ? "bg-[#32A8D7] text-white shadow-xs"
                   : "bg-[#eaf6fc] border border-[#d6effa] text-[#32A8D7] hover:bg-[#d6effa]"
               }`}
             >
-              {t("totalCount", { count: stats.total })}
+              {loading ? "..." : t("totalCount", { count: stats.total })}
             </button>
             <button
               type="button"
@@ -198,7 +205,7 @@ export default function AdminTalents() {
                   : "bg-green-50 border border-green-100 text-green-700 hover:bg-green-100"
               }`}
             >
-              {t("activeCount", { count: stats.actifs })}
+              {loading ? "..." : t("activeCount", { count: stats.actifs })}
             </button>
             <button
               type="button"
@@ -209,7 +216,7 @@ export default function AdminTalents() {
                   : "bg-yellow-50 border border-yellow-100 text-yellow-700 hover:bg-yellow-100"
               }`}
             >
-              {t("pendingCount", { count: stats.attente })}
+              {loading ? "..." : t("pendingCount", { count: stats.attente })}
             </button>
             <button
               type="button"
@@ -220,16 +227,31 @@ export default function AdminTalents() {
                   : "bg-slate-50 border border-slate-200 text-slate-600 hover:bg-slate-100"
               }`}
             >
-              {t("suspendedCount", { count: stats.suspendus })}
+              {loading ? "..." : t("suspendedCount", { count: stats.suspendus })}
             </button>
           </div>
         </div>
       </div>
 
       {/* Content: Table or Cards */}
-      {loading ? (
-        <div className="bg-white rounded-xl border border-slate-100 shadow-sm p-12 text-center text-slate-500">
-          {t("loadingTalents")}
+      {error ? (
+        <div className="bg-white rounded-xl border border-red-100 shadow-sm p-10 text-center">
+          <div className="w-12 h-12 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto mb-3">
+            <AlertCircle size={24} />
+          </div>
+          <h3 className="text-base font-bold text-slate-800 mb-1">Erreur de chargement</h3>
+          <p className="text-sm text-slate-500 max-w-md mx-auto mb-4">{error.message || "Une erreur est survenue lors de la récupération des données."}</p>
+          <button
+            onClick={() => mutate()}
+            className="px-4 py-2 bg-[#32A8D7] hover:bg-[#288db5] text-white text-sm font-semibold rounded-lg shadow-sm transition-colors cursor-pointer"
+          >
+            Réessayer
+          </button>
+        </div>
+      ) : loading ? (
+        <div className="bg-white rounded-xl border border-slate-100 shadow-sm p-12 text-center text-slate-500 flex flex-col items-center justify-center gap-3">
+          <div className="w-8 h-8 rounded-full border-3 border-[#32A8D7] border-t-transparent animate-spin" />
+          <span className="text-sm font-medium">{t("loadingTalents")}</span>
         </div>
       ) : filtered.length === 0 ? (
         <EmptyState

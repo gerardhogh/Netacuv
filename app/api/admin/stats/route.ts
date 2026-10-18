@@ -15,15 +15,15 @@ export async function GET() {
       return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
     }
 
-    const talentsCount = await prisma.user.count({ where: { talentProfile: { isNot: null } } });
-    const recruteursCount = await prisma.user.count({ where: { recruiterProfile: { isNot: null } } });
-    const jobsCount = await prisma.jobOffer.count();
-    const applicationsCount = await prisma.application.count();
-
-    // Mock videos count for now since it's not a distinct model
-    const videosCount = await prisma.talentProfile.count({
-      where: { videoUrl: { not: null } }
-    });
+    const [talentsCount, recruteursCount, jobsCount, applicationsCount, videosCount] = await Promise.all([
+      prisma.user.count({ where: { talentProfile: { isNot: null } } }),
+      prisma.user.count({ where: { recruiterProfile: { isNot: null } } }),
+      prisma.jobOffer.count(),
+      prisma.application.count(),
+      prisma.talentProfile.count({
+        where: { videoUrl: { not: null } }
+      }),
+    ]);
 
     return NextResponse.json({
       talentsCount,

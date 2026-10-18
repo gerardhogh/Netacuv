@@ -15,9 +15,9 @@ export async function GET(request: Request) {
     const session = await getServerSession(authOptions);
     const isAdmin = ["SUPER ADMIN", "ADMIN RH / MODÉRATEUR", "MANAGER IA & CERTIFICATION", "GESTIONNAIRE FINANCIER", "SUPPORT CLIENT", "ADMIN"].includes(session?.user?.role?.toUpperCase() || "");
 
-    // AS-03: Vérifier isPremium en BDD (et non via le JWT client)
+    // AS-03: Vérifier isPremium en BDD uniquement pour les recruteurs non-admin (économise un aller-retour réseau Supabase)
     let isPremium = false;
-    if (session?.user?.id) {
+    if (!isAdmin && session?.user?.id) {
       const dbUser = await prisma.user.findUnique({
         where: { id: session.user.id as string },
         select: { isPremium: true },
@@ -62,16 +62,45 @@ export async function GET(request: Request) {
     const [talents, total] = await Promise.all([
       prisma.user.findMany({
         where: whereClause,
-        include: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          image: true,
+          active: true,
+          isPremium: true,
+          createdAt: true,
+          role: { select: { name: true } },
           talentProfile: {
-            include: {
+            select: {
+              id: true,
+              bio: true,
+              degree: true,
+              gender: true,
+              city: true,
+              country: true,
+              phone: true,
+              skills: true,
+              cvUrl: true,
+              videoUrl: true,
+              username: true,
+              facebook: true,
+              linkedin: true,
+              twitter: true,
+              pinterest: true,
+              behance: true,
               interviewSessions: {
                 take: 1,
                 orderBy: { createdAt: 'desc' },
+                select: {
+                  id: true,
+                  status: true,
+                  aiScore: true,
+                  videoRecordings: true,
+                },
               },
             },
           },
-          role: true,
         },
         orderBy: {
           createdAt: 'desc'
