@@ -6,6 +6,7 @@ import { prisma } from "@/lib/prisma";
 import bcrypt from "bcrypt";
 import crypto from "crypto";
 import { cookies } from "next/headers";
+import { checkLoginRateLimit, recordFailedLogin, resetLoginRateLimit } from "@/lib/loginRateLimit";
 
 // Extension des types TypeScript de NextAuth pour inclure 'id' et 'role'
 declare module "next-auth" {
@@ -75,26 +76,39 @@ export const authOptions: NextAuthOptions = {
         }
         
         const email = credentials.email.trim().toLowerCase();
-        console.log("Authorize called with email:", email);
+
+        // Vérification de la limitation de tentatives (Rate Limit)
+        const rateCheck = checkLoginRateLimit(email);
+        if (!rateCheck.allowed) {
+          const mins = Math.ceil((rateCheck.remainingSeconds || 60) / 60);
+          throw new Error(`Trop de tentatives infructueuses. Par mesure de sécurité, veuillez patienter ${mins} minute(s) avant de réessayer.`);
+        }
 
         const user = await prisma.user.findUnique({
           where: { email: email },
           include: { role: true },
         });
-        
-        console.log("Found user:", user?.email, "Hash exists?", !!user?.passwordHash);
 
-        if (!user || !user.passwordHash) {
-          throw new Error("Utilisateur non trouvé ou compte incorrect");
+        if (!user) {
+          throw new Error("Aucun compte n'est associé à cette adresse email. Vérifiez l'orthographe ou créez un compte.");
+        }
+
+        if (!user.passwordHash) {
+          throw new Error("Ce compte a été créé via Google. Veuillez vous connecter en cliquant sur 'Continuer avec Google'.");
         }
 
         const isValid = await bcrypt.compare(credentials.password, user.passwordHash);
-        
-        console.log("Password valid?", isValid);
 
         if (!isValid) {
-          throw new Error("Mot de passe incorrect");
+          const failResult = recordFailedLogin(email);
+          if (failResult.locked) {
+            throw new Error("Trop de tentatives infructueuses (5/5). Votre accès est temporairement bloqué pendant 5 minutes.");
+          }
+          throw new Error(`Mot de passe incorrect. (${failResult.remainingAttempts} tentative(s) restante(s))`);
         }
+
+        // Connexion réussie : réinitialisation du compteur
+        resetLoginRateLimit(email);
 
         return {
           id: user.id,

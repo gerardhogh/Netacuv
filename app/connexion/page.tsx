@@ -64,13 +64,20 @@ export default function ConnexionPage() {
       if (result?.error) {
         const errLower = result.error.toLowerCase();
         if (
+          errLower.includes("google") ||
+          errLower.includes("continuer avec google")
+        ) {
+          setError(result.error);
+        } else if (errLower.includes("trop de tentatives") || errLower.includes("bloqué")) {
+          setError(result.error);
+        } else if (
+          errLower.includes("aucun compte") ||
           errLower.includes("non trouvé") ||
           errLower.includes("introuvable") ||
           errLower.includes("pas de compte") ||
-          errLower.includes("n'existe pas") ||
-          errLower.includes("utilisateur non trouvé")
+          errLower.includes("n'existe pas")
         ) {
-          setError("Vous n'avez pas encore de compte sur Netacuv. Veuillez créer votre compte pour continuer.");
+          setError(result.error);
         } else {
           setFormError(result.error);
         }
