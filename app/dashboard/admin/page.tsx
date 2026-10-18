@@ -86,7 +86,8 @@ export default function AdminDashboard() {
     value: stats[stat.key] || 0
   }));
 
-  const jobs = Array.isArray(jobsFetched) ? jobsFetched.map((j: any) => ({
+  const rawJobs = Array.isArray(jobsFetched) ? jobsFetched : (Array.isArray(jobsFetched?.jobs) ? jobsFetched.jobs : []);
+  const jobs = rawJobs.map((j: any) => ({
     id: j.id,
     title: j.title,
     company: j.recruiter?.companyName || "Entreprise",
@@ -96,7 +97,7 @@ export default function AdminDashboard() {
     date: new Date(j.createdAt).toLocaleDateString(),
     status: j.status === "PUBLISHED" ? t("statusActive") : t("statusInactive"),
     rawStatus: j.status
-  })) : [];
+  }));
 
   const toggleStatus = async (id: string, currentStatus: string) => {
     const newStatus = currentStatus === "PUBLISHED" ? "CLOSED" : "PUBLISHED";
