@@ -1,7 +1,7 @@
 "use client";
 import React, { useState } from "react";
 import Image from "next/image";
-import { Download, Eye } from "lucide-react";
+import { Download, Eye, Video } from "lucide-react";
 import NetacuvVideoPlayer from "@/components/NetacuvVideoPlayer";
 import { useTranslations } from "next-intl";
 
@@ -264,10 +264,7 @@ export function TalentDetails({ talent, onBack }: { talent: any, onBack: () => v
                   />
                 ) : (
                   <div className="text-center text-slate-500 py-20 bg-slate-50 rounded-xl border border-slate-100 w-full">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" className="mx-auto mb-3 text-slate-300">
-                      <path d="m22 8-6 4 6 4V8z"/>
-                      <rect width="14" height="12" x="2" y="6" rx="2" ry="2"/>
-                    </svg>
+                    <Video className="w-12 h-12 mx-auto mb-3 text-slate-300" strokeWidth={1.5} />
                     <p className="font-medium text-sm">{t("noVideoTitle")}</p>
                     <p className="text-xs text-slate-400 mt-1">{t("noVideoDesc")}</p>
                   </div>

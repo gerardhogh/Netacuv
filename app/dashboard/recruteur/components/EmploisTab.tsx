@@ -625,6 +625,7 @@ export default function EmploisTab() {
   // Confirmation modals
   const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null);
   const [confirmCloturerId, setConfirmCloturerId] = useState<number | null>(null);
+  const [confirmActiverId, setConfirmActiverId] = useState<number | null>(null);
   const [prolongerJobId, setProlongerJobId] = useState<number | null>(null);
   const [prolongDays, setProlongDays] = useState<string>("30");
   const [prolongCustomDate, setProlongCustomDate] = useState<string>("");
@@ -742,24 +743,30 @@ export default function EmploisTab() {
     if (emp?.status === "PUBLISHED" || emp?.status === "Active") {
       setConfirmCloturerId(id);
     } else {
-      try {
-        const res = await fetch(`/api/jobs/${id}`, {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ status: "PUBLISHED" })
-        });
-        if (res.ok) {
-          mutate();
-          showToast(t("jobReactivatedToast"));
-        } else {
-          showToast(t("errorReactivateToast"));
-        }
-      } catch (error) {
-        console.error(error);
-        showToast(t("errorReactivateToast"));
-      }
+      setConfirmActiverId(id);
     }
     setOpenMenuId(null);
+  };
+
+  const confirmActiver = async (id: number) => {
+    try {
+      const res = await fetch(`/api/jobs/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: "PUBLISHED" }),
+      });
+      if (res.ok) {
+        mutate();
+        showToast(t("jobReactivatedToast"));
+      } else {
+        showToast(t("errorReactivateToast"));
+      }
+    } catch (error) {
+      console.error(error);
+      showToast(t("errorReactivateToast"));
+    } finally {
+      setConfirmActiverId(null);
+    }
   };
 
   const openDetail = (id: number) => {
@@ -821,6 +828,19 @@ export default function EmploisTab() {
           isDanger
           onConfirm={() => confirmCloturer(confirmCloturerId)}
           onCancel={() => setConfirmCloturerId(null)}
+        />
+      )}
+
+      {/* ── Confirmation: Activer offre ── */}
+      {confirmActiverId !== null && (
+        <ConfirmModal
+          title={t("activateModalTitle") || "Activer l'offre d'emploi"}
+          message={t("activateModalMessage") || "Êtes-vous sûr de vouloir réactiver et publier cette offre d'emploi aux talents ?"}
+          confirmLabel={t("yesActivate") || "Oui, activer l'offre"}
+          cancelLabel={t("noContinue") || "Annuler"}
+          isDanger={false}
+          onConfirm={() => confirmActiver(confirmActiverId)}
+          onCancel={() => setConfirmActiverId(null)}
         />
       )}
 

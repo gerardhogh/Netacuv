@@ -14,6 +14,7 @@ import {
   PieChart, Pie, Cell, BarChart, Bar, Legend
 } from "recharts";
 import { LogoutModal } from "../recruteur/components/Modals";
+import { ConfirmModal } from "@/app/components/ui/Modal";
 
 
 
@@ -99,19 +100,32 @@ export default function AdminDashboard() {
     rawStatus: j.status
   }));
 
-  const toggleStatus = async (id: string, currentStatus: string) => {
-    const newStatus = currentStatus === "PUBLISHED" ? "CLOSED" : "PUBLISHED";
-    await fetch(`/api/jobs/${id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ status: newStatus })
-    });
-    mutate();
-  };
-  
-  const deleteJob = async (id: string) => {
-    await fetch(`/api/jobs/${id}`, { method: "DELETE" });
-    mutate();
+  const [confirmModalData, setConfirmModalData] = useState<{
+    isOpen: boolean;
+    type: "activate" | "suspend" | "delete";
+    jobId: string;
+    jobTitle?: string;
+  } | null>(null);
+
+  const handleConfirmAction = async () => {
+    if (!confirmModalData) return;
+    const { type, jobId } = confirmModalData;
+    setConfirmModalData(null);
+    try {
+      if (type === "delete") {
+        await fetch(`/api/jobs/${jobId}`, { method: "DELETE" });
+      } else {
+        const newStatus = type === "activate" ? "PUBLISHED" : "CLOSED";
+        await fetch(`/api/jobs/${jobId}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ status: newStatus }),
+        });
+      }
+      mutate();
+    } catch (err) {
+      console.error(err);
+    }
   };
 
   return (
@@ -181,13 +195,57 @@ export default function AdminDashboard() {
                         <div className="flex flex-col gap-0.5">
                           {job.status === t("statusActive") ? (
                             <>
-                              <button onClick={() => toggleStatus(job.id, job.rawStatus)} className="text-xs text-left text-orange-500 hover:underline">{t("suspend")}</button>
-                              <button onClick={() => deleteJob(job.id)} className="text-xs text-left text-red-500 hover:underline">{t("delete")}</button>
+                              <button
+                                type="button"
+                                onClick={() => setConfirmModalData({
+                                  isOpen: true,
+                                  type: "suspend",
+                                  jobId: job.id,
+                                  jobTitle: job.title
+                                })}
+                                className="text-xs text-left text-orange-500 hover:underline cursor-pointer"
+                              >
+                                {t("suspend")}
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setConfirmModalData({
+                                  isOpen: true,
+                                  type: "delete",
+                                  jobId: job.id,
+                                  jobTitle: job.title
+                                })}
+                                className="text-xs text-left text-red-500 hover:underline cursor-pointer"
+                              >
+                                {t("delete")}
+                              </button>
                             </>
                           ) : (
                             <>
-                              <button onClick={() => toggleStatus(job.id, job.rawStatus)} className="text-xs text-left text-blue-600 hover:underline">{t("activate")}</button>
-                              <button onClick={() => deleteJob(job.id)} className="text-xs text-left text-red-500 hover:underline">{t("delete")}</button>
+                              <button
+                                type="button"
+                                onClick={() => setConfirmModalData({
+                                  isOpen: true,
+                                  type: "activate",
+                                  jobId: job.id,
+                                  jobTitle: job.title
+                                })}
+                                className="text-xs text-left text-blue-600 hover:underline cursor-pointer"
+                              >
+                                {t("activate")}
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setConfirmModalData({
+                                  isOpen: true,
+                                  type: "delete",
+                                  jobId: job.id,
+                                  jobTitle: job.title
+                                })}
+                                className="text-xs text-left text-red-500 hover:underline cursor-pointer"
+                              >
+                                {t("delete")}
+                              </button>
                             </>
                           )}
                         </div>
@@ -334,6 +392,44 @@ export default function AdminDashboard() {
               </Link>
             </div>
           </div>
+
+          {/* Modal de confirmation d'action */}
+          {confirmModalData && (
+            <ConfirmModal
+              isOpen={confirmModalData.isOpen}
+              onClose={() => setConfirmModalData(null)}
+              onConfirm={handleConfirmAction}
+              variant={
+                confirmModalData.type === "delete"
+                  ? "danger"
+                  : confirmModalData.type === "suspend"
+                  ? "warning"
+                  : "primary"
+              }
+              title={
+                confirmModalData.type === "delete"
+                  ? "Supprimer l'offre d'emploi"
+                  : confirmModalData.type === "suspend"
+                  ? "Suspendre l'offre d'emploi"
+                  : "Activer l'offre d'emploi"
+              }
+              message={
+                confirmModalData.type === "delete"
+                  ? `Êtes-vous sûr de vouloir supprimer définitivement l'offre "${confirmModalData.jobTitle || ""}" ? Cette action est irréversible.`
+                  : confirmModalData.type === "suspend"
+                  ? `Êtes-vous sûr de vouloir suspendre l'offre "${confirmModalData.jobTitle || ""}" ? Les candidats ne pourront plus postuler.`
+                  : `Êtes-vous sûr de vouloir activer et rendre publique l'offre "${confirmModalData.jobTitle || ""}" ?`
+              }
+              confirmLabel={
+                confirmModalData.type === "delete"
+                  ? "Supprimer définitivement"
+                  : confirmModalData.type === "suspend"
+                  ? "Suspendre l'offre"
+                  : "Activer l'offre"
+              }
+              cancelLabel="Annuler"
+            />
+          )}
     </div>
   );
 }

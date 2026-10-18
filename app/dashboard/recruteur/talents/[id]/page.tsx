@@ -22,6 +22,7 @@ import {
   Search,
   X,
   CheckCircle,
+  Sparkles,
   LayoutDashboard,
   BadgeCheck,
   Mail,
@@ -352,7 +353,7 @@ function TabVideoEntretien({ talent, blurSensitive, tDetail }: { talent: TalentP
       {talent.interviewSession?.aiScore !== undefined && talent.interviewSession?.aiScore !== null && (
         <div className="mt-6 p-5 rounded-xl bg-indigo-50/60 border border-indigo-100">
           <h4 className="text-sm font-bold text-indigo-900 flex items-center gap-2 mb-3">
-            <CheckCircle size={18} className="text-indigo-500" />
+            <Sparkles size={18} className="text-indigo-600" />
             {tDetail("aiEvaluation")}
           </h4>
           <div className="flex items-center gap-4 mb-4">

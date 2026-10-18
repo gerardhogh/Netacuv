@@ -6,6 +6,7 @@ import TalentCard from "@/app/components/TalentCard";
 import { useAuth } from "../../../context/AuthContext";
 import useSWR from "swr";
 import { useTranslations, useLocale } from "next-intl";
+import { ConfirmModal } from "@/app/components/ui/Modal";
 
 export interface JobDetailData {
   id: string | number;
@@ -26,17 +27,29 @@ export interface JobDetailData {
 
 interface DetailOffreViewProps {
   job?: JobDetailData;
+  emploi?: any;
   onBack: () => void;
-  onEdit: () => void;
-  onDelete: () => void;
-  onViewCandidate: (candidateId: string) => void;
+  onEdit?: () => void;
+  onModifier?: () => void;
+  onDelete?: () => void;
+  onSupprimer?: () => void;
+  onCloturer?: () => void;
+  onActiver?: () => void;
+  onProlonger?: () => void;
+  onViewCandidate?: (candidateId: string) => void;
 }
 
 export default function DetailOffreView({
   job,
+  emploi,
   onBack,
   onEdit,
+  onModifier,
   onDelete,
+  onSupprimer,
+  onCloturer,
+  onActiver,
+  onProlonger,
   onViewCandidate,
 }: DetailOffreViewProps) {
   const t = useTranslations("recruiter.detailJob");
@@ -44,11 +57,13 @@ export default function DetailOffreView({
   const locale = useLocale();
   const { user } = useAuth();
   const [toastMsg, setToastMsg] = useState<string | null>(null);
-  const [isClosed, setIsClosed] = useState(job?.status === "Clôturée");
+  const effectiveInputJob = job || emploi;
+  const [isClosed, setIsClosed] = useState(effectiveInputJob?.status === "Clôturée" || effectiveInputJob?.status === "CLOSED");
+  const [confirmModalType, setConfirmModalType] = useState<"close" | "reopen" | "delete" | null>(null);
 
   const fetcher = (url: string) => fetch(url).then(res => res.json());
-  const { data: fullJobData } = useSWR(job?.id ? `/api/jobs/${job.id}` : null, fetcher);
-  const activeJob = fullJobData && !fullJobData.error ? fullJobData : job;
+  const { data: fullJobData } = useSWR(effectiveInputJob?.id ? `/api/jobs/${effectiveInputJob.id}` : null, fetcher);
+  const activeJob = fullJobData && !fullJobData.error ? fullJobData : effectiveInputJob;
 
   const title = activeJob?.title || activeJob?.titre || (locale === "en" ? "Job offer" : "Offre d'emploi");
   const company = activeJob?.company || activeJob?.recruiter?.companyName || "Mon Entreprise";
@@ -75,6 +90,18 @@ export default function DetailOffreView({
       showToast(isClosed ? t("reopenedSuccess") : t("closedSuccess"));
     } catch {
       showToast("Erreur lors de la mise à jour");
+    }
+  };
+
+  const executeConfirmAction = async () => {
+    if (!confirmModalType) return;
+    const type = confirmModalType;
+    setConfirmModalType(null);
+    if (type === "delete") {
+      if (onSupprimer) onSupprimer();
+      else if (onDelete) onDelete();
+    } else {
+      await handleToggleCloturer();
     }
   };
 
@@ -184,8 +211,16 @@ export default function DetailOffreView({
 
           <button
             type="button"
-            onClick={handleToggleCloturer}
-            className={`px-6 py-2 rounded-md text-xs font-semibold text-white transition-colors shadow-xs ${
+            onClick={() => {
+              if (!isClosed && onCloturer) {
+                onCloturer();
+              } else if (isClosed && onActiver) {
+                onActiver();
+              } else {
+                setConfirmModalType(isClosed ? "reopen" : "close");
+              }
+            }}
+            className={`px-6 py-2 rounded-md text-xs font-semibold text-white transition-colors shadow-xs cursor-pointer ${
               isClosed ? "bg-emerald-600 hover:bg-emerald-700" : "bg-[#32A8D7] hover:bg-[#2896c2]"
             }`}
           >
@@ -201,7 +236,7 @@ export default function DetailOffreView({
         </h3>
         <div className="text-xs sm:text-sm text-slate-600 leading-relaxed space-y-3">
           <p>
-            {job?.description || (locale === "en" 
+            {activeJob?.description || (locale === "en" 
               ? "We are seeking a talented Front-end Developer to join our dynamic team. You will contribute to creating innovative web applications for our global clients." 
               : "Nous recherchons un Développeur Front-end talentueux pour rejoindre notre équipe dynamique.")}
           </p>
@@ -230,7 +265,7 @@ export default function DetailOffreView({
               profession={c.profession}
               imageUrl={c.imageUrl}
               isVerified={c.isVerified}
-              onViewProfile={() => onViewCandidate(c.id)}
+              onViewProfile={() => onViewCandidate?.(c.id)}
               blurSensitive={!user?.isPremium}
             />
           ))}
@@ -241,19 +276,69 @@ export default function DetailOffreView({
       <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4 pb-8">
         <button
           type="button"
-          onClick={onDelete}
-          className="w-full sm:w-64 py-2.5 px-6 border border-red-400 text-red-500 hover:bg-red-50 font-semibold text-xs rounded-md transition-colors text-center"
+          onClick={() => {
+            if (onSupprimer) onSupprimer();
+            else setConfirmModalType("delete");
+          }}
+          className="w-full sm:w-64 py-2.5 px-6 border border-red-400 text-red-500 hover:bg-red-50 font-semibold text-xs rounded-md transition-colors text-center cursor-pointer"
         >
           {t("delete")}
         </button>
         <button
           type="button"
-          onClick={onEdit}
-          className="w-full sm:w-64 py-2.5 px-6 bg-[#32A8D7] hover:bg-[#2896c2] text-white font-semibold text-xs rounded-md transition-colors text-center shadow-xs"
+          onClick={() => {
+            if (onModifier) onModifier();
+            else if (onEdit) onEdit();
+          }}
+          className="w-full sm:w-64 py-2.5 px-6 bg-[#32A8D7] hover:bg-[#2896c2] text-white font-semibold text-xs rounded-md transition-colors text-center shadow-xs cursor-pointer"
         >
           {t("edit")}
         </button>
       </div>
+
+      {/* ── Modal de confirmation ── */}
+      {confirmModalType && (
+        <ConfirmModal
+          isOpen={true}
+          onClose={() => setConfirmModalType(null)}
+          onConfirm={executeConfirmAction}
+          variant={
+            confirmModalType === "delete"
+              ? "danger"
+              : confirmModalType === "close"
+              ? "warning"
+              : "primary"
+          }
+          title={
+            confirmModalType === "delete"
+              ? (locale === "en" ? "Delete job offer" : "Supprimer l'offre d'emploi")
+              : confirmModalType === "close"
+              ? (locale === "en" ? "Close job offer" : "Clôturer l'offre d'emploi")
+              : (locale === "en" ? "Reopen job offer" : "Réouvrir l'offre d'emploi")
+          }
+          message={
+            confirmModalType === "delete"
+              ? (locale === "en"
+                  ? `Are you sure you want to permanently delete the offer "${title}"? This action cannot be undone.`
+                  : `Êtes-vous sûr de vouloir supprimer définitivement l'offre "${title}" ? Cette action est irréversible.`)
+              : confirmModalType === "close"
+              ? (locale === "en"
+                  ? `Are you sure you want to close the offer "${title}"? Candidates will no longer be able to apply.`
+                  : `Êtes-vous sûr de vouloir clôturer l'offre "${title}" ? Les candidats ne pourront plus postuler.`)
+              : (locale === "en"
+                  ? `Are you sure you want to reopen and publish the offer "${title}"?`
+                  : `Êtes-vous sûr de vouloir réouvrir et publier l'offre "${title}" aux talents ?`)
+          }
+          confirmLabel={
+            confirmModalType === "delete"
+              ? (locale === "en" ? "Delete permanently" : "Supprimer définitivement")
+              : confirmModalType === "close"
+              ? (locale === "en" ? "Close offer" : "Clôturer l'offre")
+              : (locale === "en" ? "Reopen offer" : "Réouvrir l'offre")
+          }
+          cancelLabel={locale === "en" ? "Cancel" : "Annuler"}
+        />
+      )}
     </div>
   );
 }

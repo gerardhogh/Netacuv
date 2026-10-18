@@ -71,10 +71,7 @@ export default function RecruteursPage() {
           ].map((feat, i) => (
             <div key={i} className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex flex-col items-start gap-4 hover:shadow-md transition-shadow">
               <div className="w-12 h-12 rounded-full bg-blue-50 flex items-center justify-center flex-shrink-0 text-blue-600">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
-                  <polyline points="22 4 12 14.01 9 11.01"></polyline>
-                </svg>
+                <CheckCircle className="w-6 h-6 text-blue-600" />
               </div>
               <div>
                 <h3 className="font-bold text-lg text-slate-800 mb-2">{feat.title}</h3>

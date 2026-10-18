@@ -4,7 +4,7 @@ import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import Link from "next/link";
 import Image from "next/image";
-import { Check, X } from "lucide-react";
+import { Check, X, ArrowRight } from "lucide-react";
 import { useTranslations } from "next-intl";
 
 export default function TalentsPage() {
@@ -69,10 +69,7 @@ export default function TalentsPage() {
           {features.map((feat, i) => (
             <div key={i} className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex items-start gap-4">
               <div className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center flex-shrink-0 text-blue-600">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M5 12h14"></path>
-                  <path d="M12 5l7 7-7 7"></path>
-                </svg>
+                <ArrowRight className="w-5 h-5" />
               </div>
               <div>
                 <h3 className="font-bold text-lg text-slate-800 mb-1">{feat.title}</h3>

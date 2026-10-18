@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { Bookmark, BadgeCheck, CheckCircle, Crown, Flag } from "lucide-react";
+import { Bookmark, BadgeCheck, CheckCircle, Crown, Flag, Video } from "lucide-react";
 import PremiumRequiredModal from "./PremiumRequiredModal";
 import ReportModal from "./ReportModal";
 import { useTranslations } from "next-intl";
@@ -102,6 +102,17 @@ export default function TalentCard({
             >
               <Crown className="w-3.5 h-3.5 text-yellow-200 fill-yellow-200" />
               <span>Premium</span>
+            </div>
+          )}
+
+          {/* Video badge */}
+          {hasVideo && (
+            <div
+              className="absolute bottom-2.5 right-2.5 flex items-center gap-1 rounded-full bg-slate-900/80 backdrop-blur-xs text-white px-2.5 py-1 shadow-sm text-[11px] font-medium"
+              title="Entretien vidéo validé"
+            >
+              <Video className="w-3.5 h-3.5 text-sky-400" />
+              <span>Vidéo</span>
             </div>
           )}
         </div>

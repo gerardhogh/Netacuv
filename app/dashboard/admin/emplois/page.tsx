@@ -7,7 +7,7 @@ import useSWR, { useSWRConfig } from "swr";
 import { useTranslations } from "next-intl";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { CustomSelect } from "@/components/ui/CustomSelect";
-import { Modal } from "@/components/ui/Modal";
+import { Modal, ConfirmModal } from "@/app/components/ui/Modal";
 import { Pagination } from "@/components/ui/Pagination";
 
 const fetcher = (url: string) => fetch(url).then(res => res.json());
@@ -38,41 +38,105 @@ export default function AdminEmplois() {
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   const { mutate } = useSWRConfig();
 
-  const handleToggleStatus = async (id: string, newStatus: string) => {
+  const [confirmModalData, setConfirmModalData] = useState<{
+    isOpen: boolean;
+    type: "activate" | "close" | "delete";
+    id: string;
+    title?: string;
+  } | null>(null);
+
+  const executeConfirmAction = async () => {
+    if (!confirmModalData) return;
+    const { type, id } = confirmModalData;
+    setConfirmModalData(null);
     try {
-      const res = await fetch(`/api/jobs/${id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status: newStatus }),
-      });
-      if (res.ok) {
-        mutate("/api/admin/jobs");
+      if (type === "delete") {
+        const res = await fetch(`/api/jobs/${id}`, {
+          method: "DELETE",
+        });
+        if (res.ok) {
+          mutate("/api/admin/jobs");
+          if (jobToView?.rawId === id) setJobToView(null);
+        } else {
+          const errorData = await res.json();
+          alert(`Erreur: ${errorData.error}`);
+        }
       } else {
-        const errorData = await res.json();
-        alert(`Erreur: ${errorData.error}`);
+        const newStatus = type === "activate" ? "PUBLISHED" : "CLOSED";
+        const res = await fetch(`/api/jobs/${id}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ status: newStatus }),
+        });
+        if (res.ok) {
+          mutate("/api/admin/jobs");
+        } else {
+          const errorData = await res.json();
+          alert(`Erreur: ${errorData.error}`);
+        }
       }
     } catch (e) {
-      console.error("Erreur toggle status:", e);
+      console.error("Erreur action emploi:", e);
       alert(t("unexpectedError"));
     }
   };
 
-  const handleDelete = async (id: string) => {
-    if (!window.confirm(t("confirmDelete"))) return;
-    try {
-      const res = await fetch(`/api/jobs/${id}`, {
-        method: "DELETE",
-      });
-      if (res.ok) {
-        mutate("/api/admin/jobs");
-      } else {
-        const errorData = await res.json();
-        alert(`Erreur: ${errorData.error}`);
-      }
-    } catch (e) {
-      console.error("Erreur delete:", e);
-      alert(t("unexpectedError"));
-    }
+  const promptToggleStatus = (id: string, newStatus: string, title?: string) => {
+    setConfirmModalData({
+      isOpen: true,
+      type: newStatus === "PUBLISHED" ? "activate" : "close",
+      id,
+      title,
+    });
+  };
+
+  const promptDelete = (id: string, title?: string) => {
+    setConfirmModalData({
+      isOpen: true,
+      type: "delete",
+      id,
+      title,
+    });
+  };
+
+  const renderConfirmModal = () => {
+    if (!confirmModalData) return null;
+    return (
+      <ConfirmModal
+        isOpen={confirmModalData.isOpen}
+        onClose={() => setConfirmModalData(null)}
+        onConfirm={executeConfirmAction}
+        variant={
+          confirmModalData.type === "delete"
+            ? "danger"
+            : confirmModalData.type === "close"
+            ? "warning"
+            : "primary"
+        }
+        title={
+          confirmModalData.type === "delete"
+            ? "Supprimer l'offre d'emploi"
+            : confirmModalData.type === "close"
+            ? "Clôturer l'offre d'emploi"
+            : "Activer l'offre d'emploi"
+        }
+        message={
+          confirmModalData.type === "delete"
+            ? `Êtes-vous sûr de vouloir supprimer définitivement l'offre "${confirmModalData.title || ""}" ? Cette action est irréversible.`
+            : confirmModalData.type === "close"
+            ? `Êtes-vous sûr de vouloir clôturer l'offre "${confirmModalData.title || ""}" ? Les candidats ne pourront plus postuler.`
+            : `Êtes-vous sûr de vouloir activer et publier l'offre "${confirmModalData.title || ""}" ?`
+        }
+        confirmLabel={
+          confirmModalData.type === "delete"
+            ? "Supprimer définitivement"
+            : confirmModalData.type === "close"
+            ? "Clôturer l'offre"
+            : "Activer l'offre"
+        }
+        cancelLabel="Annuler"
+      />
+    );
   };
 
   const [currentPage, setCurrentPage] = useState(1);
@@ -133,9 +197,10 @@ export default function AdminEmplois() {
           emploi={jobToView}
           onBack={() => setJobToView(null)}
           onModifier={() => { setJobToEdit(jobToView); setJobToView(null); }}
-          onSupprimer={() => { handleDelete(jobToView.rawId); setJobToView(null); }}
-          onCloturer={() => handleToggleStatus(jobToView.rawId, 'CLOSED')}
+          onSupprimer={() => promptDelete(jobToView.rawId, jobToView.titre)}
+          onCloturer={() => promptToggleStatus(jobToView.rawId, 'CLOSED', jobToView.titre)}
         />
+        {renderConfirmModal()}
       </div>
     );
   }
@@ -315,10 +380,10 @@ export default function AdminEmplois() {
                             <button onClick={() => setJobToView(o)} className="text-[#32A8D7] hover:underline cursor-pointer">{t("viewOffer")}</button>
                             
                             {o.status === 'En attente' && (
-                              <button onClick={() => handleToggleStatus(o.rawId, 'PUBLISHED')} className="text-green-500 hover:underline cursor-pointer">{t("approve")}</button>
+                              <button onClick={() => promptToggleStatus(o.rawId, 'PUBLISHED', o.titre)} className="text-green-500 hover:underline cursor-pointer">{t("approve")}</button>
                             )}
                             {o.status === 'Suspendu' && (
-                              <button onClick={() => handleToggleStatus(o.rawId, 'PUBLISHED')} className="text-green-500 hover:underline cursor-pointer">{t("reactivateOffer")}</button>
+                              <button onClick={() => promptToggleStatus(o.rawId, 'PUBLISHED', o.titre)} className="text-green-500 hover:underline cursor-pointer">{t("reactivateOffer")}</button>
                             )}
                             
                             {/* L'admin ne modifie pas les offres externes, sauf s'il les a créées */}
@@ -327,10 +392,10 @@ export default function AdminEmplois() {
                             )}
                             
                             {o.status !== 'Suspendu' && (
-                              <button onClick={() => handleToggleStatus(o.rawId, 'CLOSED')} className="text-yellow-500 hover:underline cursor-pointer">{t("closeOffer")}</button>
+                              <button onClick={() => promptToggleStatus(o.rawId, 'CLOSED', o.titre)} className="text-yellow-500 hover:underline cursor-pointer">{t("closeOffer")}</button>
                             )}
                             
-                            <button onClick={() => handleDelete(o.rawId)} className="text-red-500 hover:underline cursor-pointer">{t("delete")}</button>
+                            <button onClick={() => promptDelete(o.rawId, o.titre)} className="text-red-500 hover:underline cursor-pointer">{t("delete")}</button>
                           </div>
                         </td>
                       </tr>
@@ -422,11 +487,11 @@ export default function AdminEmplois() {
                         <div className="absolute right-0 bottom-full mb-2 w-36 bg-white rounded-xl shadow-lg border border-slate-100 py-1 z-20">
                           <button onClick={() => { setOpenMenuId(null); setJobToEdit(o); }} className="w-full text-left px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 cursor-pointer">{t("edit")}</button>
                           {o.status !== 'Suspendu' ? (
-                            <button onClick={() => { setOpenMenuId(null); handleToggleStatus(o.rawId, 'CLOSED'); }} className="w-full text-left px-4 py-2 text-sm font-medium text-yellow-600 hover:bg-slate-50 cursor-pointer">{t("closeOffer")}</button>
+                            <button onClick={() => { setOpenMenuId(null); promptToggleStatus(o.rawId, 'CLOSED', o.titre); }} className="w-full text-left px-4 py-2 text-sm font-medium text-yellow-600 hover:bg-slate-50 cursor-pointer">{t("closeOffer")}</button>
                           ) : (
-                            <button onClick={() => { setOpenMenuId(null); handleToggleStatus(o.rawId, 'PUBLISHED'); }} className="w-full text-left px-4 py-2 text-sm font-medium text-green-600 hover:bg-slate-50 cursor-pointer">{t("reactivateOffer")}</button>
+                            <button onClick={() => { setOpenMenuId(null); promptToggleStatus(o.rawId, 'PUBLISHED', o.titre); }} className="w-full text-left px-4 py-2 text-sm font-medium text-green-600 hover:bg-slate-50 cursor-pointer">{t("reactivateOffer")}</button>
                           )}
-                          <button onClick={() => { setOpenMenuId(null); handleDelete(o.rawId); }} className="w-full text-left px-4 py-2 text-sm font-medium text-red-600 hover:bg-slate-50 cursor-pointer">{t("delete")}</button>
+                          <button onClick={() => { setOpenMenuId(null); promptDelete(o.rawId, o.titre); }} className="w-full text-left px-4 py-2 text-sm font-medium text-red-600 hover:bg-slate-50 cursor-pointer">{t("delete")}</button>
                         </div>
                       )}
                     </div>
@@ -464,6 +529,7 @@ export default function AdminEmplois() {
           }}
         />
       )}
+      {renderConfirmModal()}
     </>
   );
 }

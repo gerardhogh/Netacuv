@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import Image from "next/image";
-import { Camera, Save } from "lucide-react";
+import { Camera, Save, User } from "lucide-react";
 import { CustomSelect } from "@/components/ui/CustomSelect";
 import { useTranslations } from "next-intl";
 
@@ -239,13 +239,7 @@ export default function ProfilTab() {
               {avatarSrc ? (
                 <img src={avatarSrc} alt="Avatar" className="object-cover object-center w-full h-full group-hover:scale-105 transition-transform duration-300" />
               ) : (
-                <svg viewBox="0 0 80 80" className="w-20 h-20">
-                  <circle cx="40" cy="30" r="16" fill="#94C7EA" />
-                  <path d="M10 70 Q40 48 70 70" fill="#5B8DB8" />
-                  <circle cx="40" cy="28" r="12" fill="#FDDBB4" />
-                  <rect x="28" y="38" width="24" height="6" rx="3" fill="#2B5F8E" />
-                  <path d="M22 44 Q40 36 58 44 L62 70 H18 Z" fill="#1E4D7B" />
-                </svg>
+                <User className="w-14 h-14 text-blue-400" />
               )}
             </div>
 
