@@ -88,6 +88,7 @@ export async function GET(request: Request) {
               linkedin: true,
               twitter: true,
               pinterest: true,
+              behance: true,
             },
           },
         },
@@ -193,6 +194,10 @@ export async function GET(request: Request) {
     });
   } catch (error) {
     console.error("Erreur GET /api/talents:", error);
-    return NextResponse.json({ error: "Erreur lors de la récupération des talents" }, { status: 500 });
+    return NextResponse.json({ 
+      error: "Erreur lors de la récupération des talents",
+      details: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined
+    }, { status: 500 });
   }
 }
