@@ -31,6 +31,10 @@ export async function GET() {
       jobsCount,
       videosCount,
       applicationsCount,
+    }, {
+      headers: {
+        'Cache-Control': 'private, s-maxage=10, stale-while-revalidate=60',
+      }
     });
   } catch (error) {
     console.error("Erreur GET /api/admin/stats:", error);

@@ -9,7 +9,14 @@ import { Pagination } from "@/components/ui/Pagination";
 import useSWR from "swr";
 import { useTranslations } from "next-intl";
 
-const fetcher = (url: string) => fetch(url).then(res => res.json());
+const fetcher = async (url: string) => {
+  const res = await fetch(url);
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => ({}));
+    throw new Error(errorData.error || `Erreur ${res.status}`);
+  }
+  return res.json();
+};
 
 interface RecruiterItem {
   id: string;
@@ -43,9 +50,13 @@ export default function AdminRecruteurs() {
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 20;
 
-  const { data: usersData, isLoading: loading, mutate } = useSWR(
+  const { data: usersData, error, isLoading: loading, mutate } = useSWR(
     `/api/users?role=recruiter&page=${currentPage}&limit=${pageSize}`,
-    fetcher
+    fetcher,
+    {
+      revalidateOnFocus: false,
+      dedupingInterval: 10000,
+    }
   );
 
   const rawUsers = Array.isArray(usersData) ? usersData : (usersData?.users || []);

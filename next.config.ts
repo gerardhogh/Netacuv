@@ -24,6 +24,16 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  compress: true,
+  poweredByHeader: false,
+  experimental: {
+    optimizePackageImports: [
+      "lucide-react",
+      "recharts",
+      "framer-motion",
+      "@supabase/supabase-js",
+    ],
+  },
   typescript: {
     ignoreBuildErrors: true,
   },

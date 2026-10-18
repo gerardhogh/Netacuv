@@ -48,13 +48,27 @@ export async function GET(req: Request) {
         active: true,
         isPremium: true,
         recruiterProfile: {
-          include: {
+          select: {
+            id: true,
+            companyName: true,
+            companyLogo: true,
+            industry: true,
+            website: true,
+            address: true,
+            description: true,
+            skills: true,
+            phone: true,
             jobOffers: {
-              include: { applications: true }
+              select: {
+                id: true,
+                applications: {
+                  select: { id: true }
+                }
+              }
             }
           }
         },
-        talentProfile: true
+        talentProfile: (role === "recruiter" || role === "recruteur") ? false : true
       },
       orderBy: { createdAt: "desc" },
       skip,
@@ -69,6 +83,10 @@ export async function GET(req: Request) {
     totalPages: Math.ceil(totalCount / limit),
     page,
     limit,
+  }, {
+    headers: {
+      'Cache-Control': 'public, s-maxage=5, stale-while-revalidate=30',
+    }
   });
 }
 

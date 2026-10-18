@@ -69,10 +69,15 @@ import useSWR from "swr";
 
 const fetcher = (url: string) => fetch(url).then(res => res.json());
 
+const swrOptions = {
+  revalidateOnFocus: false,
+  dedupingInterval: 10000,
+};
+
 export default function AdminDashboard() {
   const t = useTranslations("admin.home");
-  const { data: jobsFetched = [], mutate } = useSWR("/api/admin/jobs", fetcher);
-  const { data: stats = {} } = useSWR("/api/admin/stats", fetcher);
+  const { data: jobsFetched = [], mutate } = useSWR("/api/admin/jobs", fetcher, swrOptions);
+  const { data: stats = {} } = useSWR("/api/admin/stats", fetcher, swrOptions);
 
   const globalStatsTemplate = [
     { label: t("registeredTalents"), key: "talentsCount", icon: Users, color: "text-blue-600", bg: "bg-blue-50/50 hover:bg-blue-50", border: "border-blue-100", href: "/dashboard/admin/talents" },

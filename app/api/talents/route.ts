@@ -88,17 +88,6 @@ export async function GET(request: Request) {
               linkedin: true,
               twitter: true,
               pinterest: true,
-              behance: true,
-              interviewSessions: {
-                take: 1,
-                orderBy: { createdAt: 'desc' },
-                select: {
-                  id: true,
-                  status: true,
-                  aiScore: true,
-                  videoRecordings: true,
-                },
-              },
             },
           },
         },
@@ -111,13 +100,34 @@ export async function GET(request: Request) {
       prisma.user.count({ where: whereClause }),
     ]);
     
+    // Récupération des sessions d'interview en 1 seule requête bulk globale (ultra rapide, 0 N+1)
+    const profileIds = talents.map(t => t.talentProfile?.id).filter((id): id is string => Boolean(id));
+    const sessions = profileIds.length > 0 ? await prisma.interviewSession.findMany({
+      where: { talentId: { in: profileIds } },
+      select: {
+        talentId: true,
+        status: true,
+        aiScore: true,
+        videoRecordings: true,
+      },
+      orderBy: { createdAt: 'desc' },
+    }) : [];
+
+    const sessionByTalent = new Map<string, (typeof sessions)[0]>();
+    for (const s of sessions) {
+      if (!sessionByTalent.has(s.talentId)) {
+        sessionByTalent.set(s.talentId, s);
+      }
+    }
+
     // Si c'est un recruteur non-premium, on masque certaines données
     const shouldHideSensitive = !isAdmin && !isPremium;
 
     const formattedTalents = talents.map((t: any, index: number) => {
       const profile = t.talentProfile;
-      const hasCompletedSession = !!(profile?.interviewSessions?.some((s: any) => s.status === "COMPLETED" || (s.aiScore !== null && s.aiScore !== undefined) || !!s.videoRecordings));
-      const resolvedVideo = profile?.videoUrl || profile?.interviewSessions?.[0]?.videoRecordings || null;
+      const talentSession = profile ? sessionByTalent.get(profile.id) : null;
+      const hasCompletedSession = !!(talentSession && (talentSession.status === "COMPLETED" || (talentSession.aiScore !== null && talentSession.aiScore !== undefined) || !!talentSession.videoRecordings));
+      const resolvedVideo = profile?.videoUrl || talentSession?.videoRecordings || null;
       const hasVideo = !!resolvedVideo || hasCompletedSession;
       let skillsArray = [];
       if (profile?.skills) {
@@ -176,6 +186,10 @@ export async function GET(request: Request) {
       total,
       page,
       totalPages: Math.ceil(total / limit),
+    }, {
+      headers: {
+        'Cache-Control': 'public, s-maxage=5, stale-while-revalidate=30',
+      }
     });
   } catch (error) {
     console.error("Erreur GET /api/talents:", error);

@@ -51,11 +51,13 @@ async function handleMiddleware(req: NextRequest) {
     }
   }
 
-  // Use getToken directly. It automatically handles secure cookies on production/HTTPS.
-  const token = await getToken({
+  // Ne déchiffrer le token JWT que si un cookie de session NextAuth existe
+  const hasAuthCookie = req.cookies.has("next-auth.session-token") ||
+                        req.cookies.has("__Secure-next-auth.session-token");
+  const token = hasAuthCookie ? await getToken({
     req,
     secret: process.env.NEXTAUTH_SECRET,
-  });
+  }) : null;
   const baseDomain = isLocalhost ? currentHost.replace(/^admin\./, "") : "netacuv.com";
   // En local sans sous-domaine admin., on redirige directement vers /dashboard/admin au lieu de forcer admin.localhost
   const adminUrl = isLocalhost && !isAdminSubdomain

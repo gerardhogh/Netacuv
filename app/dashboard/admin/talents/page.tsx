@@ -61,7 +61,10 @@ export default function AdminTalents() {
   const [selectedTalent, setSelectedTalent] = useState<TalentData | null>(null);
   const [confirmAction, setConfirmAction] = useState<{ id: string, type: 'activate' | 'suspend' | 'delete' } | null>(null);
 
-  const { data: talentsRaw, error, isLoading: loading, mutate } = useSWR("/api/talents", fetcher);
+  const { data: talentsRaw, error, isLoading: loading, mutate } = useSWR("/api/talents", fetcher, {
+    revalidateOnFocus: false,
+    dedupingInterval: 10000,
+  });
 
   const talents: TalentData[] = Array.isArray(talentsRaw) ? talentsRaw : (talentsRaw?.talents || []);
 
