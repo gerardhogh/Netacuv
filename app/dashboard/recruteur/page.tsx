@@ -757,7 +757,7 @@ export default function RecruteurDashboard() {
                         location={tItem.location}
                         profession={tItem.profession}
                         imageUrl={tItem.avatar || "/assets/avatar_africain.jpg"}
-                        isVerified={tItem.isVerified ?? true}
+                        isVerified={tItem.isPremium || false}
                         isFavorite={favorites.includes(tItem.id)}
                         onFavorite={toggleFavorite}
                         blurSensitive={!user?.isPremium}

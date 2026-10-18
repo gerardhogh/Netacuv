@@ -160,7 +160,7 @@ export async function GET(request: Request) {
           ? `/api/users/${t.id}/avatar` 
           : (t.image || "/assets/avatar_africain.jpg"),
         cvUrl: shouldHideSensitive ? "" : (profile?.cvUrl || ""),
-        isVerified: true,
+        isVerified: t.isPremium || false,
         isPremium: t.isPremium || false,
         skills: Array.isArray(skillsArray) ? skillsArray.join(", ") : "",
         gender: profile?.gender || "Non précisé",

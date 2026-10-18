@@ -272,7 +272,7 @@ export default function AdminTalents() {
               location={tData.location || tData.country || t("unspecified")}
               profession={tData.domaine || tData.skills || "Talent Netacuv"}
               imageUrl={tData.avatar || "/assets/avatar_africain.jpg"}
-              isVerified={tData.isVerified ?? true}
+              isVerified={tData.isPremium || false}
               isPremium={tData.isPremium}
               hasVideo={tData.videoOk}
               onViewProfile={() => setSelectedTalent(tData)}

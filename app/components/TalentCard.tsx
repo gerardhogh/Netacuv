@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { Bookmark, BadgeCheck, CheckCircle, Crown, Flag, Video } from "lucide-react";
+import { Bookmark, BadgeCheck, CheckCircle, Flag, Video } from "lucide-react";
 import PremiumRequiredModal from "./PremiumRequiredModal";
 import ReportModal from "./ReportModal";
 import { useTranslations } from "next-intl";
@@ -84,24 +84,13 @@ export default function TalentCard({
               isLoaded ? 'opacity-100' : 'opacity-0'
             } ${blurSensitive ? 'blur-md select-none' : ''}`}
           />
-          {/* Verification badge */}
-          {isVerified && (
+          {/* Badge certifié : Attribué UNIQUEMENT aux profils avec l'offre Premium */}
+          {isPremium && (
             <div
               className="absolute top-2.5 right-2.5 flex items-center justify-center rounded-full bg-white p-0.5 shadow-sm"
               title={t("certifiedAndVerified")}
             >
               <CheckCircle className="w-5 h-5 text-white fill-emerald-500" />
-            </div>
-          )}
-
-          {/* Premium badge */}
-          {isPremium && (
-            <div
-              className="absolute top-2.5 left-2.5 flex items-center gap-1.5 rounded-full bg-gradient-to-r from-amber-500 to-amber-600 text-white px-2.5 py-1 shadow-md text-[11px] font-bold tracking-wide"
-              title={t("certifiedPremium")}
-            >
-              <Crown className="w-3.5 h-3.5 text-yellow-200 fill-yellow-200" />
-              <span>Premium</span>
             </div>
           )}
 

@@ -108,7 +108,7 @@ export default function FavorisTab({ favorites, talents, toggleFavorite, onViewP
                 location={candidat.location}
                 profession={candidat.profession}
                 imageUrl={candidat.avatar || "/assets/avatar_africain.jpg"}
-                isVerified={candidat.isVerified ?? true}
+                isVerified={candidat.isPremium || false}
                 isFavorite={true}
                 onFavorite={() => removeFavori(candidat.id)}
                 blurSensitive={!user?.isPremium}

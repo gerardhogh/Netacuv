@@ -329,7 +329,7 @@ export default function RechercheProfil() {
                 location={talent.location}
                 profession={talent.profession}
                 imageUrl={talent.avatar || "/assets/avatar_africain.jpg"}
-                isVerified={talent.isVerified}
+                isVerified={talent.isPremium || false}
                 isFavorite={favorites.includes(talent.id)}
                 onFavorite={toggleFavorite}
                 blurSensitive={!isPremiumRecruiter}
