@@ -46,8 +46,16 @@ export async function POST(req: NextRequest) {
     }
     // -------------------------------------------------
 
-    // Nom de fichier unique pour éviter les collisions
-    const fileName = `${userId}-${Date.now()}-${file.name.replace(/\s+/g, '_')}`;
+    // Validation stricte de l'extension du fichier
+    const rawExt = path.extname(file.name || "").toLowerCase();
+    const allowedExtensions = ['.pdf', '.doc', '.docx'];
+    if (!allowedExtensions.includes(rawExt)) {
+      return NextResponse.json({ error: "Extension non autorisée. Seuls les .pdf, .doc, .docx sont acceptés." }, { status: 400 });
+    }
+
+    // Nom de fichier unique et sécurisé (suppression de caractères spéciaux et path traversal)
+    const safeBaseName = path.basename(file.name, rawExt).replace(/[^a-zA-Z0-9_-]/g, '_').slice(0, 50);
+    const fileName = `${userId}-${Date.now()}-${safeBaseName}${rawExt}`;
     
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);

@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { GoogleGenAI } from "@google/genai";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
 
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY! });
 
@@ -14,15 +16,25 @@ const VOICE_MAP: Record<string, string> = {
 
 export async function POST(req: NextRequest) {
   try {
+    const session = await getServerSession(authOptions);
+    if (!session || !(session.user as any)?.id) {
+      return NextResponse.json({ error: "Authentification requise" }, { status: 401 });
+    }
+
     const { text, subtitle, lang = "fr" } = await req.json();
 
     if (!text || typeof text !== "string") {
       return NextResponse.json({ error: "Texte manquant" }, { status: 400 });
     }
 
+    // Limit text length to avoid denial of wallet / memory abuse
+    if (text.length > 1000) {
+      return NextResponse.json({ error: "Texte trop long (maximum 1000 caractères)" }, { status: 400 });
+    }
+
     // Combine main question text + subtitle for full pronunciation
     const cleanText = text.replace(/[*_#]/g, "").trim();
-    const cleanSub = subtitle ? subtitle.replace(/[()_#]/g, "").trim() : "";
+    const cleanSub = subtitle ? String(subtitle).slice(0, 300).replace(/[()_#]/g, "").trim() : "";
     const fullText = cleanSub ? `${cleanText}. ${cleanSub}` : cleanText;
 
     const voiceName = VOICE_MAP[lang] || "Aoede";

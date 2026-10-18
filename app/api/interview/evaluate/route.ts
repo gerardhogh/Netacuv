@@ -9,6 +9,17 @@ const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
 export async function POST(req: NextRequest) {
   try {
+    const session = await getServerSession(authOptions);
+    const token = !session ? await getToken({ req, secret: process.env.NEXTAUTH_SECRET }).catch(() => null) : null;
+    const sessionUserId = (session?.user as any)?.id || token?.sub;
+
+    if (!sessionUserId) {
+      return NextResponse.json(
+        { error: "Authentification requise pour évaluer l'entretien" },
+        { status: 401 }
+      );
+    }
+
     const body = await req.json();
     const {
       jobDescription = "",
@@ -16,7 +27,6 @@ export async function POST(req: NextRequest) {
       candidateName = "Candidat",
       interviewSessionId = null,
       videoUrl = null,
-      userId = null,
       locale = "fr",
     } = body;
 
@@ -174,20 +184,8 @@ DIRECTIVES DE RESTITUTION :
 
     const evaluationResult = JSON.parse(responseText);
 
-    // Identifier l'utilisateur pour sauvegarder l'évaluation et la vidéo dans son profil
-    let targetUserId = userId || null;
-    if (!targetUserId) {
-      try {
-        const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET });
-        if (token?.sub) targetUserId = token.sub;
-      } catch (e) {}
-    }
-    if (!targetUserId) {
-      try {
-        const session = await getServerSession(authOptions);
-        if ((session?.user as any)?.id) targetUserId = (session?.user as any).id;
-      } catch (e) {}
-    }
+    // Identifier l'utilisateur authentifié pour sauvegarder l'évaluation et la vidéo dans son profil
+    const targetUserId = sessionUserId;
 
     if (targetUserId) {
       try {

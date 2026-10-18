@@ -59,9 +59,16 @@ export async function PATCH(
     }
   }
 
+  // SECURITY: Whitelist modifiable fields to prevent mass-assignment of sensitive fields (passwordHash, isPremium, affiliateBalance, etc.)
+  const allowedData: any = {};
+  if (body.name !== undefined) allowedData.name = String(body.name);
+  if (body.roleId !== undefined) allowedData.roleId = body.roleId;
+  if (body.active !== undefined) allowedData.active = Boolean(body.active);
+  if (body.image !== undefined) allowedData.image = body.image;
+
   const updatedUser = await prisma.user.update({
     where: { id },
-    data: body,
+    data: allowedData,
   });
 
   return NextResponse.json(updatedUser);

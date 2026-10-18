@@ -35,16 +35,7 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    if (!userId && formUserId) {
-      const userExists = await prisma.user.findUnique({ 
-        where: { id: formUserId }, 
-        select: { id: true } 
-      });
-      if (userExists) {
-        userId = formUserId;
-      }
-    }
-
+    // SECURITY: Never accept unauthenticated formUserId to prevent account hijacking
     if (!userId) {
       return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
     }
@@ -74,8 +65,10 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Vidéo trop volumineuse. La taille maximale est de 150 Mo." }, { status: 400 });
     }
 
-    // Nom de fichier unique pour éviter les collisions
-    const fileExt = file.name.split('.').pop() || (effectiveMime.includes('mp4') ? 'mp4' : 'webm');
+    // Nom de fichier unique et extension strictement contrôlée
+    const allowedVideoExts = ['mp4', 'webm', 'mov'];
+    const rawExt = (file.name.split('.').pop() || '').toLowerCase();
+    const fileExt = allowedVideoExts.includes(rawExt) ? rawExt : 'webm';
     const fileName = `${userId}-${Date.now()}-interview.${fileExt}`;
     
     const bytes = await file.arrayBuffer();

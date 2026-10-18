@@ -19,10 +19,12 @@ export async function POST(req: Request) {
       select: { id: true, name: true }
     });
 
+    // SECURITY: Prevent User Enumeration attacks.
+    // Always return a generic success message so an attacker cannot map out registered accounts.
     if (!userExists) {
       return NextResponse.json(
-        { error: "Aucun compte n'est associé à cette adresse e-mail. Veuillez vous inscrire." },
-        { status: 404 }
+        { success: true, message: "Si un compte est associé à cette adresse e-mail, un lien de réinitialisation a été envoyé." },
+        { status: 200 }
       );
     }
 
@@ -76,18 +78,17 @@ export async function POST(req: Request) {
       logger.error("ERREUR_ENVOI_RESEND", { error: errorData, email });
       console.error("[ERREUR_ENVOI_RESEND]", errorData);
       
-      // --- DEV / SANDBOX FALLBACK ---
-      // Si Resend bloque l'email (ex: domaine non vérifié, amis qui testent),
-      // on logue le lien de réinitialisation dans la console du serveur 
-      // pour permettre de tester la suite du flow de réinitialisation.
-      console.log(`\n\n========================================================`);
-      console.log(`[MODE SANDBOX RESEND] Impossible d'envoyer l'e-mail à ${email}`);
-      console.log(`Veuillez utiliser ce lien pour réinitialiser le mot de passe :`);
-      console.log(`${resetLink}`);
-      console.log(`========================================================\n\n`);
+      // --- DEV / SANDBOX FALLBACK (uniquement hors production) ---
+      if (process.env.NODE_ENV !== "production") {
+        console.log(`\n\n========================================================`);
+        console.log(`[MODE SANDBOX RESEND DEV] Impossible d'envoyer l'e-mail à ${email}`);
+        console.log(`Veuillez utiliser ce lien pour réinitialiser le mot de passe :`);
+        console.log(`${resetLink}`);
+        console.log(`========================================================\n\n`);
+      }
 
-      // On retourne un "faux" succès pour que l'interface utilisateur continue
-      return NextResponse.json({ success: true, warning: "Lien généré dans la console (sandbox)" }, { status: 200 });
+      // On retourne un succès générique pour ne pas bloquer l'utilisateur
+      return NextResponse.json({ success: true, message: "Si un compte est associé à cette adresse e-mail, un lien de réinitialisation a été envoyé." }, { status: 200 });
     }
 
     logger.info("Password reset email sent successfully via Resend", { email, context: "api/auth/forgot-password" });

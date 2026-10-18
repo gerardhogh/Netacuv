@@ -2,12 +2,19 @@ import { NextRequest, NextResponse } from "next/server";
 import { GoogleGenAI } from "@google/genai";
 import { prisma } from "@/lib/prisma";
 import { getTranslations } from "next-intl/server";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
 
 // Initialisation du client Google Gen AI
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
 export async function POST(req: NextRequest) {
   try {
+    const userSession = await getServerSession(authOptions);
+    if (!userSession || !(userSession.user as any)?.id) {
+      return NextResponse.json({ error: "Authentification requise" }, { status: 401 });
+    }
+
     const { interviewSessionId, questionIndex, videoUrl, transcript } = await req.json();
 
     if (!interviewSessionId || questionIndex === undefined || (!videoUrl && !transcript)) {

@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { GoogleGenAI, Type } from "@google/genai";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
 
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
@@ -34,6 +36,11 @@ export const NETACUV_DEFAULT_QUESTIONS = [
 
 export async function POST(req: NextRequest) {
   try {
+    const session = await getServerSession(authOptions);
+    if (!session || !(session.user as any)?.id) {
+      return NextResponse.json({ error: "Authentification requise" }, { status: 401 });
+    }
+
     const body = await req.json();
     const {
       jobDescription = "",

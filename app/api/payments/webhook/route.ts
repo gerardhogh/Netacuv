@@ -63,9 +63,17 @@ export async function POST(request: NextRequest) {
     // Verify transaction authenticity directly with FedaPay API
     const verifiedTx = await getFedaPayTransaction(fedaPayId).catch(() => null);
     
-    // Status can come from verifiedTx or directly from entity payload
-    const status = verifiedTx?.status || entity.status;
-    const customMetadata = verifiedTx?.customMetadata || entity.custom_metadata || {};
+    // SECURITY: Reject webhooks that cannot be authenticated via the official FedaPay API
+    if (!verifiedTx) {
+      console.warn(`[FEDAPAY_WEBHOOK_WARNING] Tentative de webhook non vérifiable avec FedaPay (ID: ${fedaPayId})`);
+      return NextResponse.json(
+        { received: true, verified: false, message: "Transaction non authentifiée auprès de FedaPay." },
+        { status: 200 }
+      );
+    }
+
+    const status = verifiedTx.status;
+    const customMetadata = verifiedTx.customMetadata || entity.custom_metadata || {};
     const dbTransactionId = customMetadata.dbTransactionId;
     const userId = customMetadata.userId;
 

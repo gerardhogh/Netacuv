@@ -10,15 +10,15 @@ export async function POST(request: NextRequest) {
     const body = await request.json().catch(() => ({}));
     const { method = "fedapay", phone = "" } = body;
 
-    const sessionUserId = session?.user?.id;
-    const targetUserId = body.userId || sessionUserId;
-
-    if (!targetUserId) {
+    const sessionUserId = (session?.user as any)?.id;
+    if (!sessionUserId) {
       return NextResponse.json(
         { error: "Utilisateur non identifié. Veuillez vous connecter." },
         { status: 401 }
       );
     }
+
+    const targetUserId = sessionUserId;
 
     const user = await prisma.user.findUnique({
       where: { id: targetUserId },
@@ -33,7 +33,8 @@ export async function POST(request: NextRequest) {
     }
 
     const isRecruiter = user.role?.name === "RECRUTEUR";
-    const amount = body.amount ? Number(body.amount) : isRecruiter ? 1000 : 700;
+    // Fix: Amount must NEVER be supplied by the client to prevent price tampering
+    const amount = isRecruiter ? 1000 : 700;
     const planName = isRecruiter ? "Abonnement Recruteur Premium" : "Abonnement Talent Premium";
 
     // Create pending transaction in Prisma database
@@ -105,6 +106,12 @@ export async function POST(request: NextRequest) {
 // GET: Polling status endpoint
 export async function GET(request: NextRequest) {
   try {
+    const session = await getServerSession(authOptions);
+    const sessionUserId = (session?.user as any)?.id;
+    if (!sessionUserId) {
+      return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
+    }
+
     const dbId = request.nextUrl.searchParams.get("db_id");
     const userId = request.nextUrl.searchParams.get("user_id");
 
@@ -112,15 +119,18 @@ export async function GET(request: NextRequest) {
       const tx = await prisma.transaction.findUnique({
         where: { id: dbId },
       });
-      if (!tx) {
+      if (!tx || tx.userId !== sessionUserId) {
         return NextResponse.json({ error: "Transaction introuvable" }, { status: 404 });
       }
       return NextResponse.json({ status: tx.status, transaction: tx });
     }
 
     if (userId) {
+      if (userId !== sessionUserId) {
+        return NextResponse.json({ error: "Accès interdit aux transactions d'un tiers" }, { status: 403 });
+      }
       const lastTx = await prisma.transaction.findFirst({
-        where: { userId },
+        where: { userId: sessionUserId },
         orderBy: { createdAt: "desc" },
       });
       return NextResponse.json({ transaction: lastTx, status: lastTx?.status || "NONE" });

@@ -28,34 +28,42 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const user = await prisma.user.findUnique({ where: { id: userId } });
-    if (!user || user.affiliateBalance < montant) {
-      return NextResponse.json({ error: "Solde insuffisant." }, { status: 422 });
-    }
-
-    // Atomic transaction
-    const [updatedUser, withdrawal] = await prisma.$transaction([
-      prisma.user.update({
-        where: { id: userId },
-        data: { affiliateBalance: { decrement: montant } },
-      }),
-      prisma.transaction.create({
-        data: { 
-          userId, 
-          amount: montant, 
-          paymentMethod: `${operateur} - ${numero}`, 
-          status: "PENDING",
-          type: "WITHDRAWAL" 
+    // SECURITY: Use an interactive transaction with conditional updateMany to prevent double-spending race conditions.
+    const withdrawal = await prisma.$transaction(async (tx) => {
+      const updateResult = await tx.user.updateMany({
+        where: {
+          id: userId,
+          affiliateBalance: { gte: montant },
         },
-      })
-    ]);
+        data: {
+          affiliateBalance: { decrement: montant },
+        },
+      });
+
+      if (updateResult.count === 0) {
+        throw new Error("INSUFFICIENT_BALANCE");
+      }
+
+      return await tx.transaction.create({
+        data: {
+          userId,
+          amount: montant,
+          paymentMethod: `${operateur} - ${numero}`,
+          status: "PENDING",
+          type: "WITHDRAWAL",
+        },
+      });
+    });
 
     return NextResponse.json({
       success: true,
       withdrawalId: withdrawal.id,
       message: `Demande de retrait de ${montant} FCFA enregistrée.`,
     });
-  } catch (error) {
+  } catch (error: any) {
+    if (error?.message === "INSUFFICIENT_BALANCE") {
+      return NextResponse.json({ error: "Solde insuffisant ou transaction en cours." }, { status: 422 });
+    }
     console.error("Withdrawal error:", error);
     return NextResponse.json({ error: "Erreur interne du serveur." }, { status: 500 });
   }

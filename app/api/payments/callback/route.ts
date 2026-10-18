@@ -9,8 +9,9 @@ export async function GET(request: NextRequest) {
     const fedaPayId = searchParams.get("id");
     const dbId = searchParams.get("db_id");
     const rawStatus = searchParams.get("status");
-
-    let isApproved = rawStatus === "approved";
+    // SECURITY: Never trust raw query parameters from the browser URL for payment approval.
+    // The payment must be verified via the official FedaPay API.
+    let isApproved = false;
     let dbTx: any = null;
 
     if (dbId) {
@@ -23,8 +24,8 @@ export async function GET(request: NextRequest) {
     // Verify directly with FedaPay API for security
     if (fedaPayId) {
       const fedaPayTx = await getFedaPayTransaction(fedaPayId);
-      if (fedaPayTx) {
-        isApproved = fedaPayTx.status === "approved";
+      if (fedaPayTx && fedaPayTx.status === "approved") {
+        isApproved = true;
         
         // If dbTx not found by dbId, check custom_metadata from FedaPay
         if (!dbTx && fedaPayTx.customMetadata?.dbTransactionId) {
