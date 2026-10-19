@@ -31,7 +31,10 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     }
 
     const userId = (session.user as any).id;
-    if (application.jobOffer.recruiter.userId !== userId) {
+    const userRole = ((session.user as any).role || "").toUpperCase();
+    const isAdmin = ["SUPER ADMIN", "ADMIN RH / MODÉRATEUR", "MANAGER IA & CERTIFICATION", "GESTIONNAIRE FINANCIER", "SUPPORT CLIENT", "ADMIN"].includes(userRole);
+
+    if (application.jobOffer.recruiter.userId !== userId && !isAdmin) {
       return NextResponse.json({ error: "Non autorisé" }, { status: 403 });
     }
 
@@ -97,7 +100,10 @@ export async function DELETE(req: Request, { params }: { params: Promise<{ id: s
     }
 
     const userId = (session.user as any).id;
-    if (application.jobOffer.recruiter.userId !== userId) {
+    const userRole = ((session.user as any).role || "").toUpperCase();
+    const isAdmin = ["SUPER ADMIN", "ADMIN RH / MODÉRATEUR", "MANAGER IA & CERTIFICATION", "GESTIONNAIRE FINANCIER", "SUPPORT CLIENT", "ADMIN"].includes(userRole);
+
+    if (application.jobOffer.recruiter.userId !== userId && !isAdmin) {
       return NextResponse.json({ error: "Non autorisé" }, { status: 403 });
     }
 

@@ -69,13 +69,22 @@ export async function GET(req: Request) {
       });
     }
 
-    // 2. RECRUITER : ne voit que les candidatures sur ses offres
-    if (effectiveRole === "RECRUITER" || effectiveRole === "RECRUTEUR") {
+    // 2. RECRUITER : ne voit que les candidatures sur ses offres (ou toutes si ADMIN)
+    const isAdmin = ["SUPER ADMIN", "ADMIN RH / MODÉRATEUR", "MANAGER IA & CERTIFICATION", "GESTIONNAIRE FINANCIER", "SUPPORT CLIENT", "ADMIN"].includes((session.user.role || "").toUpperCase());
+
+    if (effectiveRole === "RECRUITER" || effectiveRole === "RECRUTEUR" || isAdmin) {
       const recruiterProfile = await prisma.recruiterProfile.findFirst({
         where: { userId: session.user.id },
       });
 
-      if (!recruiterProfile) {
+      const whereClause: any = {};
+      if (jobOfferId) {
+        whereClause.jobOfferId = jobOfferId;
+      } else if (!isAdmin && recruiterProfile) {
+        whereClause.jobOffer = {
+          recruiterId: recruiterProfile.id,
+        };
+      } else if (!isAdmin && !recruiterProfile) {
         return NextResponse.json({
           applications: [],
           totalCount: 0,
@@ -85,52 +94,30 @@ export async function GET(req: Request) {
         });
       }
 
-      const whereClause: any = {
-        jobOffer: {
-          recruiterId: recruiterProfile.id,
-        },
-      };
-
-      if (jobOfferId) {
-        whereClause.jobOfferId = jobOfferId;
-      }
-
       const [applications, totalCount] = await Promise.all([
         prisma.application.findMany({
           where: whereClause,
           include: { 
             talent: {
-              include: { user: true }
+              include: { 
+                user: true,
+                interviewSessions: {
+                  select: {
+                    id: true,
+                    aiScore: true,
+                    videoRecordings: true,
+                  },
+                  orderBy: { createdAt: "desc" },
+                  take: 1,
+                }
+              }
             }, 
-            jobOffer: true 
+            jobOffer: {
+              include: {
+                recruiter: true,
+              }
+            } 
           },
-          orderBy: { createdAt: "desc" },
-          skip,
-          take,
-        }),
-        prisma.application.count({ where: whereClause }),
-      ]);
-
-      return NextResponse.json({
-        applications,
-        totalCount,
-        totalPages: Math.ceil(totalCount / limit),
-        page,
-        limit,
-      });
-    }
-
-    // 3. ADMIN : accès global
-    if (["SUPER ADMIN", "ADMIN RH / MODÉRATEUR", "MANAGER IA & CERTIFICATION", "GESTIONNAIRE FINANCIER", "SUPPORT CLIENT", "ADMIN"].includes(effectiveRole?.toUpperCase() || "")) {
-      const whereClause: any = {};
-      if (jobOfferId) {
-        whereClause.jobOfferId = jobOfferId;
-      }
-
-      const [applications, totalCount] = await Promise.all([
-        prisma.application.findMany({
-          where: whereClause,
-          include: { talent: true, jobOffer: true },
           orderBy: { createdAt: "desc" },
           skip,
           take,

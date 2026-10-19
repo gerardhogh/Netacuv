@@ -31,6 +31,7 @@ import PremiumRequiredModal from "../../../components/PremiumRequiredModal";
 import { CustomSelect } from "@/components/ui/CustomSelect";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { Pagination } from "@/components/ui/Pagination";
+import { extractProfession } from "@/lib/talents";
 
 const fetcher = (url: string) => fetch(url, { headers: { 'Cache-Control': 'no-cache' } }).then(res => res.json());
 
@@ -391,15 +392,18 @@ interface DetailOffreViewProps {
 function DetailOffreView({ emploi, onBack, onModifier, onSupprimer, onCloturer, onProlonger }: DetailOffreViewProps) {
   const t = useTranslations("recruiter.jobsTab");
   const locale = useLocale();
-  const { data: applications = [] } = useSWR(`/api/applications?role=recruiter&jobOfferId=${emploi.id}`, fetcher);
-  const candidates = Array.isArray(applications) ? applications.map((app: any) => ({
+  const { data: applicationsData } = useSWR(`/api/applications?role=recruiter&jobOfferId=${emploi.id}`, fetcher);
+  const rawList = Array.isArray(applicationsData)
+    ? applicationsData
+    : (applicationsData?.applications || []);
+  const candidates = rawList.map((app: any) => ({
     id: app.talent?.userId || app.id,
     nom: app.talent?.user?.name || "Talent sans nom",
-    localisation: t("unspecified"),
-    profession: app.talent?.profession || "Candidat",
-    avatar: app.talent?.user?.image || `https://ui-avatars.com/api/?name=${encodeURIComponent(app.talent?.user?.name || "T")}&background=random`,
+    localisation: app.talent?.city && app.talent?.country ? `${app.talent.city}, ${app.talent.country}` : (app.talent?.city || app.talent?.country || t("unspecified")),
+    profession: extractProfession(app.talent),
+    avatar: app.talent?.user?.image || `https://ui-avatars.com/api/?name=${encodeURIComponent(app.talent?.user?.name || "T")}&background=32A8D7&color=fff`,
     certifie: true,
-  })) : [];
+  }));
 
   return (
     <div className="space-y-5">

@@ -1,8 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { ArrowLeft, Share2, Trash2, Edit3, CheckCircle } from "lucide-react";
+import { ArrowLeft, Share2, Trash2, Edit3, CheckCircle, Users } from "lucide-react";
 import TalentCard from "@/app/components/TalentCard";
+import { extractProfession } from "@/lib/talents";
 import { useAuth } from "../../../context/AuthContext";
 import useSWR from "swr";
 import { useTranslations, useLocale } from "next-intl";
@@ -114,9 +115,9 @@ export default function DetailOffreView({
   const candidates = rawCandList.map((app: any) => ({
     id: app.talent?.userId || app.talentId || app.id,
     name: app.talent?.user?.name || "Talent sans nom",
-    location: app.talent?.location || app.talent?.user?.location || "Non spécifié",
-    profession: app.talent?.profession || "Candidat",
-    imageUrl: app.talent?.user?.image || `https://ui-avatars.com/api/?name=${encodeURIComponent(app.talent?.user?.name || "T")}&background=random`,
+    location: app.talent?.city && app.talent?.country ? `${app.talent.city}, ${app.talent.country}` : (app.talent?.city || app.talent?.country || app.talent?.user?.location || "Non spécifié"),
+    profession: extractProfession(app.talent),
+    imageUrl: app.talent?.user?.image || `https://ui-avatars.com/api/?name=${encodeURIComponent(app.talent?.user?.name || "T")}&background=32A8D7&color=fff`,
     isVerified: true,
   }));
 
@@ -259,22 +260,30 @@ export default function DetailOffreView({
           </p>
         </div>
 
-        {/* Grille de candidats */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-5">
-          {candidates.map((c: any) => (
-            <TalentCard
-              key={c.id}
-              id={c.id}
-              name={c.name}
-              location={c.location}
-              profession={c.profession}
-              imageUrl={c.imageUrl}
-              isVerified={c.isVerified}
-              onViewProfile={() => onViewCandidate?.(c.id)}
-              blurSensitive={!user?.isPremium}
-            />
-          ))}
-        </div>
+        {/* Grille de candidats ou état vide */}
+        {candidates.length === 0 ? (
+          <div className="text-center py-10 bg-slate-50/60 rounded-xl border border-dashed border-slate-200">
+            <Users size={32} className="text-slate-300 mx-auto mb-2" />
+            <p className="text-sm font-semibold text-slate-700">{locale === "en" ? "No applications yet" : "Aucune candidature reçue pour l'instant"}</p>
+            <p className="text-xs text-slate-400 mt-0.5">{locale === "en" ? "Candidates will appear here as soon as they apply." : "Les profils des talents postulant à cette offre s'afficheront ici."}</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-5">
+            {candidates.map((c: any) => (
+              <TalentCard
+                key={c.id}
+                id={c.id}
+                name={c.name}
+                location={c.location}
+                profession={c.profession}
+                imageUrl={c.imageUrl}
+                isVerified={c.isVerified}
+                onViewProfile={() => onViewCandidate?.(c.id)}
+                blurSensitive={!user?.isPremium}
+              />
+            ))}
+          </div>
+        )}
       </div>
 
       {/* ── ACTIONS INFÉRIEURES ── */}
