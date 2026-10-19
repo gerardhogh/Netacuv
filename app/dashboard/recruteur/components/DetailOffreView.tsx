@@ -182,10 +182,15 @@ export default function DetailOffreView({
           <button
             type="button"
             onClick={() => {
-              navigator.clipboard?.writeText(window.location.href);
-              showToast(locale === "en" ? "Job offer link copied to clipboard!" : "Lien de l'offre copié dans le presse-papier !");
+              const url = `${window.location.origin}/dashboard/talent?tab=emplois&jobId=${emploi.id}`;
+              if (navigator.share) {
+                navigator.share({ title: emploi.titre || emploi.title || "Offre d'emploi Netacuv", url }).catch(() => {});
+              } else {
+                navigator.clipboard?.writeText(url);
+                showToast(locale === "en" ? "Job offer link copied to clipboard!" : "Lien de l'offre copié dans le presse-papier !");
+              }
             }}
-            className="p-2.5 rounded-full bg-sky-50 text-[#32A8D7] hover:bg-sky-100 transition-colors"
+            className="p-2.5 rounded-full bg-sky-50 text-[#32A8D7] hover:bg-sky-100 transition-colors cursor-pointer"
             title={t("share")}
           >
             <Share2 size={18} />

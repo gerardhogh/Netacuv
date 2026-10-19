@@ -1,6 +1,7 @@
 "use client";
 import React, { useState } from "react";
 import { Search, MoreHorizontal, X, Save, ArrowLeft, ChevronRight, Clock, Share2, Users, CheckCircle2, Bookmark } from "lucide-react";
+import { Country, City } from "country-state-city";
 import Image from "next/image";
 import Link from "next/link";
 import useSWR, { useSWRConfig } from "swr";
@@ -707,7 +708,21 @@ function DetailOffreView({ emploi, onBack, onModifier, onSupprimer, onCloturer, 
                 <Bookmark size={18} className={isFavorite ? "fill-amber-500 text-amber-500" : ""} />
               </button>
             )}
-            <button className="p-2.5 rounded-xl border border-slate-200 text-slate-400 hover:text-[#32A8D7] hover:border-[#32A8D7] transition-colors shrink-0 cursor-pointer">
+            <button
+              type="button"
+              onClick={() => {
+                const jobId = emploi.rawId || emploi.id;
+                const url = `${window.location.origin}/dashboard/talent?tab=emplois&jobId=${jobId}`;
+                if (navigator.share) {
+                  navigator.share({ title: emploi.titre || "Offre d'emploi Netacuv", url }).catch(() => {});
+                } else {
+                  navigator.clipboard?.writeText(url);
+                  toast.success(t("linkCopied") || "Lien de l'offre copié dans le presse-papier !");
+                }
+              }}
+              className="p-2.5 rounded-xl border border-slate-200 text-slate-400 hover:text-[#32A8D7] hover:border-[#32A8D7] transition-colors shrink-0 cursor-pointer"
+              title="Partager l'offre"
+            >
               <Share2 size={18} />
             </button>
           </div>
@@ -796,8 +811,12 @@ function ModifierOffreView({ emploi, onBack, onSave }: ModifierOffreViewProps) {
   const [entreprise, setEntreprise] = useState(emploi.entreprise);
   
   const parts = emploi.localisation.split(", ");
-  const [pays, setPays] = useState(parts[1] || "Bénin");
-  const [ville, setVille] = useState(parts[0] || "Cotonou");
+  const countriesList = Country.getAllCountries();
+  const rawCountry = (parts[1] || "BJ").trim();
+  const foundCountry = countriesList.find(c => c.name.toLowerCase() === rawCountry.toLowerCase() || c.isoCode.toLowerCase() === rawCountry.toLowerCase());
+  const [pays, setPays] = useState(foundCountry ? foundCountry.isoCode : "BJ");
+  const [ville, setVille] = useState(parts[0]?.trim() || "");
+  const citiesList = pays ? City.getCitiesOfCountry(pays) : [];
   
   const [typeEmploi, setTypeEmploi] = useState(emploi.contrat);
   
@@ -817,11 +836,15 @@ function ModifierOffreView({ emploi, onBack, onSave }: ModifierOffreViewProps) {
 
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault();
+    const countryObj = Country.getCountryByCode(pays);
+    const countryName = countryObj ? countryObj.name : pays;
+    const fullLocation = ville ? `${ville}, ${countryName}` : (countryName || "Non spécifié");
+
     onSave({
       title: titre,
       entreprise: entreprise || "Netacuv",
       contractType: typeEmploi,
-      location: `${ville}, ${pays}`,
+      location: fullLocation,
       description: `Mode de travail : ${modeTravail}\n\n${description}`
     });
   };
@@ -860,21 +883,44 @@ function ModifierOffreView({ emploi, onBack, onSave }: ModifierOffreViewProps) {
 
       <div className={sectionClass}>
         <label className="block text-sm font-bold text-[#32A8D7] mb-3">{t("workLocationLabel")}</label>
-        <div className="grid grid-cols-2 gap-3">
-          <div className="relative">
-            <input 
-              type="text"
-              list="countries-list"
-              value={pays} 
-              onChange={(e) => setPays(e.target.value)} 
-              className={inputClass} 
-              placeholder={t("searchCountry")}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <CustomSelect
+            value={pays}
+            onChange={(val) => {
+              setPays(val);
+              setVille("");
+            }}
+            placeholder={t("searchCountry") || "Sélectionner un pays"}
+            options={[
+              { label: t("searchCountry") || "Sélectionner un pays", value: "" },
+              ...countriesList.map((c) => ({ label: c.name, value: c.isoCode })),
+            ]}
+            className="w-full"
+          />
+          {citiesList.length > 0 ? (
+            <CustomSelect
+              value={ville}
+              onChange={(val) => setVille(val)}
+              disabled={!pays}
+              placeholder={t("city") || "Sélectionner une ville"}
+              options={[
+                { label: t("city") || "Sélectionner une ville", value: "" },
+                ...citiesList.map((city) => ({
+                  label: city.name,
+                  value: city.name,
+                })),
+              ]}
+              className="w-full"
             />
-            <datalist id="countries-list">
-              {["Bénin","Côte d'Ivoire","Sénégal","Togo","Mali","Cameroun","Burkina Faso","Guinée", "France", "Canada", "États-Unis", "Maroc", "Tunisie"].map(p => <option key={p} value={p} />)}
-            </datalist>
-          </div>
-          <input type="text" value={ville} onChange={(e) => setVille(e.target.value)} className={inputClass} placeholder={t("city")} />
+          ) : (
+            <input
+              type="text"
+              value={ville}
+              onChange={(e) => setVille(e.target.value)}
+              className={inputClass}
+              placeholder={t("city") || "Ville"}
+            />
+          )}
         </div>
       </div>
 
@@ -913,24 +959,48 @@ interface PublierModalProps {
 
 function PublierModal({ onClose, onPublish }: PublierModalProps) {
   const t = useTranslations("admin.jobs");
+  const countriesList = Country.getAllCountries();
   const [titre, setTitre] = useState("");
   const [entreprise, setEntreprise] = useState("");
-  const [pays, setPays] = useState("Bénin");
-  const [ville, setVille] = useState("Cotonou");
+  const [pays, setPays] = useState("BJ");
+  const [ville, setVille] = useState("");
   
   const [typeEmploi, setTypeEmploi] = useState("CDI");
   const [modeTravail, setModeTravail] = useState("Temps plein");
   const [description, setDescription] = useState("");
+  const [dureePublication, setDureePublication] = useState("30 jours (Recommandé)");
+  const [dateExpiration, setDateExpiration] = useState("");
+  const [heureExpiration, setHeureExpiration] = useState("23:59");
+
+  const citiesList = pays ? City.getCitiesOfCountry(pays) : [];
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
+      let validityDays: number | undefined = undefined;
+      let expiresAt: string | undefined = undefined;
+
+      if (dureePublication.startsWith("15")) validityDays = 15;
+      else if (dureePublication.startsWith("30")) validityDays = 30;
+      else if (dureePublication.startsWith("60")) validityDays = 60;
+      else if (dureePublication.startsWith("90")) validityDays = 90;
+      else if (dureePublication === "Date personnalisée" && dateExpiration) {
+        const time = heureExpiration || "23:59";
+        expiresAt = new Date(`${dateExpiration}T${time}:00`).toISOString();
+      }
+
+      const countryObj = Country.getCountryByCode(pays);
+      const countryName = countryObj ? countryObj.name : pays;
+      const fullLocation = ville ? `${ville}, ${countryName}` : (countryName || "Non spécifié");
+
       const payload = {
         title: titre,
         description: `Mode de travail : ${modeTravail}\n\n${description}`,
-        location: `${ville}, ${pays}`,
+        location: fullLocation,
         contractType: typeEmploi,
         entreprise: entreprise || "Netacuv", 
+        validityDays,
+        expiresAt,
       };
 
       const res = await fetch("/api/jobs", {
@@ -983,21 +1053,44 @@ function PublierModal({ onClose, onPublish }: PublierModalProps) {
 
         <div>
           <label className="block text-sm font-bold text-[#32A8D7] mb-2">{t("workLocationLabel")}</label>
-          <div className="grid grid-cols-2 gap-3">
-            <div className="relative">
-              <input 
-                type="text"
-                list="countries-list"
-                value={pays} 
-                onChange={(e) => setPays(e.target.value)} 
-                className={inputClass} 
-                placeholder={t("searchCountry")}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <CustomSelect
+              value={pays}
+              onChange={(val) => {
+                setPays(val);
+                setVille("");
+              }}
+              placeholder={t("searchCountry") || "Sélectionner un pays"}
+              options={[
+                { label: t("searchCountry") || "Sélectionner un pays", value: "" },
+                ...countriesList.map((c) => ({ label: c.name, value: c.isoCode })),
+              ]}
+              className="w-full"
+            />
+            {citiesList.length > 0 ? (
+              <CustomSelect
+                value={ville}
+                onChange={(val) => setVille(val)}
+                disabled={!pays}
+                placeholder={t("city") || "Sélectionner une ville"}
+                options={[
+                  { label: t("city") || "Sélectionner une ville", value: "" },
+                  ...citiesList.map((city) => ({
+                    label: city.name,
+                    value: city.name,
+                  })),
+                ]}
+                className="w-full"
               />
-              <datalist id="countries-list">
-                {["Bénin","Côte d'Ivoire","Sénégal","Togo","Mali","Cameroun","Burkina Faso","Guinée", "France", "Canada", "États-Unis", "Maroc", "Tunisie"].map(p => <option key={p} value={p} />)}
-              </datalist>
-            </div>
-            <input type="text" value={ville} onChange={(e) => setVille(e.target.value)} className={inputClass} placeholder={t("city")} />
+            ) : (
+              <input
+                type="text"
+                value={ville}
+                onChange={(e) => setVille(e.target.value)}
+                className={inputClass}
+                placeholder={t("city") || "Ville"}
+              />
+            )}
           </div>
         </div>
 
@@ -1008,6 +1101,54 @@ function PublierModal({ onClose, onPublish }: PublierModalProps) {
             onChange={(val) => setModeTravail(val)}
             options={["Temps plein", "Temps partiel", "Remote", "Hybride"]}
           />
+        </div>
+
+        {/* Validité de l'offre */}
+        <div>
+          <label className="block text-sm font-bold text-[#32A8D7] mb-2">
+            Validité de l'offre (Clôture automatique)
+          </label>
+          <CustomSelect
+            value={dureePublication}
+            onChange={(val) => setDureePublication(val)}
+            options={[
+              "30 jours (Recommandé)",
+              "15 jours",
+              "60 jours",
+              "90 jours",
+              "Date personnalisée",
+              "Illimitée (Clôture manuelle)",
+            ]}
+          />
+          {dureePublication === "Date personnalisée" && (
+            <div className="mt-2.5 grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-semibold text-slate-500 mb-1">
+                  Date de clôture
+                </label>
+                <input
+                  type="date"
+                  min={new Date().toISOString().split("T")[0]}
+                  value={dateExpiration}
+                  onChange={(e) => setDateExpiration(e.target.value)}
+                  className={inputClass}
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-slate-500 mb-1">
+                  Heure de clôture
+                </label>
+                <input
+                  type="time"
+                  value={heureExpiration}
+                  onChange={(e) => setHeureExpiration(e.target.value)}
+                  className={inputClass}
+                  required
+                />
+              </div>
+            </div>
+          )}
         </div>
 
         <div>

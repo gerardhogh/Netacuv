@@ -154,7 +154,26 @@ export default function NotificationBell({
     }
     if (notif.link) {
       setIsOpen(false);
-      router.push(notif.link);
+      let targetLink = notif.link;
+
+      // Si le lien pointe vers la landing page publique (/talents ou /talents#emplois), rediriger vers l'espace dashboard concerné
+      if (targetLink === "/talents" || targetLink.startsWith("/talents#") || targetLink === "/talents#emplois") {
+        targetLink = "/dashboard/talent?tab=emplois";
+      }
+
+      // Convertir les fragments de hash en query param pour App Router Next.js
+      if (targetLink.includes("#")) {
+        targetLink = targetLink
+          .replace("/dashboard/talent#emplois", "/dashboard/talent?tab=emplois")
+          .replace("/dashboard/talent#profil", "/dashboard/talent?tab=profil")
+          .replace("/dashboard/talent#video", "/dashboard/talent?tab=video")
+          .replace("/dashboard/recruteur#candidatures", "/dashboard/recruteur?tab=candidatures")
+          .replace("/dashboard/recruteur#mes-offres", "/dashboard/recruteur?tab=emplois")
+          .replace("/dashboard/recruteur#emplois", "/dashboard/recruteur?tab=emplois")
+          .replace("#", "?tab=");
+      }
+
+      router.push(targetLink);
     }
   };
 

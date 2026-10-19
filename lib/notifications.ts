@@ -151,7 +151,7 @@ export async function notifyJobAlert(talentUserId: string, jobTitle: string, com
       ? `${companyName} recrute pour le poste "${jobTitle}". Postulez dès maintenant !`
       : `Une nouvelle opportunité "${jobTitle}" est disponible sur Netacuv.`,
     type: "JOB_ALERT",
-    link: jobId ? `/talents#emplois` : "/talents#emplois",
+    link: jobId ? `/dashboard/talent?tab=emplois&jobId=${jobId}` : "/dashboard/talent?tab=emplois",
   });
 }
 
@@ -179,7 +179,7 @@ export async function notifyApplicationStatus({
     title: "Statut de candidature mis à jour",
     message: `Votre candidature pour le poste "${jobTitle}"${companyName ? ` chez ${companyName}` : ""} a été ${statusText}.`,
     type: "APPLICATION_STATUS",
-    link: "/dashboard/talent#emplois",
+    link: "/dashboard/talent?tab=emplois",
   });
 }
 
@@ -200,7 +200,7 @@ export async function notifyInterviewReminder({
       ? `N'oubliez pas de passer votre entretien vidéo pour "${interviewTitle}" afin de valoriser votre profil.`
       : "Votre entretien vidéo IA vous attend. Complétez-le pour obtenir vos étoiles de certification !",
     type: "INTERVIEW_REMINDER",
-    link: "/interview",
+    link: "/dashboard/talent?tab=video",
   });
 }
 
@@ -221,7 +221,7 @@ export async function notifyNewApplication({
     title: "Nouvelle candidature reçue",
     message: `${candidateName} a postulé à votre offre d'emploi "${jobTitle}".`,
     type: "NEW_APPLICATION",
-    link: "/dashboard/recruteur#candidatures",
+    link: "/dashboard/recruteur?tab=candidatures",
   });
 }
 
@@ -242,7 +242,7 @@ export async function notifyJobExpiringSoon({
     title: "Offre expirant bientôt",
     message: `Votre offre "${jobTitle}" arrive à expiration dans ${daysLeft} jour${daysLeft > 1 ? "s" : ""}. Pensez à la prolonger si nécessaire.`,
     type: "JOB_EXPIRING_SOON",
-    link: "/dashboard/recruteur#mes-offres",
+    link: "/dashboard/recruteur?tab=emplois",
   });
 }
 
@@ -263,7 +263,7 @@ export async function notifyApplicationSummary({
       ? `Vous avez reçu ${count} nouvelle${count > 1 ? "s" : ""} candidature${count > 1 ? "s" : ""} cette semaine.`
       : "Aucune nouvelle candidature reçue cette semaine. Pensez à booster la visibilité de vos offres !",
     type: "APPLICATION_SUMMARY",
-    link: "/dashboard/recruteur#candidatures",
+    link: "/dashboard/recruteur?tab=candidatures",
   });
 }
 

@@ -102,7 +102,10 @@ export default function CandidatProfilDetail({
   }, [candidat?.id]);
 
   const name = fullProfile?.name || candidat?.name || "Alicia PARKER";
-  const profession = fullProfile?.profession || candidat?.profession || "Développeur Frontend";
+  const rawProfession = fullProfile?.profession || candidat?.profession;
+  const profession = (!rawProfession || rawProfession.trim().toLowerCase() === "talent" || rawProfession.trim().toLowerCase() === "candidat")
+    ? (fullProfile?.domaine && fullProfile.domaine.toLowerCase() !== "talent" ? fullProfile.domaine : "Profession non renseignée")
+    : rawProfession;
   const email = fullProfile?.email || candidat?.email || "jean.dossou@mail.com";
   const phone = fullProfile?.contact || candidat?.phone || "+229 01 91 49 61 67";
   const imageUrl = fullProfile?.imageUrl || candidat?.imageUrl || "/assets/candidate-alicia-parker.jpg";

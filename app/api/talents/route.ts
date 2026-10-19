@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
+import { extractProfession } from "@/lib/talents";
 
 export async function GET(request: Request) {
   try {
@@ -139,6 +140,8 @@ export async function GET(request: Request) {
         }
       }
 
+      const resolvedProfession = extractProfession(profile);
+
       return {
         id: t.id,
         no: (index + 1).toString().padStart(2, '0'),
@@ -152,10 +155,10 @@ export async function GET(request: Request) {
         status: t.active ? "Actif" : "Suspendu",
         videoOk: hasVideo,
         videoUrl: resolvedVideo,
-        domaine: profile?.degree || "Général",
+        domaine: (profile?.degree && profile.degree.toLowerCase() !== "talent") ? profile.degree : (resolvedProfession !== "Profession non renseignée" ? resolvedProfession : "Général"),
         location: profile?.city ? `${profile.city}, ${profile.country || ''}` : (profile?.country || "Non spécifié"),
         country: profile?.country || "Non spécifié",
-        profession: profile?.degree || "Talent", 
+        profession: resolvedProfession, 
         bio: profile?.bio || "Aucune biographie",
         avatar: t.image?.startsWith("data:image") 
           ? `/api/users/${t.id}/avatar` 

@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
+import { extractProfession } from "@/lib/talents";
 
 export async function GET(
   request: Request,
@@ -89,24 +90,26 @@ export async function GET(
     // Si c'est un recruteur non-premium et que le talent n'a pas postulé à l'une de ses offres, on masque certaines données
     const shouldHideSensitive = !isAdmin && !isPremium && !hasAppliedToRecruiter;
 
-    const formattedTalent = {
-      id: talentUser.id,
-      name: talentUser.name || "Talent Anonyme",
-      username: profile?.username || talentUser.email?.split('@')[0] || "",
-      email: shouldHideSensitive ? "premium@requis.com" : (talentUser.email || ""),
-      contact: shouldHideSensitive ? "Premium requis" : (profile?.phone || "Non spécifié"),
-      date: new Date(talentUser.createdAt).toLocaleDateString('fr-FR'),
-      updatedAt: profile?.updatedAt ? new Date(profile.updatedAt).toLocaleDateString('fr-FR') : "Récemment",
-      status: talentUser.active ? "Actif" : "Suspendu",
-      videoUrl: cleanVideoUrl,
-      domaine: profile?.degree || "Général",
-      location: (profile?.city && profile?.country) 
-        ? `${profile.city}, ${profile.country}` 
-        : (profile?.city || profile?.country || "Non spécifié"),
-      country: profile?.country || "",
-      city: profile?.city || "",
-      profession: profile?.degree || "Talent", 
-      bio: profile?.bio || "Aucune biographie",
+      const resolvedProfession = extractProfession(profile);
+
+      const formattedTalent = {
+        id: talentUser.id,
+        name: talentUser.name || "Talent Anonyme",
+        username: profile?.username || talentUser.email?.split('@')[0] || "",
+        email: shouldHideSensitive ? "premium@requis.com" : (talentUser.email || ""),
+        contact: shouldHideSensitive ? "Premium requis" : (profile?.phone || "Non spécifié"),
+        date: new Date(talentUser.createdAt).toLocaleDateString('fr-FR'),
+        updatedAt: profile?.updatedAt ? new Date(profile.updatedAt).toLocaleDateString('fr-FR') : "Récemment",
+        status: talentUser.active ? "Actif" : "Suspendu",
+        videoUrl: cleanVideoUrl,
+        domaine: (profile?.degree && profile.degree.toLowerCase() !== "talent") ? profile.degree : (resolvedProfession !== "Profession non renseignée" ? resolvedProfession : "Général"),
+        location: (profile?.city && profile?.country) 
+          ? `${profile.city}, ${profile.country}` 
+          : (profile?.city || profile?.country || "Non spécifié"),
+        country: profile?.country || "",
+        city: profile?.city || "",
+        profession: resolvedProfession, 
+        bio: profile?.bio || "Aucune biographie",
       imageUrl: talentUser.image?.startsWith("data:image")
         ? `/api/users/${talentUser.id}/avatar`
         : (talentUser.image || "/assets/avatar_africain.jpg"),

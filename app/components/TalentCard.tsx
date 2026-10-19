@@ -43,6 +43,9 @@ export default function TalentCard({
   hasVideo = false,
 }: TalentCardProps) {
   const t = useTranslations("talentCard");
+  const displayProfession = (!profession || profession.trim().toLowerCase() === "talent" || profession.trim().toLowerCase() === "candidat")
+    ? (t("unspecified") || "Profession non renseignée")
+    : profession;
   const [showPremiumModal, setShowPremiumModal] = useState(false);
   const [showReportModal, setShowReportModal] = useState(false);
 
@@ -146,7 +149,7 @@ export default function TalentCard({
           {/* Profession */}
           <p className="text-xs text-slate-700 font-semibold mb-4 mt-1">
             {t("profession")}{" "}
-            <span className="font-normal text-slate-500">{profession}</span>
+            <span className="font-normal text-slate-500">{displayProfession}</span>
           </p>
 
           {/* Action buttons */}

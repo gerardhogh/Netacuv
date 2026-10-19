@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Image from "next/image";
+import { Country, City } from "country-state-city";
 import {
   Briefcase,
   Plus,
@@ -147,15 +148,19 @@ interface PublierModalProps {
 
 function PublierModal({ onClose, onPublish }: PublierModalProps) {
   const t = useTranslations("recruiter.jobsTab");
+  const countriesList = Country.getAllCountries();
   const [titre, setTitre] = useState("");
   const [entreprise, setEntreprise] = useState("");
-  const [pays, setPays] = useState("Bénin");
-  const [ville, setVille] = useState("Cotonou");
+  const [pays, setPays] = useState("BJ");
+  const [ville, setVille] = useState("");
   const [typeEmploi, setTypeEmploi] = useState("CDI");
   const [modeTravail, setModeTravail] = useState("Temps plein");
   const [description, setDescription] = useState("");
   const [dureePublication, setDureePublication] = useState("30 jours (Recommandé)");
   const [dateExpiration, setDateExpiration] = useState("");
+  const [heureExpiration, setHeureExpiration] = useState("23:59");
+
+  const citiesList = pays ? City.getCitiesOfCountry(pays) : [];
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -168,13 +173,18 @@ function PublierModal({ onClose, onPublish }: PublierModalProps) {
       else if (dureePublication.startsWith("60")) validityDays = 60;
       else if (dureePublication.startsWith("90")) validityDays = 90;
       else if (dureePublication === "Date personnalisée" && dateExpiration) {
-        expiresAt = new Date(dateExpiration).toISOString();
+        const time = heureExpiration || "23:59";
+        expiresAt = new Date(`${dateExpiration}T${time}:00`).toISOString();
       }
+
+      const countryObj = Country.getCountryByCode(pays);
+      const countryName = countryObj ? countryObj.name : pays;
+      const fullLocation = ville ? `${ville}, ${countryName}` : (countryName || "Non spécifié");
 
       const payload = {
         title: titre,
         description: `Mode de travail : ${modeTravail}\n\n${description}`,
-        location: `${ville}, ${pays}`,
+        location: fullLocation,
         contractType: typeEmploi,
         entreprise: entreprise, // Utilisé pour auto-créer le profil si inexistant
         validityDays,
@@ -245,21 +255,44 @@ function PublierModal({ onClose, onPublish }: PublierModalProps) {
           {/* Lieu du travail */}
           <div>
             <label className="block text-sm font-bold text-[#32A8D7] mb-2">{t("workLocation")}</label>
-            <div className="grid grid-cols-2 gap-3">
-              <div className="relative">
-                <input 
-                  type="text"
-                  list="recruiter-countries-list"
-                  value={pays} 
-                  onChange={(e) => setPays(e.target.value)} 
-                  className={inputClass} 
-                  placeholder={t("searchCountry")}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <CustomSelect
+                value={pays}
+                onChange={(val) => {
+                  setPays(val);
+                  setVille("");
+                }}
+                placeholder={t("searchCountry") || "Sélectionner un pays"}
+                options={[
+                  { label: t("searchCountry") || "Sélectionner un pays", value: "" },
+                  ...countriesList.map((c) => ({ label: c.name, value: c.isoCode })),
+                ]}
+                className="w-full"
+              />
+              {citiesList.length > 0 ? (
+                <CustomSelect
+                  value={ville}
+                  onChange={(val) => setVille(val)}
+                  disabled={!pays}
+                  placeholder={t("city") || "Sélectionner une ville"}
+                  options={[
+                    { label: t("city") || "Sélectionner une ville", value: "" },
+                    ...citiesList.map((city) => ({
+                      label: city.name,
+                      value: city.name,
+                    })),
+                  ]}
+                  className="w-full"
                 />
-                <datalist id="recruiter-countries-list">
-                  {["Bénin","Côte d'Ivoire","Sénégal","Togo","Mali","Cameroun","Burkina Faso","Guinée", "France", "Canada", "États-Unis", "Maroc", "Tunisie"].map(p => <option key={p} value={p} />)}
-                </datalist>
-              </div>
-              <input type="text" value={ville} onChange={(e) => setVille(e.target.value)} className={inputClass} placeholder={t("city")} />
+              ) : (
+                <input
+                  type="text"
+                  value={ville}
+                  onChange={(e) => setVille(e.target.value)}
+                  className={inputClass}
+                  placeholder={t("city") || "Ville"}
+                />
+              )}
             </div>
           </div>
 
@@ -293,15 +326,32 @@ function PublierModal({ onClose, onPublish }: PublierModalProps) {
               className="w-full"
             />
             {dureePublication === "Date personnalisée" && (
-              <div className="mt-2.5">
-                <input
-                  type="date"
-                  min={new Date(Date.now() + 86400000).toISOString().split('T')[0]}
-                  value={dateExpiration}
-                  onChange={(e) => setDateExpiration(e.target.value)}
-                  className={inputClass}
-                  required
-                />
+              <div className="mt-2.5 grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-500 mb-1">
+                    Date de clôture
+                  </label>
+                  <input
+                    type="date"
+                    min={new Date().toISOString().split("T")[0]}
+                    value={dateExpiration}
+                    onChange={(e) => setDateExpiration(e.target.value)}
+                    className={inputClass}
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-500 mb-1">
+                    Heure de clôture
+                  </label>
+                  <input
+                    type="time"
+                    value={heureExpiration}
+                    onChange={(e) => setHeureExpiration(e.target.value)}
+                    className={inputClass}
+                    required
+                  />
+                </div>
               </div>
             )}
           </div>
@@ -378,7 +428,21 @@ function DetailOffreView({ emploi, onBack, onModifier, onSupprimer, onCloturer, 
               <span className="font-semibold">{t("locationLabel")}</span> {emploi.lieu || (emploi as any).location}
             </p>
           </div>
-          <button className="p-2.5 rounded-xl border border-slate-200 text-slate-400 hover:text-[#32A8D7] hover:border-[#32A8D7] transition-colors shrink-0">
+          <button 
+            type="button"
+            onClick={() => {
+              const jobId = emploi.id;
+              const url = `${window.location.origin}/dashboard/talent?tab=emplois&jobId=${jobId}`;
+              if (navigator.share) {
+                navigator.share({ title: emploi.titre || (emploi as any).title || "Offre d'emploi Netacuv", url }).catch(() => {});
+              } else {
+                navigator.clipboard?.writeText(url);
+                alert(locale === "en" ? "Job offer link copied to clipboard!" : "Lien de l'offre copié dans le presse-papier !");
+              }
+            }}
+            className="p-2.5 rounded-xl border border-slate-200 text-slate-400 hover:text-[#32A8D7] hover:border-[#32A8D7] transition-colors shrink-0 cursor-pointer"
+            title={t("share") || "Partager l'offre"}
+          >
             <Share2 size={18} />
           </button>
         </div>
@@ -498,17 +562,30 @@ interface ModifierOffreViewProps {
 
 function ModifierOffreView({ emploi, onBack, onSave }: ModifierOffreViewProps) {
   const t = useTranslations("recruiter.jobsTab");
-  const [titre, setTitre] = useState(emploi.titre || (emploi as any).title);
-  const [entreprise, setEntreprise] = useState(emploi.entreprise || (emploi as any).recruiter?.companyName);
-  const [pays, setPays] = useState(emploi.pays || "Bénin");
-  const [ville, setVille] = useState(emploi.ville || (emploi as any).location?.split(',')[0]);
-  const [typeEmploi, setTypeEmploi] = useState(emploi.typeEmploi || (emploi as any).contractType);
+  const countriesList = Country.getAllCountries();
+
+  const resolvedCountryCode = (() => {
+    const raw = emploi.pays || (emploi as any).location?.split(",")?.slice(-1)[0]?.trim() || "BJ";
+    const found = countriesList.find(c => c.isoCode.toLowerCase() === raw.toLowerCase() || c.name.toLowerCase() === raw.toLowerCase());
+    return found ? found.isoCode : "BJ";
+  })();
+
+  const [titre, setTitre] = useState(emploi.titre || (emploi as any).title || "");
+  const [entreprise, setEntreprise] = useState(emploi.entreprise || (emploi as any).recruiter?.companyName || "");
+  const [pays, setPays] = useState(resolvedCountryCode);
+  const [ville, setVille] = useState(emploi.ville || (emploi as any).location?.split(',')[0]?.trim() || "");
+  const [typeEmploi, setTypeEmploi] = useState(emploi.typeEmploi || (emploi as any).contractType || "CDI");
   const [modeTravail, setModeTravail] = useState(emploi.modeTravail || "Temps plein");
-  const [description, setDescription] = useState(emploi.description || (emploi as any).description);
+  const [description, setDescription] = useState(emploi.description || (emploi as any).description || "");
+
+  const citiesList = pays ? City.getCitiesOfCountry(pays) : [];
 
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault();
-    onSave({ ...emploi, titre, entreprise, pays, ville, typeEmploi, modeTravail, description, lieu: `${ville}, ${pays}` });
+    const countryObj = Country.getCountryByCode(pays);
+    const countryName = countryObj ? countryObj.name : pays;
+    const fullLocation = ville ? `${ville}, ${countryName}` : (countryName || "Non spécifié");
+    onSave({ ...emploi, titre, entreprise, pays, ville, typeEmploi, modeTravail, description, lieu: fullLocation });
   };
 
   const sectionClass = "bg-white rounded-2xl border border-slate-100 shadow-sm p-6";
@@ -551,14 +628,44 @@ function ModifierOffreView({ emploi, onBack, onSave }: ModifierOffreViewProps) {
       {/* Lieu */}
       <div className={sectionClass}>
         <label className="block text-sm font-bold text-[#32A8D7] mb-3">{t("workLocation")}</label>
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <CustomSelect
             value={pays}
-            onChange={setPays}
-            options={["Bénin","Côte d'Ivoire","Sénégal","Togo","Mali","Cameroun","Burkina Faso","Guinée", "France", "Canada"]}
+            onChange={(val) => {
+              setPays(val);
+              setVille("");
+            }}
+            placeholder={t("searchCountry") || "Sélectionner un pays"}
+            options={[
+              { label: t("searchCountry") || "Sélectionner un pays", value: "" },
+              ...countriesList.map((c) => ({ label: c.name, value: c.isoCode })),
+            ]}
             className="w-full"
           />
-          <input type="text" value={ville} onChange={(e) => setVille(e.target.value)} className={inputClass} placeholder={t("city")} />
+          {citiesList.length > 0 ? (
+            <CustomSelect
+              value={ville}
+              onChange={(val) => setVille(val)}
+              disabled={!pays}
+              placeholder={t("city") || "Sélectionner une ville"}
+              options={[
+                { label: t("city") || "Sélectionner une ville", value: "" },
+                ...citiesList.map((city) => ({
+                  label: city.name,
+                  value: city.name,
+                })),
+              ]}
+              className="w-full"
+            />
+          ) : (
+            <input
+              type="text"
+              value={ville}
+              onChange={(e) => setVille(e.target.value)}
+              className={inputClass}
+              placeholder={t("city") || "Ville"}
+            />
+          )}
         </div>
       </div>
 

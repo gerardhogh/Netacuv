@@ -314,7 +314,7 @@ export default function AdminTalents() {
               id={tData.id}
               name={tData.name}
               location={tData.location || tData.country || t("unspecified")}
-              profession={tData.domaine || tData.skills || "Talent Netacuv"}
+              profession={tData.profession || tData.domaine || "Profession non renseignée"}
               imageUrl={tData.avatar || "/assets/avatar_africain.jpg"}
               isVerified={tData.isPremium || false}
               isPremium={tData.isPremium}

@@ -93,6 +93,20 @@ export default function OffresEmplois({
   const { data, error, isLoading } = useSWR("/api/jobs", fetcher);
   const jobs = data?.jobs || [];
 
+  // Deep-linking: auto-select job if jobId is passed in query params
+  useEffect(() => {
+    if (typeof window === "undefined" || !jobs || jobs.length === 0) return;
+    const params = new URLSearchParams(window.location.search);
+    const targetJobId = params.get("jobId");
+    if (targetJobId) {
+      const found = jobs.find((j: any) => String(j.id) === String(targetJobId));
+      if (found) {
+        setSelectedJob(found);
+        setView("detail");
+      }
+    }
+  }, [jobs]);
+
   const { data: myAppsData, mutate: mutateApps } = useSWR("/api/applications", fetcher);
   const { data: favsData, mutate: mutateFavs } = useSWR("/api/favorites?type=JOB_OFFER", fetcher);
 
@@ -265,12 +279,16 @@ export default function OffresEmplois({
                               onClick={() => {
                                 setOpenMenuJobId(null);
                                 if (typeof window !== "undefined") {
-                                  const url = `${window.location.origin}/talents#emplois`;
-                                  navigator.clipboard.writeText(url);
-                                  toast.success(t("linkCopied"));
+                                  const url = `${window.location.origin}/dashboard/talent?tab=emplois&jobId=${job.id}`;
+                                  if (navigator.share) {
+                                    navigator.share({ title: job.title || "Offre d'emploi Netacuv", url }).catch(() => {});
+                                  } else {
+                                    navigator.clipboard.writeText(url);
+                                    toast.success(t("linkCopied"));
+                                  }
                                 }
                               }}
-                              className="w-full px-3.5 py-2 text-left text-xs font-semibold text-slate-700 hover:bg-slate-50 flex items-center gap-2.5 transition-colors"
+                              className="w-full px-3.5 py-2 text-left text-xs font-semibold text-slate-700 hover:bg-slate-50 flex items-center gap-2.5 transition-colors cursor-pointer"
                             >
                               <Share2 size={14} className="text-slate-400" />
                               <span>{t("share")}</span>
@@ -395,11 +413,17 @@ export default function OffresEmplois({
               <button 
                 onClick={() => {
                   if (typeof window !== "undefined") {
-                    navigator.clipboard.writeText(window.location.href);
-                    toast.success(t("linkCopied"));
+                    const url = `${window.location.origin}/dashboard/talent?tab=emplois&jobId=${selectedJob.id}`;
+                    if (navigator.share) {
+                      navigator.share({ title: selectedJob.title || "Offre d'emploi Netacuv", url }).catch(() => {});
+                    } else {
+                      navigator.clipboard.writeText(url);
+                      toast.success(t("linkCopied"));
+                    }
                   }
                 }}
-                className="w-10 h-10 rounded-full bg-white/20 hover:bg-white/40 backdrop-blur-md flex items-center justify-center text-white transition-all shadow-sm"
+                className="w-10 h-10 rounded-full bg-white/20 hover:bg-white/40 backdrop-blur-md flex items-center justify-center text-white transition-all shadow-sm cursor-pointer"
+                title={t("share") || "Partager l'offre"}
               >
                 <Share2 size={16} />
               </button>
