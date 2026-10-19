@@ -1,12 +1,13 @@
 "use client";
 import React, { useState } from "react";
-import { Search, Mail, Eye, Edit, Trash2, LayoutList, LayoutGrid, Crown, Briefcase, Users as UsersIcon, Phone, Building2 } from "lucide-react";
+import { Search, Mail, Eye, Edit, Trash2, LayoutList, LayoutGrid, Crown, Briefcase, Users as UsersIcon, Phone, Building2, Bookmark } from "lucide-react";
 import { RecruteurDetails } from "../components/RecruteurDetails";
 import { CustomSelect } from "../components/CustomSelect";
 import { Modal } from "@/app/components/ui/Modal";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { Pagination } from "@/components/ui/Pagination";
 import useSWR from "swr";
+import toast from "react-hot-toast";
 import { useTranslations } from "next-intl";
 
 const fetcher = async (url: string) => {
@@ -59,6 +60,42 @@ export default function AdminRecruteurs() {
     }
   );
 
+  const { data: favsData, mutate: mutateFavs } = useSWR("/api/favorites?type=RECRUITER", fetcher, {
+    revalidateOnFocus: false,
+  });
+
+  const favoriteIds = new Set<string>((favsData?.favorites || []).map((f: any) => String(f.targetId)));
+
+  const handleToggleFavorite = async (id: string, name?: string, secteur?: string, address?: string) => {
+    try {
+      const res = await fetch("/api/favorites", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          targetType: "RECRUITER",
+          targetId: String(id),
+          title: name || "Entreprise",
+          subtitle: secteur || "Recruteur",
+          location: address || null,
+        }),
+      });
+      if (res.ok) {
+        mutateFavs();
+        const json = await res.json();
+        if (json.action === "added") {
+          toast.success("Profil recruteur ajouté aux favoris !");
+        } else {
+          toast.success("Profil recruteur retiré des favoris.");
+        }
+      } else {
+        toast.error("Erreur lors de la mise à jour des favoris.");
+      }
+    } catch (err) {
+      console.error("Error toggling favorite", err);
+      toast.error("Erreur de connexion.");
+    }
+  };
+
   const rawUsers = Array.isArray(usersData) ? usersData : (usersData?.users || []);
   const totalCount = usersData?.totalCount ?? rawUsers.length;
   const totalPages = usersData?.totalPages ?? Math.max(1, Math.ceil(totalCount / pageSize));
@@ -104,7 +141,21 @@ export default function AdminRecruteurs() {
   };
 
   if (selectedRecruteur) {
-    return <RecruteurDetails recruteur={selectedRecruteur} onBack={() => setSelectedRecruteur(null)} />;
+    return (
+      <RecruteurDetails
+        recruteur={selectedRecruteur}
+        onBack={() => setSelectedRecruteur(null)}
+        isFavorite={favoriteIds.has(String(selectedRecruteur.id))}
+        onToggleFavorite={() =>
+          handleToggleFavorite(
+            selectedRecruteur.id,
+            selectedRecruteur.name,
+            selectedRecruteur.secteur,
+            selectedRecruteur.address
+          )
+        }
+      />
+    );
   }
 
   const handleConfirmAction = async () => {
@@ -258,13 +309,31 @@ export default function AdminRecruteurs() {
                   </span>
                 )}
 
-                {/* Status Badge */}
-                <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[11px] font-semibold shadow-xs" style={{
-                  backgroundColor: r.status === 'Actif' ? '#f0fdf4' : r.status === 'En attente' ? '#fefce8' : '#fef2f2',
-                  color: '#475569'
-                }}>
-                  <span>{r.status === 'Actif' ? t("active") : r.status === 'En attente' ? t("pending") : t("suspended")}</span>
-                  <span className={`w-1.5 h-1.5 rounded-full ${r.status === 'Actif' ? 'bg-green-500' : r.status === 'En attente' ? 'bg-yellow-400' : 'bg-red-500'}`}></span>
+                {/* Status Badge & Favorite */}
+                <div className="flex items-center gap-1.5">
+                  <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[11px] font-semibold shadow-xs" style={{
+                    backgroundColor: r.status === 'Actif' ? '#f0fdf4' : r.status === 'En attente' ? '#fefce8' : '#fef2f2',
+                    color: '#475569'
+                  }}>
+                    <span>{r.status === 'Actif' ? t("active") : r.status === 'En attente' ? t("pending") : t("suspended")}</span>
+                    <span className={`w-1.5 h-1.5 rounded-full ${r.status === 'Actif' ? 'bg-green-500' : r.status === 'En attente' ? 'bg-yellow-400' : 'bg-red-500'}`}></span>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleToggleFavorite(r.id, r.name, r.secteur, r.address);
+                    }}
+                    className={`p-1.5 rounded-full transition-colors cursor-pointer ${
+                      favoriteIds.has(String(r.id))
+                        ? "bg-amber-100 text-amber-600"
+                        : "bg-white/90 text-slate-400 hover:text-amber-500 hover:bg-white"
+                    }`}
+                    title={favoriteIds.has(String(r.id)) ? "Retirer des favoris" : "Ajouter aux favoris"}
+                  >
+                    <Bookmark size={13} className={favoriteIds.has(String(r.id)) ? "fill-amber-500 text-amber-500" : ""} />
+                  </button>
                 </div>
               </div>
 
@@ -361,7 +430,22 @@ export default function AdminRecruteurs() {
                 {filtered.map(r => (
                   <tr key={r.id} className="hover:bg-slate-50/50 transition-colors">
                     <td className="px-5 py-4 text-[#1e4869] font-medium">{r.no}</td>
-                    <td className="px-5 py-4 text-[#1e4869] font-medium">{r.name}</td>
+                    <td className="px-5 py-4 text-[#1e4869] font-medium">
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => handleToggleFavorite(r.id, r.name, r.secteur, r.address)}
+                          className="p-1 rounded-full hover:bg-slate-100 transition-colors cursor-pointer"
+                          title={favoriteIds.has(String(r.id)) ? "Retirer des favoris" : "Ajouter aux favoris"}
+                        >
+                          <Bookmark
+                            size={14}
+                            className={favoriteIds.has(String(r.id)) ? "fill-amber-500 text-amber-500" : "text-slate-300 hover:text-amber-500"}
+                          />
+                        </button>
+                        <span>{r.name}</span>
+                      </div>
+                    </td>
                     <td className="px-5 py-4 text-[#1e4869]">{r.offresPubliees}</td>
                     <td className="px-5 py-4 text-[#1e4869]">{r.email}</td>
                     <td className="px-5 py-4 whitespace-nowrap">

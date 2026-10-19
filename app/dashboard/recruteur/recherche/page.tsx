@@ -81,6 +81,14 @@ export default function RechercheProfil() {
 
   useEffect(() => {
     fetchTalents();
+    fetch("/api/favorites?type=TALENT")
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (data?.favorites && Array.isArray(data.favorites)) {
+          setFavorites(data.favorites.map((f: any) => String(f.targetId)));
+        }
+      })
+      .catch((err) => console.error("Error loading favorites:", err));
   }, []);
 
   const showToast = (msg: string) => {
@@ -91,13 +99,28 @@ export default function RechercheProfil() {
   const toggleFavorite = (id?: string | number) => {
     if (!id) return;
     const strId = String(id);
-    if (favorites.includes(strId)) {
+    const talentObj = talents.find((t: any) => String(t.id) === strId);
+    const isFav = favorites.includes(strId);
+
+    if (isFav) {
       setFavorites(favorites.filter((f) => f !== strId));
       showToast(tSearch("profileRemoved"));
     } else {
       setFavorites([...favorites, strId]);
       showToast(tSearch("profileAdded"));
     }
+
+    fetch("/api/favorites", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        targetType: "TALENT",
+        targetId: strId,
+        title: talentObj?.name || "Candidat",
+        subtitle: talentObj?.profession || "Professionnel",
+        location: talentObj?.location,
+      }),
+    }).catch(console.error);
   };
 
   return (

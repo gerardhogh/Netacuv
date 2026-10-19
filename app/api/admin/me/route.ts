@@ -1,20 +1,35 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getToken } from "next-auth/jwt";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
 import { logger } from "@/lib/logger";
 import bcrypt from "bcrypt";
 
 export const dynamic = 'force-dynamic';
 
+function checkIsAdminRole(roleName?: string | null): boolean {
+  if (!roleName) return false;
+  const upper = roleName.toUpperCase();
+  return (
+    upper.includes("ADMIN") ||
+    upper.includes("MODERATEUR") ||
+    upper.includes("MODÉRATEUR") ||
+    upper.includes("MANAGER") ||
+    upper.includes("GESTIONNAIRE") ||
+    upper.includes("SUPPORT")
+  );
+}
+
 export async function GET(req: NextRequest) {
   try {
-    const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET });
+    const session = await getServerSession(authOptions);
+    const token = !session?.user ? await getToken({ req, secret: process.env.NEXTAUTH_SECRET }).catch(() => null) : null;
+    const userId = (session?.user as any)?.id || token?.sub;
     
-    if (!token?.sub) {
+    if (!userId) {
       return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
     }
-
-    const userId = token.sub;
     
     const user = await prisma.user.findUnique({
       where: { id: userId },
@@ -31,8 +46,8 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: "Utilisateur non trouvé" }, { status: 404 });
     }
 
-    const upperRole = user.role?.name?.toUpperCase() || "";
-    const isAdmin = upperRole === "SUPER ADMIN" || upperRole === "ADMIN RH / MODÉRATEUR" || upperRole === "MANAGER IA & CERTIFICATION" || upperRole === "GESTIONNAIRE FINANCIER" || upperRole === "SUPPORT CLIENT" || upperRole === "ADMIN";
+    const sessionRole = (session?.user as any)?.role || (token as any)?.role;
+    const isAdmin = checkIsAdminRole(user.role?.name) || checkIsAdminRole(sessionRole);
 
     if (!isAdmin) {
       return NextResponse.json({ error: "Accès refusé" }, { status: 403 });
@@ -54,21 +69,25 @@ export async function GET(req: NextRequest) {
 
 export async function PUT(req: NextRequest) {
   try {
-    const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET });
+    const session = await getServerSession(authOptions);
+    const token = !session?.user ? await getToken({ req, secret: process.env.NEXTAUTH_SECRET }).catch(() => null) : null;
+    const userId = (session?.user as any)?.id || token?.sub;
     
-    if (!token?.sub) {
+    if (!userId) {
       return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
     }
-
-    const userId = token.sub;
     
     const user = await prisma.user.findUnique({
       where: { id: userId },
-      select: { role: true, passwordHash: true }
+      select: { id: true, role: true, passwordHash: true }
     });
 
-    const upperRole = user?.role?.name?.toUpperCase() || "";
-    const isAdmin = upperRole === "SUPER ADMIN" || upperRole === "ADMIN RH / MODÉRATEUR" || upperRole === "MANAGER IA & CERTIFICATION" || upperRole === "GESTIONNAIRE FINANCIER" || upperRole === "SUPPORT CLIENT" || upperRole === "ADMIN";
+    if (!user) {
+      return NextResponse.json({ error: "Utilisateur non trouvé" }, { status: 404 });
+    }
+
+    const sessionRole = (session?.user as any)?.role || (token as any)?.role;
+    const isAdmin = checkIsAdminRole(user.role?.name) || checkIsAdminRole(sessionRole);
 
     if (!isAdmin) {
       return NextResponse.json({ error: "Accès refusé" }, { status: 403 });

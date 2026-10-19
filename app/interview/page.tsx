@@ -971,7 +971,7 @@ export default function InterviewPage() {
               <div className="absolute -top-24 -left-24 w-72 h-72 bg-[#32A8D7]/20 rounded-full blur-3xl" />
               <div className="absolute -bottom-24 -right-24 w-80 h-80 bg-[#1e8ae9]/20 rounded-full blur-3xl" />
               <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-[#0c3e70]/30 rounded-full blur-3xl" />
-              <div className="w-[320px] h-[320px] max-w-[80vw] max-h-[80vw] opacity-[0.08] transform -rotate-12 scale-110">
+              <div className="w-[320px] h-[320px] max-w-[80vw] max-h-[80vw] opacity-[0.025] transform -rotate-12 scale-110">
                 <Image
                   src="/Logo/SVG/Asset 14.svg"
                   alt="Netacuv Logo"

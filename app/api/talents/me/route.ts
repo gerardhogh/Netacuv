@@ -1,19 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getToken } from "next-auth/jwt";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
 import { logger } from "@/lib/logger";
 
 export const dynamic = 'force-dynamic';
 
 export async function GET(req: NextRequest) {
   try {
-    const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET });
+    const session = await getServerSession(authOptions);
+    const token = !session?.user ? await getToken({ req, secret: process.env.NEXTAUTH_SECRET }).catch(() => null) : null;
+    const userId = (session?.user as any)?.id || token?.sub;
     
-    if (!token?.sub) {
+    if (!userId) {
       return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
     }
-
-    const userId = token.sub;
     
     let user = await prisma.user.findUnique({
       where: { id: userId },
@@ -67,13 +69,14 @@ export async function GET(req: NextRequest) {
 
 export async function PUT(req: NextRequest) {
   try {
-    const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET });
+    const session = await getServerSession(authOptions);
+    const token = !session?.user ? await getToken({ req, secret: process.env.NEXTAUTH_SECRET }).catch(() => null) : null;
+    const userId = (session?.user as any)?.id || token?.sub;
     
-    if (!token?.sub) {
+    if (!userId) {
       return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
     }
 
-    const userId = token.sub;
     const data = await req.json();
 
     const {

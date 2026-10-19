@@ -1,6 +1,7 @@
 import { NextResponse, NextRequest } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getServerSession } from "next-auth/next";
+import { getToken } from "next-auth/jwt";
 import { authOptions } from "@/lib/auth";
 
 export const dynamic = 'force-dynamic';
@@ -8,14 +9,25 @@ export const dynamic = 'force-dynamic';
 export async function POST(req: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
-    
-    if (!session || !session.user) {
-      return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
+    let userId = (session?.user as any)?.id;
+    let userEmail = session?.user?.email;
+
+    if (!userId && !userEmail) {
+      const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET });
+      userId = (token?.sub as string) || (token?.id as string);
+      userEmail = token?.email as string;
     }
 
-    const userId = (session.user as any).id;
+    if (!userId && userEmail) {
+      const u = await prisma.user.findUnique({
+        where: { email: userEmail },
+        select: { id: true }
+      });
+      userId = u?.id;
+    }
+
     if (!userId) {
-      return NextResponse.json({ error: "Identifiant utilisateur introuvable" }, { status: 401 });
+      return NextResponse.json({ error: "Non autorisé ou identifiant introuvable" }, { status: 401 });
     }
 
     const formData = await req.formData();

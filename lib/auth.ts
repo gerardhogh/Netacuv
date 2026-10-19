@@ -107,8 +107,15 @@ export const authOptions: NextAuthOptions = {
           throw new Error(`Mot de passe incorrect. (${failResult.remainingAttempts} tentative(s) restante(s))`);
         }
 
-        // Connexion réussie : réinitialisation du compteur
+        // Connexion réussie : réinitialisation du compteur et mise à jour de l'activité (conservation des données)
         resetLoginRateLimit(email);
+
+        try {
+          await prisma.user.update({
+            where: { id: user.id },
+            data: { updatedAt: new Date() },
+          });
+        } catch (e) {}
 
         return {
           id: user.id,
@@ -139,7 +146,21 @@ export const authOptions: NextAuthOptions = {
             if (authAction === "login" && !existingUser) {
               return "/connexion?error=Ce+compte+n'existe+pas.+Veuillez+vous+inscrire.";
             }
+
+            if (existingUser) {
+              await prisma.user.update({
+                where: { id: existingUser.id },
+                data: { updatedAt: new Date() },
+              });
+            }
           }
+        } else if (user?.email) {
+          try {
+            await prisma.user.updateMany({
+              where: { email: user.email },
+              data: { updatedAt: new Date() },
+            });
+          } catch (e) {}
         }
         return true;
       } catch (err) {

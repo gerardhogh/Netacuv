@@ -7,6 +7,7 @@ import {
   notifyInterviewReminder,
   notifyApplicationSummary,
 } from "@/lib/notifications";
+import { applyDataRetentionPolicy } from "@/lib/dataRetention";
 
 export const dynamic = "force-dynamic";
 
@@ -52,6 +53,7 @@ async function handleCron(req: Request) {
       jobExpiringNotified: 0,
       interviewRemindersNotified: 0,
       applicationSummariesNotified: 0,
+      inactiveAccountsDeleted: 0,
       executedAt: now.toISOString(),
     };
 
@@ -187,9 +189,19 @@ async function handleCron(req: Request) {
       }
     }
 
+    // ------------------------------------------------------------------
+    // 4. TÂCHE CONSERVATION DES DONNÉES : Inactivité > 2 ans
+    // ------------------------------------------------------------------
+    try {
+      const retentionResult = await applyDataRetentionPolicy({ dryRun: false });
+      stats.inactiveAccountsDeleted = retentionResult.deletedUsersCount;
+    } catch (retentionErr) {
+      console.error("Erreur lors de l'application de la politique de conservation des données:", retentionErr);
+    }
+
     return NextResponse.json({
       success: true,
-      message: "Cron Job de notifications exécuté avec succès",
+      message: "Cron Job exécuté avec succès (notifications & conservation des données)",
       stats,
     });
   } catch (error) {

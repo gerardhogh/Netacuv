@@ -1,12 +1,13 @@
 "use client";
 import React, { useState } from "react";
-import { Search, LayoutList, LayoutGrid, AlertCircle } from "lucide-react";
+import { Search, LayoutList, LayoutGrid, AlertCircle, Bookmark } from "lucide-react";
 import { TalentDetails } from "../components/TalentDetails";
 import { CustomSelect } from "../components/CustomSelect";
 import { Modal } from "@/app/components/ui/Modal";
 import { EmptyState } from "@/components/ui/EmptyState";
 import TalentCard from "@/app/components/TalentCard";
 import useSWR from "swr";
+import toast from "react-hot-toast";
 import { useTranslations } from "next-intl";
 
 const fetcher = async (url: string) => {
@@ -66,6 +67,42 @@ export default function AdminTalents() {
     dedupingInterval: 10000,
   });
 
+  const { data: favsData, mutate: mutateFavs } = useSWR("/api/favorites?type=TALENT", fetcher, {
+    revalidateOnFocus: false,
+  });
+
+  const favoriteIds = new Set<string>((favsData?.favorites || []).map((f: any) => String(f.targetId)));
+
+  const handleToggleFavorite = async (id: string, name?: string, domaine?: string, location?: string) => {
+    try {
+      const res = await fetch("/api/favorites", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          targetType: "TALENT",
+          targetId: String(id),
+          title: name || "Talent Netacuv",
+          subtitle: domaine || "Professionnel",
+          location: location || null,
+        }),
+      });
+      if (res.ok) {
+        mutateFavs();
+        const json = await res.json();
+        if (json.action === "added") {
+          toast.success("Profil talent ajouté aux favoris !");
+        } else {
+          toast.success("Profil talent retiré des favoris.");
+        }
+      } else {
+        toast.error("Erreur lors de la mise à jour des favoris.");
+      }
+    } catch (err) {
+      console.error("Error toggling favorite", err);
+      toast.error("Erreur de connexion.");
+    }
+  };
+
   const talents: TalentData[] = Array.isArray(talentsRaw) ? talentsRaw : (talentsRaw?.talents || []);
 
   const filtered = talents.filter(t => {
@@ -89,7 +126,14 @@ export default function AdminTalents() {
   };
 
   if (selectedTalent) {
-    return <TalentDetails talent={selectedTalent} onBack={() => setSelectedTalent(null)} />;
+    return (
+      <TalentDetails 
+        talent={selectedTalent} 
+        onBack={() => setSelectedTalent(null)}
+        isFavorite={favoriteIds.has(String(selectedTalent.id))}
+        onToggleFavorite={() => handleToggleFavorite(selectedTalent.id, selectedTalent.name, selectedTalent.domaine, selectedTalent.location)}
+      />
+    );
   }
 
   const handleConfirmAction = async () => {
@@ -275,6 +319,8 @@ export default function AdminTalents() {
               isVerified={tData.isPremium || false}
               isPremium={tData.isPremium}
               hasVideo={tData.videoOk}
+              isFavorite={favoriteIds.has(String(tData.id))}
+              onFavorite={() => handleToggleFavorite(tData.id, tData.name, tData.domaine, tData.location)}
               onViewProfile={() => setSelectedTalent(tData)}
               onSendEmail={() => window.open(`mailto:${tData.email}`)}
             />
@@ -304,9 +350,23 @@ export default function AdminTalents() {
                   <tr key={tData.id} className="hover:bg-slate-50/50 transition-colors">
                     <td className="px-5 py-4 text-slate-500">{tData.no}</td>
                     <td className="px-5 py-4">
-                      <button onClick={() => setSelectedTalent(tData)} className="text-[#32A8D7] font-semibold hover:underline text-left">
-                        {tData.name}
-                      </button>
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => handleToggleFavorite(tData.id, tData.name, tData.domaine, tData.location)}
+                          title={favoriteIds.has(String(tData.id)) ? "Retirer des favoris" : "Ajouter aux favoris"}
+                          className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
+                            favoriteIds.has(String(tData.id))
+                              ? "text-amber-500 bg-amber-50 hover:bg-amber-100"
+                              : "text-slate-400 hover:text-amber-500 hover:bg-slate-100"
+                          }`}
+                        >
+                          <Bookmark size={15} fill={favoriteIds.has(String(tData.id)) ? "currentColor" : "none"} />
+                        </button>
+                        <button onClick={() => setSelectedTalent(tData)} className="text-[#32A8D7] font-semibold hover:underline text-left">
+                          {tData.name}
+                        </button>
+                      </div>
                     </td>
                     <td className="px-5 py-4 text-slate-700 whitespace-nowrap">{tData.domaine}</td>
                     <td className="px-5 py-4 text-slate-500 whitespace-nowrap">{tData.date}</td>

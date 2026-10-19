@@ -5,6 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import useSWR, { useSWRConfig } from "swr";
 import { useTranslations } from "next-intl";
+import toast from "react-hot-toast";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { CustomSelect } from "@/components/ui/CustomSelect";
 import { Modal, ConfirmModal } from "@/app/components/ui/Modal";
@@ -37,6 +38,42 @@ export default function AdminEmplois() {
   const [jobToEdit, setJobToEdit] = useState<JobOfferData | null>(null);
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   const { mutate } = useSWRConfig();
+
+  const { data: favsData, mutate: mutateFavs } = useSWR("/api/favorites?type=JOB_OFFER", fetcher, {
+    revalidateOnFocus: false,
+  });
+
+  const favoriteIds = new Set<string>((favsData?.favorites || []).map((f: any) => String(f.targetId)));
+
+  const handleToggleFavorite = async (rawId: string, titre: string, entreprise: string, localisation: string) => {
+    try {
+      const res = await fetch("/api/favorites", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          targetType: "JOB_OFFER",
+          targetId: String(rawId),
+          title: titre,
+          subtitle: entreprise,
+          location: localisation,
+        }),
+      });
+      if (res.ok) {
+        mutateFavs();
+        const json = await res.json();
+        if (json.action === "added") {
+          toast.success("Offre d'emploi ajoutée aux favoris !");
+        } else {
+          toast.success("Offre d'emploi retirée des favoris.");
+        }
+      } else {
+        toast.error("Erreur lors de la mise à jour des favoris.");
+      }
+    } catch (e) {
+      console.error(e);
+      toast.error("Erreur de connexion.");
+    }
+  };
 
   const [confirmModalData, setConfirmModalData] = useState<{
     isOpen: boolean;
@@ -199,6 +236,15 @@ export default function AdminEmplois() {
           onModifier={() => { setJobToEdit(jobToView); setJobToView(null); }}
           onSupprimer={() => promptDelete(jobToView.rawId, jobToView.titre)}
           onCloturer={() => promptToggleStatus(jobToView.rawId, 'CLOSED', jobToView.titre)}
+          isFavorite={favoriteIds.has(String(jobToView.rawId))}
+          onToggleFavorite={() =>
+            handleToggleFavorite(
+              jobToView.rawId,
+              jobToView.titre,
+              jobToView.entreprise,
+              jobToView.localisation
+            )
+          }
         />
         {renderConfirmModal()}
       </div>
@@ -357,7 +403,22 @@ export default function AdminEmplois() {
                     {filteredToutesOffres.map(o => (
                       <tr key={o.id} className="hover:bg-slate-50/50 transition-colors">
                         <td className="px-5 py-4 text-[#1e4869] font-medium">{o.id}</td>
-                        <td className="px-5 py-4 text-[#1e4869] font-medium">{o.titre}</td>
+                        <td className="px-5 py-4 text-[#1e4869] font-medium">
+                          <div className="flex items-center gap-2">
+                            <button
+                              type="button"
+                              onClick={() => handleToggleFavorite(o.rawId, o.titre, o.entreprise, o.localisation)}
+                              className="p-1 rounded-full hover:bg-slate-100 transition-colors cursor-pointer"
+                              title={favoriteIds.has(String(o.rawId)) ? "Retirer des favoris" : "Ajouter aux favoris"}
+                            >
+                              <Bookmark
+                                size={14}
+                                className={favoriteIds.has(String(o.rawId)) ? "fill-amber-500 text-amber-500" : "text-slate-300 hover:text-amber-500"}
+                              />
+                            </button>
+                            <span>{o.titre}</span>
+                          </div>
+                        </td>
                         <td className="px-5 py-4 text-[#1e4869]">{o.entreprise}</td>
                         <td className="px-5 py-4 text-[#1e4869] whitespace-nowrap">{o.date}</td>
                         <td className="px-5 py-4 text-[#1e4869]">{o.contrat}</td>
@@ -457,6 +518,18 @@ export default function AdminEmplois() {
                            <span className="-rotate-45 text-[10px] font-bold text-orange-500">G</span>
                         </div>
                       </div>
+                      <button
+                        type="button"
+                        onClick={() => handleToggleFavorite(o.rawId, o.titre, o.entreprise, o.localisation)}
+                        className={`p-1.5 rounded-full transition-colors cursor-pointer ${
+                          favoriteIds.has(String(o.rawId))
+                            ? "bg-amber-100 text-amber-600"
+                            : "text-slate-400 hover:text-amber-500 hover:bg-slate-50"
+                        }`}
+                        title={favoriteIds.has(String(o.rawId)) ? "Retirer des favoris" : "Ajouter aux favoris"}
+                      >
+                        <Bookmark size={15} className={favoriteIds.has(String(o.rawId)) ? "fill-amber-500 text-amber-500" : ""} />
+                      </button>
                     </div>
 
                     <div className="flex items-center justify-between text-xs text-slate-500 mb-1">
@@ -577,9 +650,11 @@ interface DetailOffreViewProps {
   onModifier: () => void;
   onSupprimer: () => void;
   onCloturer: () => void;
+  isFavorite?: boolean;
+  onToggleFavorite?: () => void;
 }
 
-function DetailOffreView({ emploi, onBack, onModifier, onSupprimer, onCloturer }: DetailOffreViewProps) {
+function DetailOffreView({ emploi, onBack, onModifier, onSupprimer, onCloturer, isFavorite, onToggleFavorite }: DetailOffreViewProps) {
   const t = useTranslations("admin.jobs");
   // Extract modeTravail if encoded in description
   const rawDesc = emploi.description || "";
@@ -617,9 +692,25 @@ function DetailOffreView({ emploi, onBack, onModifier, onSupprimer, onCloturer }
               <span className="font-semibold">{t("locationLabel")}</span> {emploi.localisation}
             </p>
           </div>
-          <button className="p-2.5 rounded-xl border border-slate-200 text-slate-400 hover:text-[#32A8D7] hover:border-[#32A8D7] transition-colors shrink-0 cursor-pointer">
-            <Share2 size={18} />
-          </button>
+          <div className="flex items-center gap-2">
+            {onToggleFavorite && (
+              <button
+                type="button"
+                onClick={onToggleFavorite}
+                className={`p-2.5 rounded-xl border transition-colors shrink-0 cursor-pointer ${
+                  isFavorite
+                    ? "border-amber-300 bg-amber-50 text-amber-500"
+                    : "border-slate-200 text-slate-400 hover:text-amber-500 hover:border-amber-300"
+                }`}
+                title={isFavorite ? "Retirer des favoris" : "Ajouter aux favoris"}
+              >
+                <Bookmark size={18} className={isFavorite ? "fill-amber-500 text-amber-500" : ""} />
+              </button>
+            )}
+            <button className="p-2.5 rounded-xl border border-slate-200 text-slate-400 hover:text-[#32A8D7] hover:border-[#32A8D7] transition-colors shrink-0 cursor-pointer">
+              <Share2 size={18} />
+            </button>
+          </div>
         </div>
 
         <div className="mt-3 space-y-1 text-sm text-slate-600">

@@ -165,7 +165,7 @@ export default function ConnexionPage() {
 
       {/* Netacuv "N" Symbol Watermarks in Background */}
       <div className="pointer-events-none absolute inset-0 flex items-center justify-center overflow-hidden select-none">
-        <div className="w-[580px] h-[580px] max-w-[90vw] max-h-[90vw] opacity-[0.06] transform -rotate-12 scale-110">
+        <div className="w-[580px] h-[580px] max-w-[90vw] max-h-[90vw] opacity-[0.02] transform -rotate-12 scale-110">
           <Image
             src="/Logo/SVG/Asset 14.svg"
             alt=""
@@ -175,7 +175,7 @@ export default function ConnexionPage() {
             priority
           />
         </div>
-        <div className="absolute -top-16 -right-16 w-80 h-80 opacity-[0.04] transform rotate-12">
+        <div className="absolute -top-16 -right-16 w-80 h-80 opacity-[0.015] transform rotate-12">
           <Image
             src="/Logo/SVG/Asset 14.svg"
             alt=""
@@ -184,7 +184,7 @@ export default function ConnexionPage() {
             className="w-full h-full object-contain"
           />
         </div>
-        <div className="absolute -bottom-20 -left-20 w-80 h-80 opacity-[0.04] transform -rotate-6">
+        <div className="absolute -bottom-20 -left-20 w-80 h-80 opacity-[0.015] transform -rotate-6">
           <Image
             src="/Logo/SVG/Asset 14.svg"
             alt=""

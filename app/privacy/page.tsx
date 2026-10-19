@@ -81,7 +81,7 @@ export default function PrivacyPage() {
               <h2 className="text-2xl font-bold text-slate-900">4. Vos droits (Droit à l&apos;oubli)</h2>
             </div>
             <p className="text-slate-600 leading-relaxed">
-              Conformément aux réglementations sur la protection des données personnelles, vous disposez d&apos;un droit d&apos;accès, de rectification, de portabilité et de suppression de vos données. Vous pouvez exercer ce droit directement dans vos réglages ou en écrivant à <a href="mailto:privacy@netacuv.com" className="text-blue-600 font-medium hover:underline">privacy@netacuv.com</a>.
+              Conformément aux réglementations sur la protection des données personnelles, vous disposez d&apos;un droit d&apos;accès, de rectification, de portabilité et de suppression de vos données. Vous pouvez exercer ce droit directement dans vos réglages ou en écrivant à <a href="mailto:contact@netacuv.com" className="text-blue-600 font-medium hover:underline">contact@netacuv.com</a>.
             </p>
           </div>
 

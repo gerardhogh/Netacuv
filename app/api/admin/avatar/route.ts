@@ -1,20 +1,33 @@
 import { NextResponse, NextRequest } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getServerSession } from "next-auth/next";
+import { getToken } from "next-auth/jwt";
 import { authOptions } from "@/lib/auth";
 
-
 export const dynamic = 'force-dynamic';
+
+function checkIsAdminRole(roleName?: string | null): boolean {
+  if (!roleName) return false;
+  const upper = roleName.toUpperCase();
+  return (
+    upper.includes("ADMIN") ||
+    upper.includes("MODERATEUR") ||
+    upper.includes("MODÉRATEUR") ||
+    upper.includes("MANAGER") ||
+    upper.includes("GESTIONNAIRE") ||
+    upper.includes("SUPPORT")
+  );
+}
 
 export async function POST(req: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
+    const token = !session?.user ? await getToken({ req, secret: process.env.NEXTAUTH_SECRET }).catch(() => null) : null;
+    const userId = (session?.user as any)?.id || token?.sub;
     
-    if (!session || !session.user) {
+    if (!userId) {
       return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
     }
-
-    const userId = (session.user as any).id;
 
     // Check if the user is an admin
     const user = await prisma.user.findUnique({
@@ -22,8 +35,8 @@ export async function POST(req: NextRequest) {
       select: { role: true }
     });
 
-    const upperRole = user?.role?.name?.toUpperCase() || "";
-    const isAdmin = upperRole === "SUPER ADMIN" || upperRole === "ADMIN RH / MODÉRATEUR" || upperRole === "MANAGER IA & CERTIFICATION" || upperRole === "GESTIONNAIRE FINANCIER" || upperRole === "SUPPORT CLIENT" || upperRole === "ADMIN";
+    const sessionRole = (session?.user as any)?.role || (token as any)?.role;
+    const isAdmin = checkIsAdminRole(user?.role?.name) || checkIsAdminRole(sessionRole);
 
     if (!isAdmin) {
       return NextResponse.json({ error: "Accès refusé" }, { status: 403 });

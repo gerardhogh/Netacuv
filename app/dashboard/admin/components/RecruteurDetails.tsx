@@ -2,8 +2,16 @@
 import React, { useState } from "react";
 import Image from "next/image";
 import { useTranslations } from "next-intl";
+import { Bookmark } from "lucide-react";
 
-export function RecruteurDetails({ recruteur, onBack }: { recruteur: any, onBack: () => void }) {
+interface RecruteurDetailsProps {
+  recruteur: any;
+  onBack: () => void;
+  isFavorite?: boolean;
+  onToggleFavorite?: () => void;
+}
+
+export function RecruteurDetails({ recruteur, onBack, isFavorite, onToggleFavorite }: RecruteurDetailsProps) {
   const t = useTranslations("admin.recruiters");
   const [activeTab, setActiveTab] = useState("Informations");
 
@@ -76,6 +84,21 @@ export function RecruteurDetails({ recruteur, onBack }: { recruteur: any, onBack
               >
                 {recruteur.isPremium ? t("premiumOfferDisable") : t("premiumOfferEnable")}
               </button>
+
+              {onToggleFavorite && (
+                <button
+                  type="button"
+                  onClick={onToggleFavorite}
+                  className={`w-full mt-2 py-2 px-3 rounded-lg text-xs font-bold transition-all shadow-xs flex items-center justify-center gap-1.5 cursor-pointer border ${
+                    isFavorite
+                      ? "bg-amber-50 text-amber-700 border-amber-300 hover:bg-amber-100"
+                      : "bg-white text-slate-700 border-slate-200 hover:bg-slate-50"
+                  }`}
+                >
+                  <Bookmark size={14} className={isFavorite ? "fill-amber-500 text-amber-500" : "text-slate-400"} />
+                  {isFavorite ? "Retirer des favoris" : "Ajouter aux favoris"}
+                </button>
+              )}
             </div>
           </div>
         </div>

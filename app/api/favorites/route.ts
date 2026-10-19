@@ -1,13 +1,23 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
+import { getToken } from "next-auth/jwt";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+
+async function getAuthUserId(req: Request): Promise<string | null> {
+  const session = await getServerSession(authOptions);
+  if (session?.user && (session.user as any).id) {
+    return (session.user as any).id;
+  }
+  const token = await getToken({ req: req as any, secret: process.env.NEXTAUTH_SECRET }).catch(() => null);
+  return token?.sub || null;
+}
 
 // GET /api/favorites - Récupérer les favoris de l'utilisateur connecté
 export async function GET(req: Request) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
+    const userId = await getAuthUserId(req);
+    if (!userId) {
       return NextResponse.json(
         { error: "Vous devez être connecté pour accéder à vos favoris." },
         { status: 401 }
@@ -20,7 +30,7 @@ export async function GET(req: Request) {
     const limit = Math.max(1, parseInt(searchParams.get("limit") || "20", 10) || 20);
     const skip = (page - 1) * limit;
 
-    const where: any = { userId: session.user.id };
+    const where: any = { userId };
     if (targetType) {
       where.targetType = targetType;
     }
@@ -94,8 +104,8 @@ export async function GET(req: Request) {
 // POST /api/favorites - Ajouter ou retirer un favori (Toggle)
 export async function POST(req: Request) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
+    const userId = await getAuthUserId(req);
+    if (!userId) {
       return NextResponse.json(
         { error: "Vous devez être connecté pour gérer vos favoris." },
         { status: 401 }
@@ -115,7 +125,7 @@ export async function POST(req: Request) {
     const existing = await prisma.favorite.findUnique({
       where: {
         userId_targetType_targetId: {
-          userId: session.user.id,
+          userId,
           targetType,
           targetId: String(targetId),
         },
@@ -140,7 +150,7 @@ export async function POST(req: Request) {
 
     const newFav = await prisma.favorite.create({
       data: {
-        userId: session.user.id,
+        userId,
         targetType,
         targetId: String(targetId),
         title: title || null,
@@ -167,8 +177,8 @@ export async function POST(req: Request) {
 // DELETE /api/favorites - Supprimer un favori
 export async function DELETE(req: Request) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
+    const userId = await getAuthUserId(req);
+    if (!userId) {
       return NextResponse.json(
         { error: "Vous devez être connecté." },
         { status: 401 }
@@ -182,7 +192,7 @@ export async function DELETE(req: Request) {
 
     if (id) {
       await prisma.favorite.deleteMany({
-        where: { id, userId: session.user.id },
+        where: { id, userId },
       });
       return NextResponse.json({ success: true, id });
     }
@@ -190,7 +200,7 @@ export async function DELETE(req: Request) {
     if (targetType && targetId) {
       await prisma.favorite.deleteMany({
         where: {
-          userId: session.user.id,
+          userId,
           targetType,
           targetId,
         },

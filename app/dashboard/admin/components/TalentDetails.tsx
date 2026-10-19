@@ -1,11 +1,21 @@
 "use client";
 import React, { useState } from "react";
 import Image from "next/image";
-import { Download, Eye, Video } from "lucide-react";
+import { Download, Eye, Video, Bookmark } from "lucide-react";
 import NetacuvVideoPlayer from "@/components/NetacuvVideoPlayer";
 import { useTranslations } from "next-intl";
 
-export function TalentDetails({ talent, onBack }: { talent: any, onBack: () => void }) {
+export function TalentDetails({ 
+  talent, 
+  onBack, 
+  isFavorite = false, 
+  onToggleFavorite 
+}: { 
+  talent: any; 
+  onBack: () => void; 
+  isFavorite?: boolean; 
+  onToggleFavorite?: () => void; 
+}) {
   const t = useTranslations("admin.talents");
   const [activeTab, setActiveTab] = useState("Informations");
 
@@ -90,6 +100,21 @@ export function TalentDetails({ talent, onBack }: { talent: any, onBack: () => v
               >
                 {talent.isPremium ? t("premiumOfferDisable") : t("premiumOfferEnable")}
               </button>
+
+              {onToggleFavorite && (
+                <button
+                  type="button"
+                  onClick={onToggleFavorite}
+                  className={`w-full py-2 px-3 rounded-lg text-xs font-bold transition-all shadow-xs flex items-center justify-center gap-1.5 cursor-pointer ${
+                    isFavorite
+                      ? "bg-amber-50 text-amber-700 border border-amber-300 hover:bg-amber-100"
+                      : "bg-slate-50 text-slate-700 border border-slate-200 hover:bg-slate-100 hover:text-amber-600"
+                  }`}
+                >
+                  <Bookmark size={14} fill={isFavorite ? "currentColor" : "none"} className={isFavorite ? "text-amber-500" : ""} />
+                  {isFavorite ? "Retirer des favoris" : "Ajouter aux favoris"}
+                </button>
+              )}
 
               <a 
                 href={`https://mail.google.com/mail/?view=cm&fs=1&to=${talent.email}&su=Contact%20Check%20CV&body=Bonjour%20${talent.name},`}

@@ -37,8 +37,23 @@ export async function deleteUserFiles(userId: string) {
       // Collect interview session videos
       if (user.talentProfile.interviewSessions) {
         for (const session of user.talentProfile.interviewSessions) {
-          if (session.videoRecordings?.startsWith("/uploads/")) {
-            urlsToDelete.push(session.videoRecordings);
+          if (session.videoRecordings) {
+            if (session.videoRecordings.startsWith("/uploads/")) {
+              urlsToDelete.push(session.videoRecordings);
+            } else if (session.videoRecordings.startsWith("[") || session.videoRecordings.startsWith("{")) {
+              try {
+                const parsed = JSON.parse(session.videoRecordings);
+                if (Array.isArray(parsed)) {
+                  for (const item of parsed) {
+                    if (typeof item === "string" && item.startsWith("/uploads/")) {
+                      urlsToDelete.push(item);
+                    } else if (item && typeof item.url === "string" && item.url.startsWith("/uploads/")) {
+                      urlsToDelete.push(item.url);
+                    }
+                  }
+                }
+              } catch (e) {}
+            }
           }
         }
       }
