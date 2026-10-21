@@ -121,8 +121,27 @@ export default function RecruteurPremium({ isPremium: propIsPremium }: { isPremi
                 </ul>
                 
                 {isPremium ? (
-                  <div className="w-full bg-slate-100 text-slate-500 font-bold py-4 rounded-xl border border-slate-200 flex items-center justify-center gap-2 mt-auto">
-                    <CheckCheck size={18} className="text-green-500" /> {t("premiumActivated")}
+                  <div className="space-y-3 mt-auto">
+                    <div className="w-full bg-emerald-50 text-emerald-700 font-bold py-2.5 px-4 rounded-xl border border-emerald-200 flex items-center justify-center gap-2 text-xs">
+                      <CheckCheck size={16} className="text-emerald-600" /> {t("premiumActivated")}
+                    </div>
+                    <button
+                      disabled={loading}
+                      onClick={handleCheckout}
+                      className="w-full font-bold py-3.5 rounded-xl transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer bg-gradient-to-r from-[#32A8D7] to-[#2896c2] hover:from-[#2896c2] hover:to-[#1f7ca4] text-white hover:shadow-lg hover:-translate-y-0.5 disabled:opacity-60 disabled:cursor-wait text-sm"
+                    >
+                      {loading ? (
+                        <>
+                          <Loader2 size={18} className="animate-spin" />
+                          Connexion à FedaPay...
+                        </>
+                      ) : (
+                        <>
+                          <Sparkles size={16} />
+                          Prolonger de 30 jours (1 000 FCFA)
+                        </>
+                      )}
+                    </button>
                   </div>
                 ) : (
                   <button

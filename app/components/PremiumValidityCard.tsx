@@ -1,8 +1,8 @@
 "use client";
 
+import { useState } from "react";
 import { useLocale } from "next-intl";
-import { Crown, Sparkles, Calendar, Clock, ArrowRight, ShieldCheck, AlertCircle } from "lucide-react";
-import Link from "next/link";
+import { Crown, Sparkles, Calendar, Clock, ArrowRight, ShieldCheck, Loader2 } from "lucide-react";
 
 export interface PremiumInfoData {
   isPremium: boolean;
@@ -35,11 +35,54 @@ export default function PremiumValidityCard({
 
   const isPremium = Boolean(premiumInfo?.isPremium);
   const isRecruiter = role === "RECRUTEUR";
-  const upgradeUrl = isRecruiter
-    ? "/dashboard/recruteur?tab=premium#premium"
-    : "/dashboard/talent?tab=premium#premium";
-
   const priceText = isRecruiter ? "1 000 FCFA / mois" : "700 FCFA / mois";
+  const amount = isRecruiter ? 1000 : 700;
+
+  const [loading, setLoading] = useState(false);
+
+  // Bascule instantanée d'onglet vers l'onglet Premium du dashboard
+  const navigateToPremiumTab = () => {
+    if (typeof window !== "undefined") {
+      if (isRecruiter) {
+        window.dispatchEvent(new CustomEvent("switchRecruiterTab", { detail: "premium" }));
+        window.location.href = "/dashboard/recruteur?tab=premium#premium";
+      } else {
+        window.dispatchEvent(new CustomEvent("switchTalentTab", { detail: "premium" }));
+        window.location.href = "/dashboard/talent?tab=premium#premium";
+      }
+    }
+  };
+
+  // Déclenchement direct du paiement FedaPay pour prolonger (+30 jours)
+  const handleExtend = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setLoading(true);
+
+    try {
+      const res = await fetch("/api/payments/initialize", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          amount,
+          method: "fedapay",
+        }),
+      });
+
+      const data = await res.json();
+      if (res.ok && data.success && data.paymentUrl) {
+        // Redirection directe vers la passerelle sécurisée FedaPay
+        window.location.href = data.paymentUrl;
+        return;
+      }
+    } catch (err) {
+      console.error("Erreur initialisation paiement FedaPay:", err);
+    }
+
+    // Fallback : redirection vers l'onglet premium du dashboard
+    setLoading(false);
+    navigateToPremiumTab();
+  };
 
   // Formattage date expiration
   let formattedExpiryDate = "";
@@ -59,11 +102,11 @@ export default function PremiumValidityCard({
   const daysRemaining = typeof premiumInfo?.daysRemaining === "number" ? premiumInfo.daysRemaining : 0;
   const totalDays = premiumInfo?.totalCycleDays || 30;
   const percentRemaining = Math.max(0, Math.min(100, Math.round((daysRemaining / totalDays) * 100)));
+  const isUrgent = daysRemaining <= 5;
+  const daysUnit = daysRemaining > 1 ? (isEn ? "days" : "jours") : (isEn ? "day" : "jour");
 
   // État : Premium Actif
   if (isPremium && formattedExpiryDate) {
-    const isUrgent = daysRemaining <= 5;
-
     if (variant === "horizontal") {
       return (
         <div
@@ -107,8 +150,7 @@ export default function PremiumValidityCard({
                   <div className="text-xs flex-1">
                     <span className="text-slate-500 block leading-tight">{isEn ? "Days remaining" : "Temps restant"}</span>
                     <span className={`font-bold leading-tight ${isUrgent ? "text-amber-700 font-black" : "text-slate-800"}`}>
-                      {daysRemaining} {daysRemaining > 1 ? (isEn ? "days" : "jours") : (isEn ? "day" : "jour")}
-                      {isUrgent && (isEn ? " (Expires soon)" : " (Renouvellement conseillé)")}
+                      {daysRemaining} {daysUnit} {isUrgent ? (isEn ? "(Expires soon)" : "(Renouvellement conseillé)") : ""}
                     </span>
                   </div>
                 </div>
@@ -135,14 +177,25 @@ export default function PremiumValidityCard({
 
             {/* Action button */}
             <div className="flex flex-col sm:flex-row md:flex-col gap-2 shrink-0 md:self-center">
-              <Link
-                href={upgradeUrl}
-                className="inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 px-5 py-3 text-xs font-bold text-white shadow-md hover:from-amber-600 hover:to-orange-600 hover:shadow-lg transition-all"
+              <button
+                type="button"
+                disabled={loading}
+                onClick={handleExtend}
+                className="inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 px-5 py-3 text-xs font-bold text-white shadow-md hover:from-amber-600 hover:to-orange-600 hover:shadow-lg transition-all cursor-pointer disabled:opacity-75 disabled:cursor-wait"
               >
-                <Sparkles size={15} />
-                <span>{isEn ? "Extend / Renew" : "Prolonger l'offre"}</span>
-                <ArrowRight size={14} />
-              </Link>
+                {loading ? (
+                  <>
+                    <Loader2 size={15} className="animate-spin" />
+                    <span>{isEn ? "Connecting to FedaPay..." : "Connexion à FedaPay..."}</span>
+                  </>
+                ) : (
+                  <>
+                    <Sparkles size={15} />
+                    <span>{isEn ? "Extend / Renew (+30 days)" : "Prolonger l'offre (+30 jours)"}</span>
+                    <ArrowRight size={14} />
+                  </>
+                )}
+              </button>
             </div>
           </div>
         </div>
@@ -179,7 +232,7 @@ export default function PremiumValidityCard({
           <div className="flex items-center gap-2 text-slate-600">
             <Clock size={13} className={isUrgent ? "text-amber-600 shrink-0" : "text-slate-400 shrink-0"} />
             <span>
-              {isEn ? "Remaining:" : "Restant :"} <strong className={isUrgent ? "text-amber-700 font-bold" : "text-slate-800"}>{daysRemaining} {isEn ? "days" : "jours"}</strong>
+              {isEn ? "Remaining:" : "Restant :"} <strong className={isUrgent ? "text-amber-700 font-bold" : "text-slate-800"}>{daysRemaining} {daysUnit}</strong>
             </span>
           </div>
         </div>
@@ -196,18 +249,37 @@ export default function PremiumValidityCard({
           </div>
         </div>
 
-        <Link
-          href={upgradeUrl}
-          className="w-full flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg bg-gradient-to-r from-amber-400 to-orange-500 hover:from-amber-500 hover:to-orange-600 text-white font-bold text-xs shadow-xs transition-all text-center"
+        <button
+          type="button"
+          disabled={loading}
+          onClick={handleExtend}
+          className="w-full flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-lg bg-gradient-to-r from-amber-400 to-orange-500 hover:from-amber-500 hover:to-orange-600 active:scale-[0.99] text-white font-bold text-xs shadow-xs hover:shadow-md transition-all text-center cursor-pointer disabled:opacity-75 disabled:cursor-wait"
         >
-          <Sparkles size={13} />
-          <span>{isEn ? "Renew (+30 days)" : "Prolonger (+30 jours)"}</span>
-        </Link>
+          {loading ? (
+            <>
+              <Loader2 size={13} className="animate-spin" />
+              <span>{isEn ? "Connecting to FedaPay..." : "Connexion à FedaPay..."}</span>
+            </>
+          ) : (
+            <>
+              <Sparkles size={13} />
+              <span>{isEn ? "Renew (+30 days)" : "Prolonger (+30 jours)"}</span>
+            </>
+          )}
+        </button>
       </div>
     );
   }
 
   // État : Non Premium / Gratuit
+  const freeDesc = isRecruiter
+    ? (isEn
+        ? "Upgrade to Recruiter Premium for unlimited access to validated video talents."
+        : "Passez au Forfait Recruteur Premium pour débloquer l'accès complet au vivier certifié.")
+    : (isEn
+        ? "Upgrade to Talent Premium for unlimited AI tests, certified badge and priority applications."
+        : "Passez au Forfait Talent Premium pour les candidatures illimitées, badge certifié et export CV.");
+
   if (variant === "horizontal") {
     return (
       <div
@@ -224,27 +296,22 @@ export default function PremiumValidityCard({
                   {isEn ? "Standard Free Plan" : "Formule Standard Gratuite"}
                 </h3>
                 <p className="text-xs text-slate-500 font-medium">
-                  {isRecruiter
-                    ? (isEn
-                        ? "Upgrade to Recruiter Premium for unlimited access to validated video talents."
-                        : "Passez au Forfait Recruteur Premium pour débloquer l'accès complet au vivier certifié.")
-                    : (isEn
-                        ? "Upgrade to Talent Premium for unlimited AI tests, certified badge and priority applications."
-                        : "Passez au Forfait Talent Premium pour les candidatures illimitées, badge certifié et export CV.")}
+                  {freeDesc}
                 </p>
               </div>
             </div>
           </div>
 
           <div className="flex flex-col sm:flex-row md:flex-col gap-2 shrink-0 md:self-center">
-            <Link
-              href={upgradeUrl}
-              className="inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-amber-400 to-orange-500 px-5 py-3 text-xs font-bold text-white shadow-md hover:from-amber-500 hover:to-orange-600 transition-all"
+            <button
+              type="button"
+              onClick={navigateToPremiumTab}
+              className="inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-amber-400 to-orange-500 px-5 py-3 text-xs font-bold text-white shadow-md hover:from-amber-500 hover:to-orange-600 transition-all cursor-pointer"
             >
               <Crown size={15} />
               <span>{isEn ? `Upgrade to Premium (${priceText})` : `Activer l'offre Premium (${priceText})`}</span>
               <ArrowRight size={14} />
-            </Link>
+            </button>
           </div>
         </div>
       </div>
@@ -266,21 +333,16 @@ export default function PremiumValidityCard({
         </span>
       </div>
       <p className="text-[11px] text-slate-500 mb-3 leading-relaxed">
-        {isRecruiter
-          ? (isEn
-              ? "Access full candidate evaluations and AI video recordings with Premium."
-              : "Accédez aux vidéos et évaluations complètes des talents avec le Premium.")
-          : (isEn
-              ? "Unlock CV updates, priority ranking and AI evaluation features with Premium."
-              : "Débloquez l'actualisation de votre CV et le badge certifié avec le Premium.")}
+        {freeDesc}
       </p>
-      <Link
-        href={upgradeUrl}
-        className="w-full flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg bg-gradient-to-r from-amber-400 to-orange-500 hover:from-amber-500 hover:to-orange-600 text-white font-bold text-xs shadow-xs transition-all text-center"
+      <button
+        type="button"
+        onClick={navigateToPremiumTab}
+        className="w-full flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg bg-gradient-to-r from-amber-400 to-orange-500 hover:from-amber-500 hover:to-orange-600 text-white font-bold text-xs shadow-xs transition-all text-center cursor-pointer"
       >
         <Crown size={13} />
         <span>{isEn ? `Go Premium (${priceText})` : `Passer au Premium (${priceText})`}</span>
-      </Link>
+      </button>
     </div>
   );
 }

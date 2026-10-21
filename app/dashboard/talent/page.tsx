@@ -140,9 +140,17 @@ export default function TalentDashboard() {
     syncTabFromUrl();
     window.addEventListener("popstate", syncTabFromUrl);
     window.addEventListener("hashchange", syncTabFromUrl);
+    const handleSwitchTab = (e: any) => {
+      const tab = e?.detail || e;
+      if (tab && typeof tab === "string") {
+        setActiveTab(tab as TalentTab);
+      }
+    };
+    window.addEventListener("switchTalentTab", handleSwitchTab);
     return () => {
       window.removeEventListener("popstate", syncTabFromUrl);
       window.removeEventListener("hashchange", syncTabFromUrl);
+      window.removeEventListener("switchTalentTab", handleSwitchTab);
     };
   }, []);
 

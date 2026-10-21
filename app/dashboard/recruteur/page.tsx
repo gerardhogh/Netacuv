@@ -180,9 +180,17 @@ export default function RecruteurDashboard() {
     syncTabFromUrl();
     window.addEventListener("popstate", syncTabFromUrl);
     window.addEventListener("hashchange", syncTabFromUrl);
+    const handleSwitchTab = (e: any) => {
+      const tab = e?.detail || e;
+      if (tab && typeof tab === "string") {
+        setActiveTab(tab as RecruiterTab);
+      }
+    };
+    window.addEventListener("switchRecruiterTab", handleSwitchTab);
     return () => {
       window.removeEventListener("popstate", syncTabFromUrl);
       window.removeEventListener("hashchange", syncTabFromUrl);
+      window.removeEventListener("switchRecruiterTab", handleSwitchTab);
     };
   }, []);
 

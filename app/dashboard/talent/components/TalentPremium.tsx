@@ -119,8 +119,27 @@ export default function TalentPremium({ isPremium: propIsPremium }: { isPremium?
                 </ul>
                 
                 {isPremium ? (
-                  <div className="w-full bg-slate-100 text-slate-500 font-bold py-4 rounded-xl border border-slate-200 flex items-center justify-center gap-2 mt-auto">
-                    <CheckCheck size={18} className="text-green-500" /> {t("premiumActive")}
+                  <div className="space-y-3 mt-auto">
+                    <div className="w-full bg-emerald-50 text-emerald-700 font-bold py-2.5 px-4 rounded-xl border border-emerald-200 flex items-center justify-center gap-2 text-xs">
+                      <CheckCheck size={16} className="text-emerald-600" /> {t("premiumActive")}
+                    </div>
+                    <button
+                      disabled={loading}
+                      onClick={handleCheckout}
+                      className="w-full font-bold py-3.5 rounded-xl transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer bg-gradient-to-r from-orange-400 to-amber-500 hover:from-orange-500 hover:to-amber-600 text-white hover:shadow-lg hover:-translate-y-0.5 disabled:opacity-60 disabled:cursor-wait text-sm"
+                    >
+                      {loading ? (
+                        <>
+                          <Loader2 size={18} className="animate-spin" />
+                          Connexion à FedaPay...
+                        </>
+                      ) : (
+                        <>
+                          <Sparkles size={16} />
+                          Prolonger de 30 jours (700 FCFA)
+                        </>
+                      )}
+                    </button>
                   </div>
                 ) : (
                   <button
