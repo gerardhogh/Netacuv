@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma';
 import { getToken } from "next-auth/jwt";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
+import { getUserPremiumStatus } from "@/lib/premium";
 
 export const dynamic = 'force-dynamic';
 
@@ -27,6 +28,8 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: "Utilisateur non trouvé" }, { status: 404 });
     }
 
+    const premiumInfo = await getUserPremiumStatus(user.id);
+
     return NextResponse.json({
       id: user.id,
       name: user.name,
@@ -34,7 +37,8 @@ export async function GET(req: NextRequest) {
       avatar: user.image?.startsWith("data:image")
         ? `/api/users/${user.id}/avatar?v=${user.updatedAt ? user.updatedAt.getTime() : Date.now()}`
         : (user.image || "/assets/avatar_africain.jpg"),
-      isPremium: user.isPremium,
+      isPremium: premiumInfo.isPremium,
+      premiumInfo,
       recruiterProfile: user.recruiterProfile || {}
     });
   } catch (error) {

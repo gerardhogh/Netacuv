@@ -27,8 +27,8 @@ import { getVideoFromDB, deleteVideoFromDB, saveCvToDB, getCvFromDB } from "../.
 import { QRCodeSVG } from "qrcode.react";
 import PremiumRequiredModal from "../../../components/PremiumRequiredModal";
 import { compressImage } from "@/lib/compressImage";
-import NetacuvVideoPlayer from "@/components/NetacuvVideoPlayer";
 import { CustomSelect } from "@/components/ui/CustomSelect";
+import PremiumValidityCard from "@/app/components/PremiumValidityCard";
 
 type SubTab = "informations" | "reseaux" | "video";
 
@@ -78,6 +78,7 @@ function ProfilTalentContent({ initialTab = "informations" }: { initialTab?: Sub
   const [userAvatar, setUserAvatar] = useState<string>(user?.avatar || "/assets/avatar_africain.jpg");
   const [userName, setUserName] = useState<string>(user?.name || (locale === "en" ? "Candidate" : "Candidat"));
   const [userTitle, setUserTitle] = useState<string>(locale === "en" ? "Talent" : "Aucun profil");
+  const [premiumInfo, setPremiumInfo] = useState<any>(null);
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
@@ -91,6 +92,11 @@ function ProfilTalentContent({ initialTab = "informations" }: { initialTab?: Sub
           if (data.avatar) setUserAvatar(data.avatar);
           if (data.name) setUserName(data.name);
           if (data.talentProfile?.degree) setUserTitle(data.talentProfile.degree);
+          if (data.premiumInfo) {
+            setPremiumInfo(data.premiumInfo);
+          } else if (data.isPremium !== undefined) {
+            setPremiumInfo({ isPremium: data.isPremium });
+          }
           
           if (data.talentProfile?.cvUrl) {
             setCvBlobUrl(data.talentProfile.cvUrl);
@@ -365,13 +371,22 @@ function ProfilTalentContent({ initialTab = "informations" }: { initialTab?: Sub
               {userTitle || (locale === "en" ? "Talent" : "Candidat")}
             </p>
 
-            <div className="flex items-center gap-3 mb-8">
+            <div className="flex items-center gap-3 mb-5">
               <span className="bg-[#22c55e] text-white text-xs font-bold px-4 py-1.5 rounded-full">
                 {t("active")}
               </span>
               <span className="bg-[#e0f2fe] text-[#0284c7] text-xs font-bold px-4 py-1.5 rounded-full">
                 {t("certified")}
               </span>
+            </div>
+
+            {/* Statut & Validité de l'Offre Premium */}
+            <div className="w-full mb-6">
+              <PremiumValidityCard
+                role="TALENT"
+                premiumInfo={premiumInfo || (user?.isPremium !== undefined ? { isPremium: user.isPremium } : null)}
+                variant="vertical"
+              />
             </div>
 
             {/* CV Upload */}
@@ -412,7 +427,7 @@ function ProfilTalentContent({ initialTab = "informations" }: { initialTab?: Sub
                     {t("premiumFeatureDesc")}
                   </p>
                   <button
-                    onClick={() => {/* Rediriger vers l'upgrade */ window.location.href = "/dashboard/talent?tab=abonnement"}}
+                    onClick={() => {/* Rediriger vers l'upgrade */ window.location.href = "/dashboard/talent?tab=premium#premium"}}
                     className="px-4 py-2 bg-gradient-to-r from-amber-400 to-orange-500 text-white text-xs font-bold rounded-lg shadow-sm hover:from-amber-500 hover:to-orange-600 transition-all cursor-pointer"
                   >
                     {t("upgradePremium")}

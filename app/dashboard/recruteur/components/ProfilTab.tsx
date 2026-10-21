@@ -5,6 +5,7 @@ import Image from "next/image";
 import { Camera, Save, User } from "lucide-react";
 import { CustomSelect } from "@/components/ui/CustomSelect";
 import { useTranslations } from "next-intl";
+import PremiumValidityCard from "@/app/components/PremiumValidityCard";
 
 // ─── Social network icons (inline SVGs) ──────────────────────────────────────
 function FacebookIcon() {
@@ -58,6 +59,7 @@ export default function ProfilTab() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [premiumInfo, setPremiumInfo] = useState<any>(null);
 
   // Informations state
   const [nomEntreprise, setNomEntreprise] = useState("");
@@ -88,6 +90,11 @@ export default function ProfilTab() {
           const data = await res.json();
           setEmail(data.email || "");
           setAvatarSrc(data.avatar || null);
+          if (data.premiumInfo) {
+            setPremiumInfo(data.premiumInfo);
+          } else if (data.isPremium !== undefined) {
+            setPremiumInfo({ isPremium: data.isPremium });
+          }
           
           if (data.recruiterProfile) {
             setNomEntreprise(data.recruiterProfile.companyName || "");
@@ -226,9 +233,10 @@ export default function ProfilTab() {
         </div>
       )}
 
-      {/* Avatar section */}
-      <div className="flex justify-center">
-        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6 flex flex-col items-center gap-4 w-60">
+      {/* Header section : Logo/Avatar de l'entreprise + Statut & Validité Premium */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-stretch">
+        {/* Colonne 1 : Avatar de l'entreprise */}
+        <div className="lg:col-span-1 bg-white rounded-2xl border border-slate-100 shadow-sm p-6 flex flex-col items-center justify-center gap-4">
           {/* Avatar Cliquable */}
           <div
             onClick={() => fileInputRef.current?.click()}
@@ -259,11 +267,21 @@ export default function ProfilTab() {
           
           <button
             onClick={() => fileInputRef.current?.click()}
-            className="flex items-center justify-center gap-1.5 px-3 py-2 w-full rounded-lg border border-slate-200 text-xs text-slate-600 font-medium hover:bg-slate-50 transition-colors whitespace-nowrap"
+            className="flex items-center justify-center gap-1.5 px-3 py-2 w-full max-w-[200px] rounded-lg border border-slate-200 text-xs text-slate-600 font-medium hover:bg-slate-50 transition-colors whitespace-nowrap cursor-pointer"
           >
             <Camera size={14} className="shrink-0" />
             <span className="text-center leading-tight">{t("savePhoto")}</span>
           </button>
+        </div>
+
+        {/* Colonne 2 & 3 : Statut & Validité de l'offre Recruteur Premium */}
+        <div className="lg:col-span-2 flex flex-col justify-center">
+          <PremiumValidityCard
+            role="RECRUTEUR"
+            premiumInfo={premiumInfo}
+            variant="horizontal"
+            className="h-full flex flex-col justify-center"
+          />
         </div>
       </div>
 

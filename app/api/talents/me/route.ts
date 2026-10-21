@@ -4,6 +4,7 @@ import { getToken } from "next-auth/jwt";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { logger } from "@/lib/logger";
+import { getUserPremiumStatus } from "@/lib/premium";
 
 export const dynamic = 'force-dynamic';
 
@@ -33,6 +34,8 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: "Utilisateur non trouvé" }, { status: 404 });
     }
 
+    const premiumInfo = await getUserPremiumStatus(user.id);
+
     let applicationsCountThisMonth = 0;
     
     if (user.talentProfile) {
@@ -57,7 +60,8 @@ export async function GET(req: NextRequest) {
       avatar: user.image?.startsWith("data:image")
         ? `/api/users/${user.id}/avatar`
         : (user.image || "/assets/avatar_africain.jpg"),
-      isPremium: user.isPremium || false,
+      isPremium: premiumInfo.isPremium,
+      premiumInfo,
       applicationsCountThisMonth,
       talentProfile: user.talentProfile || {}
     });
