@@ -11,6 +11,7 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { CustomSelect } from "@/components/ui/CustomSelect";
 import { Modal, ConfirmModal } from "@/app/components/ui/Modal";
 import { Pagination } from "@/components/ui/Pagination";
+import { formatTableId } from "@/lib/formatTableId";
 
 const fetcher = (url: string) => fetch(url).then(res => res.json());
 
@@ -68,7 +69,8 @@ export default function AdminEmplois() {
           toast.success("Offre d'emploi retirée des favoris.");
         }
       } else {
-        toast.error("Erreur lors de la mise à jour des favoris.");
+        const errJson = await res.json().catch(() => null);
+        toast.error(errJson?.error || "Erreur lors de la mise à jour des favoris.");
       }
     } catch (e) {
       console.error(e);
@@ -185,8 +187,8 @@ export default function AdminEmplois() {
   const totalCount = data?.totalCount ?? rawJobs.length;
   const totalPages = data?.totalPages ?? Math.max(1, Math.ceil(totalCount / pageSize));
 
-  const offres: JobOfferData[] = rawJobs.map((j: Record<string, unknown>) => ({
-    id: String(j.id).substring(0, 8),
+  const offres: JobOfferData[] = rawJobs.map((j: Record<string, unknown>, index: number) => ({
+    id: formatTableId(String(j.id), (currentPage - 1) * pageSize + index + 1),
     rawId: String(j.id),
     titre: String(j.title),
     entreprise: (j.recruiter as any)?.companyName || "Entreprise Inconnue",

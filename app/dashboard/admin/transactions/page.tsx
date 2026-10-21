@@ -6,6 +6,7 @@ import { Modal } from "@/components/ui/Modal";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { CustomSelect } from "@/components/ui/CustomSelect";
 import { downloadReceipt } from "@/lib/receiptGenerator";
+import { formatTableId } from "@/lib/formatTableId";
 
 interface UserData {
   name: string | null;
@@ -324,7 +325,7 @@ export default function AdminTransactions() {
                   const statusLabel = getStatusLabel(item.status);
                   return (
                     <tr key={item.id} className="hover:bg-slate-50/50 transition-colors">
-                      <td className="px-3 py-3 text-[#1e4869] text-xs whitespace-nowrap">#{index + 1}</td>
+                      <td className="px-3 py-3 text-[#0071a2] font-mono font-bold text-xs whitespace-nowrap">{formatTableId(item.id, index + 1)}</td>
                       <td className="px-3 py-3 text-[#1e4869] text-xs whitespace-nowrap">
                         {new Date(item.createdAt).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' })}
                         <br />
@@ -332,7 +333,7 @@ export default function AdminTransactions() {
                           {new Date(item.createdAt).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
                         </span>
                       </td>
-                      <td className="px-3 py-3 text-[#1e4869] font-mono text-xs whitespace-nowrap">{item.id.slice(-8).toUpperCase()}</td>
+                      <td className="px-3 py-3 text-[#0071a2] font-mono text-xs whitespace-nowrap font-semibold">{formatTableId(item.id, index + 1)}</td>
                       <td className="px-3 py-3 text-[#1e4869] text-xs whitespace-nowrap">{item.user?.name || t("unknown")}</td>
                       <td className="px-3 py-3 text-xs whitespace-nowrap">
                         <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${

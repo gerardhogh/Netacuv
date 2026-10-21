@@ -293,7 +293,11 @@ export default function InterviewPage() {
   const handleNavigate = (tabKey: string) => {
     stopAllMediaTracks();
     setMenuDrawerOpen(false);
-    router.push(`/dashboard/talent?tab=${tabKey}#${tabKey}`);
+    const isRecruiter = (user?.role || "").toUpperCase().includes("RECRUT");
+    const targetUrl = isRecruiter
+      ? `/dashboard/recruteur?tab=${tabKey}#${tabKey}`
+      : `/dashboard/talent?tab=${tabKey}#${tabKey}`;
+    window.location.href = targetUrl;
   };
 
   // ── Initialise questions on mount (Q1 fixe en 1er, reste randomisé) ────────

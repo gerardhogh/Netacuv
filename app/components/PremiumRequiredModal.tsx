@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { Crown, X } from "lucide-react";
-import Link from "next/link";
+import { useAuth } from "@/app/context/AuthContext";
 
 interface PremiumRequiredModalProps {
   onClose: () => void;
@@ -17,10 +17,11 @@ export default function PremiumRequiredModal({
   onClose, 
   message = "Passez au plan Premium pour accéder à cette fonctionnalité.",
   title = "Fonctionnalité Premium",
-  upgradeHref = "/dashboard/recruteur?tab=premium",
+  upgradeHref,
   onUpgrade,
 }: PremiumRequiredModalProps) {
   const [mounted, setMounted] = useState(false);
+  const { user } = useAuth();
   
   useEffect(() => {
     setMounted(true);
@@ -32,6 +33,18 @@ export default function PremiumRequiredModal({
   }, []);
 
   if (!mounted) return null;
+
+  const isRecruiter = (user?.role || "").toUpperCase().includes("RECRUT");
+  const effectiveUpgradeHref = upgradeHref || (isRecruiter ? "/dashboard/recruteur?tab=premium#premium" : "/dashboard/talent?tab=premium#premium");
+
+  const handleUpgradeClick = () => {
+    onClose();
+    if (onUpgrade) {
+      onUpgrade();
+    } else {
+      window.location.href = effectiveUpgradeHref;
+    }
+  };
 
   return createPortal(
     <div className="fixed inset-0 z-[10000] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
@@ -59,27 +72,13 @@ export default function PremiumRequiredModal({
         </p>
 
         <div className="flex flex-col w-full gap-3">
-          {onUpgrade ? (
-            <button
-              onClick={() => {
-                onClose();
-                onUpgrade();
-              }}
-              className="w-full py-3 px-4 bg-amber-500 hover:bg-amber-600 text-white rounded-xl text-sm font-bold shadow-md shadow-amber-500/20 transition-all flex items-center justify-center gap-2 cursor-pointer"
-            >
-              <Crown className="w-4 h-4" />
-              Souscrire à l'offre Premium
-            </button>
-          ) : (
-            <Link
-              href={upgradeHref}
-              onClick={onClose}
-              className="w-full py-3 px-4 bg-amber-500 hover:bg-amber-600 text-white rounded-xl text-sm font-bold shadow-md shadow-amber-500/20 transition-all flex items-center justify-center gap-2 cursor-pointer"
-            >
-              <Crown className="w-4 h-4" />
-              Souscrire à l'offre Premium
-            </Link>
-          )}
+          <button
+            onClick={handleUpgradeClick}
+            className="w-full py-3 px-4 bg-amber-500 hover:bg-amber-600 text-white rounded-xl text-sm font-bold shadow-md shadow-amber-500/20 transition-all flex items-center justify-center gap-2 cursor-pointer"
+          >
+            <Crown className="w-4 h-4" />
+            Souscrire à l'offre Premium
+          </button>
           <button
             onClick={onClose}
             className="w-full py-3 px-4 bg-slate-50 hover:bg-slate-100 text-slate-600 rounded-xl text-sm font-semibold border border-slate-200 transition-colors cursor-pointer"

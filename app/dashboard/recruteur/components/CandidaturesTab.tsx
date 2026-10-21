@@ -30,6 +30,7 @@ import { useTranslations } from "next-intl";
 import { useAuth } from "@/app/context/AuthContext";
 import PremiumRequiredModal from "@/app/components/PremiumRequiredModal";
 import { extractProfession } from "@/lib/talents";
+import { formatTableId } from "@/lib/formatTableId";
 
 // ─── Status badge ─────────────────────────────────────────────────────────────
 function StatutBadge({ statut, t }: { statut: "Accepté" | "En attente" | "Rejeté"; t: any }) {
@@ -480,7 +481,7 @@ export default function CandidaturesTab() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="bg-slate-50/80 border-b border-slate-200/80">
-                  <th className="text-left px-4 py-3.5 text-[11px] font-bold text-slate-500 uppercase tracking-wider whitespace-nowrap">N°</th>
+                  <th className="text-left px-4 py-3.5 text-[11px] font-bold text-slate-500 uppercase tracking-wider whitespace-nowrap">ID</th>
                   <th className="text-left px-4 py-3.5 text-[11px] font-bold text-slate-500 uppercase tracking-wider whitespace-nowrap">Candidat</th>
                   <th className="text-left px-4 py-3.5 text-[11px] font-bold text-slate-500 uppercase tracking-wider whitespace-nowrap">Offre d'emploi</th>
                   <th className="text-left px-4 py-3.5 text-[11px] font-bold text-slate-500 uppercase tracking-wider whitespace-nowrap">Date de postulation</th>
@@ -494,8 +495,8 @@ export default function CandidaturesTab() {
               <tbody className="divide-y divide-slate-100">
                 {filteredCandidatures.map((c, index) => (
                   <tr key={c.id} className="hover:bg-slate-50/80 transition-colors">
-                    <td className="px-4 py-3.5 text-xs text-slate-400 font-semibold align-middle">
-                      {String((currentPage - 1) * pageSize + index + 1).padStart(2, "0")}
+                    <td className="px-4 py-3.5 text-xs text-[#0071a2] font-mono font-bold align-middle whitespace-nowrap">
+                      {formatTableId(c.id, (currentPage - 1) * pageSize + index + 1)}
                     </td>
 
                     {/* Talent info */}

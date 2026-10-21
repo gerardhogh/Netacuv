@@ -5,12 +5,35 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
 async function getAuthUserId(req: Request): Promise<string | null> {
-  const session = await getServerSession(authOptions);
-  if (session?.user && (session.user as any).id) {
-    return (session.user as any).id;
+  try {
+    const session = await getServerSession(authOptions);
+    if (session?.user) {
+      if ((session.user as any).id) {
+        return (session.user as any).id;
+      }
+      if (session.user.email) {
+        const u = await prisma.user.findUnique({
+          where: { email: session.user.email },
+          select: { id: true },
+        });
+        if (u) return u.id;
+      }
+    }
+    const token = await getToken({ req: req as any, secret: process.env.NEXTAUTH_SECRET }).catch(() => null);
+    if (token?.sub) {
+      return token.sub;
+    }
+    if (token?.email) {
+      const u = await prisma.user.findUnique({
+        where: { email: token.email },
+        select: { id: true },
+      });
+      if (u) return u.id;
+    }
+  } catch (err) {
+    console.error("Error in getAuthUserId:", err);
   }
-  const token = await getToken({ req: req as any, secret: process.env.NEXTAUTH_SECRET }).catch(() => null);
-  return token?.sub || null;
+  return null;
 }
 
 // GET /api/favorites - Récupérer les favoris de l'utilisateur connecté
@@ -25,14 +48,14 @@ export async function GET(req: Request) {
     }
 
     const { searchParams } = new URL(req.url);
-    const targetType = searchParams.get("type"); // JOB_OFFER | TALENT | RECRUITER
+    const targetTypeParam = searchParams.get("type"); // JOB_OFFER | TALENT | RECRUITER
     const page = Math.max(1, parseInt(searchParams.get("page") || "1", 10) || 1);
     const limit = Math.max(1, parseInt(searchParams.get("limit") || "20", 10) || 20);
     const skip = (page - 1) * limit;
 
     const where: any = { userId };
-    if (targetType) {
-      where.targetType = targetType;
+    if (targetTypeParam) {
+      where.targetType = targetTypeParam.trim().toUpperCase();
     }
 
     const [favorites, totalCount] = await Promise.all([
@@ -112,6 +135,18 @@ export async function POST(req: Request) {
       );
     }
 
+    // Vérifier que l'utilisateur existe bien en BDD
+    const dbUser = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { id: true },
+    });
+    if (!dbUser) {
+      return NextResponse.json(
+        { error: "Votre session a expiré. Veuillez vous reconnecter." },
+        { status: 401 }
+      );
+    }
+
     const body = await req.json();
     const { targetType, targetId, title, subtitle, location, metadata } = body;
 
@@ -122,53 +157,71 @@ export async function POST(req: Request) {
       );
     }
 
-    const existing = await prisma.favorite.findUnique({
+    const normTargetType = String(targetType).trim().toUpperCase();
+    const strTargetId = String(targetId).trim();
+
+    const existing = await prisma.favorite.findFirst({
       where: {
-        userId_targetType_targetId: {
-          userId,
-          targetType,
-          targetId: String(targetId),
-        },
+        userId,
+        targetType: normTargetType,
+        targetId: strTargetId,
       },
     });
 
     if (existing) {
       // Toggle OFF : Supprimer
-      await prisma.favorite.delete({
-        where: { id: existing.id },
-      });
+      try {
+        await prisma.favorite.delete({
+          where: { id: existing.id },
+        });
+      } catch (delErr) {
+        // Déjà supprimé en concurrence
+      }
       return NextResponse.json({
         action: "removed",
         isFavorite: false,
-        targetId,
-        targetType,
+        targetId: strTargetId,
+        targetType: normTargetType,
       });
     }
 
     // Toggle ON : Créer
     const metaStr = metadata ? (typeof metadata === "string" ? metadata : JSON.stringify(metadata)) : null;
 
-    const newFav = await prisma.favorite.create({
-      data: {
-        userId,
-        targetType,
-        targetId: String(targetId),
-        title: title || null,
-        subtitle: subtitle || null,
-        location: location || null,
-        metadata: metaStr,
-      },
-    });
+    try {
+      const newFav = await prisma.favorite.create({
+        data: {
+          userId,
+          targetType: normTargetType,
+          targetId: strTargetId,
+          title: title || null,
+          subtitle: subtitle || null,
+          location: location || null,
+          metadata: metaStr,
+        },
+      });
 
-    return NextResponse.json({
-      action: "added",
-      isFavorite: true,
-      favorite: newFav,
-    }, { status: 201 });
-  } catch (error) {
+      return NextResponse.json({
+        action: "added",
+        isFavorite: true,
+        favorite: newFav,
+      }, { status: 201 });
+    } catch (createErr: any) {
+      if (createErr?.code === "P2002") {
+        // En cas de double-clic rapide, le favori existe déjà
+        return NextResponse.json({
+          action: "added",
+          isFavorite: true,
+          targetId: strTargetId,
+          targetType: normTargetType,
+        }, { status: 200 });
+      }
+      throw createErr;
+    }
+  } catch (error: any) {
     console.error("[FAVORITES_POST_ERROR]", error);
     return NextResponse.json(
-      { error: "Erreur lors de la mise à jour des favoris." },
+      { error: error?.message || "Erreur lors de la mise à jour des favoris." },
       { status: 500 }
     );
   }
@@ -201,8 +254,8 @@ export async function DELETE(req: Request) {
       await prisma.favorite.deleteMany({
         where: {
           userId,
-          targetType,
-          targetId,
+          targetType: targetType.trim().toUpperCase(),
+          targetId: String(targetId).trim(),
         },
       });
       return NextResponse.json({ success: true, targetType, targetId });
@@ -212,10 +265,10 @@ export async function DELETE(req: Request) {
       { error: "Paramètres manquants pour la suppression." },
       { status: 400 }
     );
-  } catch (error) {
+  } catch (error: any) {
     console.error("[FAVORITES_DELETE_ERROR]", error);
     return NextResponse.json(
-      { error: "Erreur lors de la suppression du favori." },
+      { error: error?.message || "Erreur lors de la suppression du favori." },
       { status: 500 }
     );
   }

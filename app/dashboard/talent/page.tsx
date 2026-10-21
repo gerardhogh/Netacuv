@@ -113,14 +113,37 @@ export default function TalentDashboard() {
 
   // Sync activeTab with URL Query / Hash for persistence on reload or redirect
   useEffect(() => {
-    if (typeof window === "undefined") return;
-    const params = new URLSearchParams(window.location.search);
-    const tabParam = params.get("tab");
-    const hash = window.location.hash.replace("#", "");
-    const targetTab = (tabParam || hash) as TalentTab;
-    if (targetTab && ["dashboard", "profil", "transactions", "video", "emplois", "premium", "affiliation", "parametres"].includes(targetTab)) {
-      setActiveTab(targetTab);
-    }
+    const syncTabFromUrl = () => {
+      if (typeof window === "undefined") return;
+      const params = new URLSearchParams(window.location.search);
+      const tabParam = params.get("tab");
+      const hash = window.location.hash.replace("#", "");
+      const targetTab = (tabParam || hash) as TalentTab;
+      if (
+        targetTab &&
+        [
+          "dashboard",
+          "profil",
+          "transactions",
+          "video",
+          "emplois",
+          "favoris",
+          "premium",
+          "affiliation",
+          "parametres",
+        ].includes(targetTab)
+      ) {
+        setActiveTab(targetTab);
+      }
+    };
+
+    syncTabFromUrl();
+    window.addEventListener("popstate", syncTabFromUrl);
+    window.addEventListener("hashchange", syncTabFromUrl);
+    return () => {
+      window.removeEventListener("popstate", syncTabFromUrl);
+      window.removeEventListener("hashchange", syncTabFromUrl);
+    };
   }, []);
 
   useEffect(() => {

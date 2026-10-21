@@ -9,6 +9,7 @@ import { Pagination } from "@/components/ui/Pagination";
 import useSWR from "swr";
 import toast from "react-hot-toast";
 import { useTranslations } from "next-intl";
+import { formatTableId } from "@/lib/formatTableId";
 
 const fetcher = async (url: string) => {
   const res = await fetch(url);
@@ -88,7 +89,8 @@ export default function AdminRecruteurs() {
           toast.success("Profil recruteur retiré des favoris.");
         }
       } else {
-        toast.error("Erreur lors de la mise à jour des favoris.");
+        const errJson = await res.json().catch(() => null);
+        toast.error(errJson?.error || "Erreur lors de la mise à jour des favoris.");
       }
     } catch (err) {
       console.error("Error toggling favorite", err);
@@ -104,7 +106,7 @@ export default function AdminRecruteurs() {
     .filter((u: any) => u.recruiterProfile || ["RECRUTEUR", "RECRUITER"].includes(u.role?.name?.toUpperCase()))
     .map((r: any, index: number): RecruiterItem => ({
       id: r.id,
-      no: (index + 1).toString().padStart(2, '0'),
+      no: formatTableId(r.id, (currentPage - 1) * pageSize + index + 1),
       name: r.recruiterProfile?.companyName || r.name || "Entreprise",
       logo: r.recruiterProfile?.logo || r.image || undefined,
       secteur: r.recruiterProfile?.industry || r.recruiterProfile?.sector || "",

@@ -76,6 +76,8 @@ export default function RecruteurDashboard() {
   const talents = Array.isArray(talentsRaw) ? talentsRaw : (talentsRaw?.talents || []);
   const { data: emploisFetched = [] } = useSWR("/api/jobs?mine=true", fetcher);
   const emplois = Array.isArray(emploisFetched) ? emploisFetched : (emploisFetched.jobs || []);
+  const { data: applicationsRaw } = useSWR("/api/applications?role=recruiter&limit=1", fetcher);
+  const totalApplicationsCount = applicationsRaw?.totalCount ?? (Array.isArray(applicationsRaw) ? applicationsRaw.length : (applicationsRaw?.applications?.length || 0));
 
   const [isPremium, setIsPremium] = useState<boolean>(false);
   const [recruiterAvatar, setRecruiterAvatar] = useState<string | null>(() => {
@@ -151,9 +153,11 @@ export default function RecruteurDashboard() {
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   useEffect(() => {
-    if (typeof window !== "undefined") {
+    const syncTabFromUrl = () => {
+      if (typeof window === "undefined") return;
       const params = new URLSearchParams(window.location.search);
-      const tab = params.get("tab") as RecruiterTab | null;
+      const hash = window.location.hash.replace("#", "") as RecruiterTab;
+      const tab = (params.get("tab") || hash) as RecruiterTab | null;
       if (
         tab &&
         [
@@ -171,7 +175,15 @@ export default function RecruteurDashboard() {
       ) {
         setActiveTab(tab);
       }
-    }
+    };
+
+    syncTabFromUrl();
+    window.addEventListener("popstate", syncTabFromUrl);
+    window.addEventListener("hashchange", syncTabFromUrl);
+    return () => {
+      window.removeEventListener("popstate", syncTabFromUrl);
+      window.removeEventListener("hashchange", syncTabFromUrl);
+    };
   }, []);
 
   const [favorites, setFavorites] = useState<string[]>([]);
@@ -499,11 +511,13 @@ export default function RecruteurDashboard() {
                     <div className="flex items-center justify-between mb-3">
                       <h3 className="font-bold text-slate-900 text-base">{t("recruiter.applicationsCard.title")}</h3>
                       <span className="text-xs font-bold px-3 py-1 rounded-full bg-slate-100 text-slate-700">
-                        0
+                        {totalApplicationsCount}
                       </span>
                     </div>
                     <p className="text-xs text-slate-500 mb-6 leading-relaxed">
-                      {t("recruiter.applicationsCard.empty")}
+                      {totalApplicationsCount > 0 
+                        ? `${totalApplicationsCount} candidature${totalApplicationsCount > 1 ? "s" : ""} reçue${totalApplicationsCount > 1 ? "s" : ""}. Consultez les profils et les évaluations.`
+                        : t("recruiter.applicationsCard.empty")}
                     </p>
                   </div>
                   <button

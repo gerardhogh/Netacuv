@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma';
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { extractProfession } from "@/lib/talents";
+import { formatTableId } from "@/lib/formatTableId";
 
 export async function GET(request: Request) {
   try {
@@ -144,7 +145,7 @@ export async function GET(request: Request) {
 
       return {
         id: t.id,
-        no: (index + 1).toString().padStart(2, '0'),
+        no: formatTableId(t.id, skip + index + 1),
         name: t.name || "Talent Anonyme",
         firstName: t.name?.split(" ")[0] || "",
         lastName: t.name?.split(" ").slice(1).join(" ") || "",

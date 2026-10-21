@@ -7,6 +7,7 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { useTranslations } from "next-intl";
 import useSWR from "swr";
 import { downloadReceipt } from "@/lib/receiptGenerator";
+import { formatTableId } from "@/lib/formatTableId";
 
 type TxStatus = "success" | "failed" | "pending";
 
@@ -36,13 +37,13 @@ export default function TransactionsTab() {
 
   const { data: apiData } = useSWR('/api/transactions', fetcher);
   
-  const transactions: Transaction[] = apiData?.transactions?.map((item: any) => ({
+  const transactions: Transaction[] = apiData?.transactions?.map((item: any, index: number) => ({
     id: item.id,
     date: new Date(item.createdAt).toLocaleDateString('fr-FR', {
       day: '2-digit', month: '2-digit', year: 'numeric',
       hour: '2-digit', minute: '2-digit'
     }),
-    reference: item.id.substring(0, 10).toUpperCase(),
+    reference: formatTableId(item.id, index + 1),
     method: item.paymentMethod || t("bankCard"),
     amount: item.amount,
     service: item.type || t("premiumSubscription"),
@@ -136,7 +137,7 @@ export default function TransactionsTab() {
                   const cfg = statusConfig[tx.status] || statusConfig.pending;
                   return (
                     <tr key={tx.id} className="hover:bg-slate-50/60 transition-colors">
-                      <td className="px-5 py-3.5 text-[#32A8D7] font-semibold">{index + 1}</td>
+                      <td className="px-5 py-3.5 text-[#0071a2] font-mono font-bold whitespace-nowrap">{formatTableId(index + 1)}</td>
                       <td className="px-5 py-3.5 text-slate-600 whitespace-nowrap">{tx.date}</td>
                       <td className="px-5 py-3.5 text-slate-700 font-medium">{tx.reference}</td>
                       <td className="px-5 py-3.5 text-slate-600">{tx.method}</td>

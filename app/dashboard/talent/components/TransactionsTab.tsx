@@ -7,6 +7,7 @@ import { useTranslations, useLocale } from "next-intl";
 import { Modal } from "@/app/components/ui/Modal";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { downloadReceipt } from "@/lib/receiptGenerator";
+import { formatTableId } from "@/lib/formatTableId";
 
 type TxStatus = "success" | "failed" | "pending";
 
@@ -39,13 +40,13 @@ export default function TransactionsTab() {
     refreshInterval: 30000,
   });
 
-  const transactions: Transaction[] = apiData?.transactions?.map((tx: any) => ({
+  const transactions: Transaction[] = apiData?.transactions?.map((tx: any, index: number) => ({
     id: tx.id,
     date: new Date(tx.createdAt).toLocaleDateString(locale === "en" ? "en-US" : "fr-FR", {
       day: '2-digit', month: '2-digit', year: 'numeric',
       hour: '2-digit', minute: '2-digit'
     }),
-    reference: tx.id.substring(0, 10).toUpperCase(),
+    reference: formatTableId(tx.id, index + 1),
     method: tx.paymentMethod || t("bankCard"),
     amount: tx.amount,
     service: tx.type || t("premiumSubscription"),
@@ -156,7 +157,7 @@ export default function TransactionsTab() {
                   const cfg = statusConfig[tx.status] || statusConfig.pending;
                   return (
                     <tr key={tx.id} className="hover:bg-slate-50/60 transition-colors">
-                      <td className="px-5 py-3.5 text-[#008de4] font-semibold">{index + 1}</td>
+                      <td className="px-5 py-3.5 text-[#0071a2] font-mono font-bold whitespace-nowrap">{formatTableId(index + 1)}</td>
                       <td className="px-5 py-3.5 text-slate-600 whitespace-nowrap">{tx.date}</td>
                       <td className="px-5 py-3.5 text-slate-700 font-medium">{tx.reference}</td>
                       <td className="px-5 py-3.5 text-slate-600">{tx.method}</td>

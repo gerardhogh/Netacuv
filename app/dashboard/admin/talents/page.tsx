@@ -9,6 +9,7 @@ import TalentCard from "@/app/components/TalentCard";
 import useSWR from "swr";
 import toast from "react-hot-toast";
 import { useTranslations } from "next-intl";
+import { formatTableId } from "@/lib/formatTableId";
 
 const fetcher = async (url: string) => {
   const res = await fetch(url);
@@ -95,7 +96,8 @@ export default function AdminTalents() {
           toast.success("Profil talent retiré des favoris.");
         }
       } else {
-        toast.error("Erreur lors de la mise à jour des favoris.");
+        const errData = await res.json().catch(() => null);
+        toast.error(errData?.error || "Erreur lors de la mise à jour des favoris.");
       }
     } catch (err) {
       console.error("Error toggling favorite", err);
@@ -346,9 +348,9 @@ export default function AdminTalents() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {filtered.map(tData => (
+                {filtered.map((tData, index) => (
                   <tr key={tData.id} className="hover:bg-slate-50/50 transition-colors">
-                    <td className="px-5 py-4 text-slate-500">{tData.no}</td>
+                    <td className="px-5 py-4 text-slate-500 font-mono font-bold text-xs">{formatTableId(tData.no || tData.id, index + 1)}</td>
                     <td className="px-5 py-4">
                       <div className="flex items-center gap-2">
                         <button

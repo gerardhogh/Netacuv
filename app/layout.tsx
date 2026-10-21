@@ -25,6 +25,7 @@ import Providers from "./components/Providers";
 import NextTopLoader from 'nextjs-toploader';
 import Image from "next/image";
 import VisitorTracker from "./components/VisitorTracker";
+import GoogleAnalytics from "./components/GoogleAnalytics";
 
 const openSans = Open_Sans({
   subsets: ['latin'],
@@ -168,6 +169,7 @@ export default async function RootLayout({
         <meta name="google" content="notranslate" />
       </head>
       <body>
+        <GoogleAnalytics />
         <NextTopLoader color="#f97316" showSpinner={false} />
         <VisitorTracker />
         <NextIntlClientProvider messages={messages} locale={locale}>

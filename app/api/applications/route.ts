@@ -16,7 +16,6 @@ export async function GET(req: Request) {
   }
 
   try {
-    const role = session.user.role;
     const { searchParams } = new URL(req.url);
     const jobOfferId = searchParams.get("jobOfferId");
     const requestedRole = searchParams.get("role");
@@ -24,19 +23,36 @@ export async function GET(req: Request) {
     const limit = Math.max(1, parseInt(searchParams.get("limit") || "20", 10) || 20);
     const skip = (page - 1) * limit;
     const take = limit;
-    
-    // Determine effective role: if requestedRole is 'recruiter', and the user has a recruiter profile, we act as recruiter.
-    // Otherwise fallback to session.user.role
-    let effectiveRole = session.user.role;
-    if (requestedRole === "recruiter" || requestedRole === "recruteur") {
-       effectiveRole = "RECRUTEUR";
+
+    let sessionUserId = session.user.id;
+    if (!sessionUserId && session.user.email) {
+      const u = await prisma.user.findUnique({
+        where: { email: session.user.email },
+        select: { id: true, role: { select: { name: true } } },
+      });
+      if (u) {
+        sessionUserId = u.id;
+        if (!session.user.role && u.role?.name) {
+          session.user.role = u.role.name;
+        }
+      }
     }
 
+    const userRole = (session.user.role || "").toUpperCase();
+    const reqRole = (requestedRole || "").toUpperCase();
+    const isAdmin = ["SUPER ADMIN", "ADMIN RH / MODÉRATEUR", "MANAGER IA & CERTIFICATION", "GESTIONNAIRE FINANCIER", "SUPPORT CLIENT", "ADMIN"].includes(userRole);
+    const isRecruiterAction = isAdmin || reqRole === "RECRUITER" || reqRole === "RECRUTEUR" || userRole === "RECRUTEUR" || userRole === "RECRUITER";
+
     // 1. TALENT : ne voit que ses propres candidatures
-    if (effectiveRole === "TALENT") {
-      const talentProfile = await prisma.talentProfile.findFirst({
-        where: { userId: session.user.id },
+    if (!isRecruiterAction) {
+      let talentProfile = await prisma.talentProfile.findFirst({
+        where: { userId: sessionUserId || undefined },
       });
+      if (!talentProfile && session.user.email) {
+        talentProfile = await prisma.talentProfile.findFirst({
+          where: { user: { email: session.user.email } },
+        });
+      }
 
       if (!talentProfile) {
         return NextResponse.json({
@@ -70,12 +86,15 @@ export async function GET(req: Request) {
     }
 
     // 2. RECRUITER : ne voit que les candidatures sur ses offres (ou toutes si ADMIN)
-    const isAdmin = ["SUPER ADMIN", "ADMIN RH / MODÉRATEUR", "MANAGER IA & CERTIFICATION", "GESTIONNAIRE FINANCIER", "SUPPORT CLIENT", "ADMIN"].includes((session.user.role || "").toUpperCase());
-
-    if (effectiveRole === "RECRUITER" || effectiveRole === "RECRUTEUR" || isAdmin) {
-      const recruiterProfile = await prisma.recruiterProfile.findFirst({
-        where: { userId: session.user.id },
+    if (isRecruiterAction) {
+      let recruiterProfile = await prisma.recruiterProfile.findFirst({
+        where: { userId: sessionUserId || undefined },
       });
+      if (!recruiterProfile && session.user.email) {
+        recruiterProfile = await prisma.recruiterProfile.findFirst({
+          where: { user: { email: session.user.email } },
+        });
+      }
 
       const whereClause: any = {};
       if (jobOfferId) {
@@ -167,9 +186,23 @@ export async function POST(req: Request) {
     }
 
     // Récupérer le profil Talent de l'utilisateur connecté
-    const talentProfile = await prisma.talentProfile.findFirst({
-      where: { userId: session.user.id },
+    let postUserId = session.user.id;
+    if (!postUserId && session.user.email) {
+      const u = await prisma.user.findUnique({
+        where: { email: session.user.email },
+        select: { id: true },
+      });
+      if (u) postUserId = u.id;
+    }
+
+    let talentProfile = await prisma.talentProfile.findFirst({
+      where: { userId: postUserId || undefined },
     });
+    if (!talentProfile && session.user.email) {
+      talentProfile = await prisma.talentProfile.findFirst({
+        where: { user: { email: session.user.email } },
+      });
+    }
 
     if (!talentProfile) {
       return NextResponse.json(
