@@ -218,31 +218,13 @@ export const authOptions: NextAuthOptions = {
                 if (referrer && referrer.id !== token.sub) {
                   referredById = referrer.id;
 
-                  // Récupérer le montant de prime configuré (par défaut 1500 FCFA)
-                  let bonusAmount = 1500;
-                  try {
-                    const bonusSetting = await prisma.systemSetting.findUnique({
-                      where: { key: "AFFILIATE_BONUS_FIXED" },
-                    });
-                    if (bonusSetting?.value) {
-                      const parsed = parseFloat(bonusSetting.value);
-                      if (!isNaN(parsed) && parsed > 0) bonusAmount = parsed;
-                    }
-                  } catch (sErr) {}
-
-                  // Créditer la cagnotte du parrain
-                  await prisma.user.update({
-                    where: { id: referrer.id },
-                    data: { affiliateBalance: { increment: bonusAmount } },
-                  });
-
-                  // Notifier le parrain en temps réel
+                  // Notification au parrain de la nouvelle inscription Google (étape 1 sur 2 validée)
                   try {
                     const { createNotification } = await import("@/lib/notifications");
                     await createNotification({
                       userId: referrer.id,
-                      title: "Nouveau filleul inscrit ! 🎉",
-                      message: `Un nouveau membre s'est inscrit avec votre code de parrainage. Vous avez reçu ${bonusAmount.toLocaleString('fr-FR')} FCFA sur votre solde affilié.`,
+                      title: "Nouveau filleul inscrit ! 👥",
+                      message: `Un nouveau membre s'est inscrit avec votre code de parrainage via Google. Dès qu'il aura complété son profil à 100%, votre prime de 25 FCFA sera automatiquement débloquée.`,
                       type: "SYSTEM_ALERT",
                       link: (referrer as any)?.role?.name === "RECRUTEUR" ? "/dashboard/recruteur?tab=affiliation" : "/dashboard/talent?tab=affiliation",
                     });

@@ -80,56 +80,47 @@ export async function GET(request: Request) {
       (f) => new Date(f.createdAt) >= startOfToday
     ).length;
 
-    // Formatter les filleuls selon les 3 critères d'éligibilité :
-    // 1. Inscription via code/QR (validé par relation referredById)
-    // 2. Offre Premium active
-    // 3. Profil 100% complété
-    const affilies = filleuls.map((f: any) => {
-      const step1Registered = true;
-      const step2Premium = Boolean(f.isPremium);
-      const step3ProfileComplete = Boolean(
-        f.talentProfile
-          ? f.name &&
-            f.talentProfile.phone &&
-            f.talentProfile.city &&
-            f.talentProfile.country &&
-            f.talentProfile.bio &&
-            f.talentProfile.skills
-          : f.recruiterProfile
-          ? f.name &&
-            f.recruiterProfile.companyName &&
-            f.recruiterProfile.industry
-          : false
-      );
+    // Formatter les filleuls selon les 2 critères d'éligibilité :
+    // 1. Inscription via code/QR (relation referredById)
+    // 2. Profil 100% complété (sans condition Premium)
+    const { isProfileComplete, checkAndRewardReferral } = await import("@/lib/referral");
 
-      const isEligible = step1Registered && step2Premium && step3ProfileComplete;
+    const affilies = await Promise.all(
+      filleuls.map(async (f: any) => {
+        const step1Registered = true;
+        const step2ProfileComplete = isProfileComplete(f);
+        const isEligible = step1Registered && step2ProfileComplete;
 
-      let statut: "Validé" | "En attente" | "Profil incomplet" = "En attente";
-      if (isEligible) {
-        statut = "Validé";
-      } else if (!step2Premium) {
-        statut = "En attente";
-      } else if (!step3ProfileComplete) {
-        statut = "Profil incomplet";
-      }
+        // Si le filleul remplit les 2 critères, s'assurer que les 25 FCFA sont débloqués
+        if (isEligible) {
+          await checkAndRewardReferral(f.id);
+        }
 
-      return {
-        id: f.id,
-        name: f.name || "Utilisateur anonyme",
-        email: f.email,
-        dateInscription: new Date(f.createdAt).toLocaleDateString('fr-FR'),
-        step1Registered,
-        step2Premium,
-        step3ProfileComplete,
-        isEligible,
-        statut,
-        gain: isEligible ? 25 : 0,
-      };
+        const statut: "Validé" | "Profil incomplet" = isEligible ? "Validé" : "Profil incomplet";
+
+        return {
+          id: f.id,
+          name: f.name || "Utilisateur anonyme",
+          email: f.email,
+          dateInscription: new Date(f.createdAt).toLocaleDateString('fr-FR'),
+          step1Registered,
+          step2ProfileComplete,
+          isEligible,
+          statut,
+          gain: isEligible ? 25 : 0,
+        };
+      })
+    );
+
+    // Rafraîchir le solde cagnotte après attribution automatique
+    const refreshedUser = await prisma.user.findUnique({
+      where: { id: session.user.id },
+      select: { affiliateBalance: true },
     });
 
     return NextResponse.json({
       referralCode: user.referralCode || "",
-      cagnotte: user.affiliateBalance || 0,
+      cagnotte: refreshedUser?.affiliateBalance ?? user.affiliateBalance ?? 0,
       affilies,
       dailyReferralsCount: todayReferralsCount,
       dailyLimit: 15,

@@ -108,3 +108,145 @@ export async function findReferrer(rawCode: string | null | undefined): Promise<
 
   return null;
 }
+
+/**
+ * Critère 2 d'éligibilité au bonus : profil 100% complété.
+ * - Pour un Talent : nom + téléphone + ville + pays + bio + compétences
+ * - Pour un Recruteur : nom + entreprise + secteur
+ */
+export function isProfileComplete(user: any): boolean {
+  if (!user || !user.name || typeof user.name !== "string" || !user.name.trim()) {
+    return false;
+  }
+
+  if (user.talentProfile) {
+    const tp = user.talentProfile;
+    return Boolean(
+      tp.phone?.trim() &&
+      tp.city?.trim() &&
+      tp.country?.trim() &&
+      tp.bio?.trim() &&
+      tp.skills?.trim()
+    );
+  }
+
+  if (user.recruiterProfile) {
+    const rp = user.recruiterProfile;
+    return Boolean(
+      rp.companyName?.trim() &&
+      rp.industry?.trim()
+    );
+  }
+
+  return false;
+}
+
+/**
+ * Validation et déblocage du bonus de 25 FCFA lorsque les 2 critères sont satisfaits :
+ * 1. Inscription via code/QR parrain (relation referredById)
+ * 2. Profil 100% complété
+ * 
+ * Si éligible et non encore crédité :
+ * - Vérifie le plafond de 15 parrainages par jour
+ * - Crédite 25 FCFA au parrain
+ * - Enregistre la transaction AFFILIATE_REWARD
+ * - Envoie une notification en temps réel au parrain
+ */
+export async function checkAndRewardReferral(filleulUserId: string) {
+  try {
+    const filleul = await prisma.user.findUnique({
+      where: { id: filleulUserId },
+      include: {
+        talentProfile: true,
+        recruiterProfile: true,
+        referredBy: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            role: { select: { name: true } },
+          },
+        },
+      },
+    });
+
+    if (!filleul || !filleul.referredById || !filleul.referredBy) {
+      return { eligible: false, rewarded: false, reason: "NO_REFERRER" };
+    }
+
+    const complete = isProfileComplete(filleul);
+    if (!complete) {
+      return { eligible: false, rewarded: false, reason: "PROFILE_INCOMPLETE" };
+    }
+
+    const referrerId = filleul.referredById;
+
+    // Vérifier si le bonus a déjà été versé pour ce filleul spécifique
+    const alreadyRewarded = await prisma.transaction.findFirst({
+      where: {
+        userId: referrerId,
+        type: "AFFILIATE_REWARD",
+        paymentMethod: { contains: filleul.id },
+      },
+    });
+
+    if (alreadyRewarded) {
+      return { eligible: true, rewarded: false, reason: "ALREADY_REWARDED" };
+    }
+
+    // Vérifier le plafond journalier de 15 parrainages par jour (max 11 250 FCFA/mois)
+    const startOfToday = new Date();
+    startOfToday.setHours(0, 0, 0, 0);
+
+    const todayRewardsCount = await prisma.transaction.count({
+      where: {
+        userId: referrerId,
+        type: "AFFILIATE_REWARD",
+        createdAt: { gte: startOfToday },
+      },
+    });
+
+    if (todayRewardsCount >= 15) {
+      return { eligible: true, rewarded: false, reason: "DAILY_LIMIT_REACHED" };
+    }
+
+    // Créditer 25 FCFA au parrain
+    const bonus = 25;
+    await prisma.$transaction([
+      prisma.user.update({
+        where: { id: referrerId },
+        data: { affiliateBalance: { increment: bonus } },
+      }),
+      prisma.transaction.create({
+        data: {
+          userId: referrerId,
+          amount: bonus,
+          currency: "XOF",
+          status: "COMPLETED",
+          type: "AFFILIATE_REWARD",
+          paymentMethod: `Parrainage - Filleul: ${filleul.id} (${filleul.name || filleul.email})`,
+        },
+      }),
+    ]);
+
+    // Notifier le parrain en temps réel
+    try {
+      const { createNotification } = await import("@/lib/notifications");
+      const isRecruiter = filleul.referredBy.role?.name === "RECRUTEUR";
+      await createNotification({
+        userId: referrerId,
+        title: "Prime de parrainage débloquée ! 🎉",
+        message: `Votre filleul ${filleul.name || "Nouveau membre"} a complété son profil à 100%. Vous avez reçu 25 FCFA sur votre solde affilié.`,
+        type: "SYSTEM_ALERT",
+        link: isRecruiter ? "/dashboard/recruteur?tab=affiliation" : "/dashboard/talent?tab=affiliation",
+      });
+    } catch (notifErr) {
+      console.error("[Affiliation] Erreur notification prime débloquée:", notifErr);
+    }
+
+    return { eligible: true, rewarded: true, bonus };
+  } catch (error) {
+    console.error("[Affiliation] Erreur checkAndRewardReferral:", error);
+    return { eligible: false, rewarded: false, error };
+  }
+}

@@ -220,7 +220,7 @@ export default function AffiliationProgram({ role = "talent" }: AffiliationProgr
     }
   };
 
-  const valides = affilies.filter((a) => a.statut === "Validé" || a.statut === "Inscrit").length;
+  const valides = affilies.filter((a) => a.statut === "Validé" || a.isEligible || (a.gain ?? 0) > 0).length;
 
   return (
     <div className="space-y-5 max-w-5xl">
@@ -395,42 +395,30 @@ export default function AffiliationProgram({ role = "talent" }: AffiliationProgr
           Conditions d&apos;éligibilité au bonus (25 FCFA)
         </h3>
         <p className="text-xs text-slate-500 mb-4">
-          Le bonus est débloqué dès que le filleul valide les 3 étapes suivantes :
+          Le bonus est débloqué dès que le filleul valide les 2 étapes suivantes :
         </p>
 
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          <div className="flex items-start gap-3 p-3 rounded-lg bg-slate-50 border border-slate-100">
-            <div className="w-7 h-7 rounded-md bg-[#32A8D7]/10 text-[#0071a2] flex items-center justify-center shrink-0 mt-0.5">
-              <UserCheck size={15} />
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div className="flex items-start gap-3 p-3.5 rounded-lg bg-slate-50 border border-slate-100">
+            <div className="w-8 h-8 rounded-md bg-[#32A8D7]/10 text-[#0071a2] flex items-center justify-center shrink-0 mt-0.5">
+              <UserCheck size={16} />
             </div>
             <div>
               <div className="text-xs font-semibold text-slate-800">1. Inscription</div>
               <div className="text-[11px] text-slate-500 mt-0.5">
-                Avec votre code ou en scannant votre QR code.
+                Avec votre code de parrainage ou en scannant votre QR code.
               </div>
             </div>
           </div>
 
-          <div className="flex items-start gap-3 p-3 rounded-lg bg-slate-50 border border-slate-100">
-            <div className="w-7 h-7 rounded-md bg-amber-500/10 text-amber-700 flex items-center justify-center shrink-0 mt-0.5">
-              <ShieldCheck size={15} />
+          <div className="flex items-start gap-3 p-3.5 rounded-lg bg-slate-50 border border-slate-100">
+            <div className="w-8 h-8 rounded-md bg-emerald-500/10 text-emerald-700 flex items-center justify-center shrink-0 mt-0.5">
+              <FileCheck size={16} />
             </div>
             <div>
-              <div className="text-xs font-semibold text-slate-800">2. Offre Premium</div>
+              <div className="text-xs font-semibold text-slate-800">2. Profil 100% complet</div>
               <div className="text-[11px] text-slate-500 mt-0.5">
-                Activation de l&apos;abonnement Premium.
-              </div>
-            </div>
-          </div>
-
-          <div className="flex items-start gap-3 p-3 rounded-lg bg-slate-50 border border-slate-100">
-            <div className="w-7 h-7 rounded-md bg-emerald-500/10 text-emerald-700 flex items-center justify-center shrink-0 mt-0.5">
-              <FileCheck size={15} />
-            </div>
-            <div>
-              <div className="text-xs font-semibold text-slate-800">3. Profil 100% complet</div>
-              <div className="text-[11px] text-slate-500 mt-0.5">
-                Renseignement de tous les champs du profil.
+                Renseignement de tous les champs requis du profil.
               </div>
             </div>
           </div>

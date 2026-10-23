@@ -141,6 +141,15 @@ export async function PUT(req: NextRequest) {
     ]);
 
     logger.info("Talent profile updated", { userId });
+
+    // Vérifier l'éligibilité au parrainage (critère profil 100% complété) et débloquer les 25 FCFA
+    try {
+      const { checkAndRewardReferral } = await import("@/lib/referral");
+      await checkAndRewardReferral(userId);
+    } catch (refErr) {
+      logger.error("Erreur checkAndRewardReferral dans PUT /api/talents/me", { error: refErr instanceof Error ? refErr.message : "Unknown" });
+    }
+
     return NextResponse.json({
       success: true,
       talentProfile
