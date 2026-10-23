@@ -2,10 +2,10 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { useState, Suspense } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { signIn } from "next-auth/react";
-import { AlertCircle, Sparkles, Briefcase } from "lucide-react";
+import { AlertCircle, Sparkles, Briefcase, Gift, CheckCircle2, Loader2, X } from "lucide-react";
 import Navbar from "../components/Navbar";
 
 type UserRole = "talent" | "recruteur";
@@ -16,11 +16,55 @@ function InscriptionForm() {
 
   const defaultRole: UserRole =
     searchParams.get("type") === "recruteur" ? "recruteur" : "talent";
+  const urlRef = (searchParams.get("ref") || "").trim();
 
   const [role, setRole] = useState<UserRole>(defaultRole);
   const [acceptTerms, setAcceptTerms] = useState(false);
   const [error, setError] = useState("");
   const [googleLoading, setGoogleLoading] = useState(false);
+
+  // Referral / Invitation code states
+  const [referralCode, setReferralCode] = useState(urlRef);
+  const [showReferralInput, setShowReferralInput] = useState(Boolean(urlRef));
+  const [referralStatus, setReferralStatus] = useState<"idle" | "checking" | "valid" | "invalid">(
+    urlRef ? "checking" : "idle"
+  );
+  const [referrerName, setReferrerName] = useState("");
+
+  // Validate referral code whenever it changes (with debounce)
+  useEffect(() => {
+    const cleanCode = referralCode.trim();
+    if (!cleanCode) {
+      setReferralStatus("idle");
+      setReferrerName("");
+      return;
+    }
+
+    if (cleanCode.length < 3) {
+      setReferralStatus("idle");
+      setReferrerName("");
+      return;
+    }
+
+    const timer = setTimeout(async () => {
+      setReferralStatus("checking");
+      try {
+        const res = await fetch(`/api/affiliation/verify?code=${encodeURIComponent(cleanCode)}`);
+        const data = await res.json();
+        if (data.valid) {
+          setReferralStatus("valid");
+          setReferrerName(data.referrerName || "Membre Netacuv");
+        } else {
+          setReferralStatus("invalid");
+          setReferrerName("");
+        }
+      } catch (err) {
+        setReferralStatus("idle");
+      }
+    }, 400);
+
+    return () => clearTimeout(timer);
+  }, [referralCode]);
 
   const handleGoogleSignup = async () => {
     setError("");
@@ -35,6 +79,13 @@ function InscriptionForm() {
       // Create cookies to remember the intended role and the auth action for Google signup
       document.cookie = `netacuv_intended_role=${role}; path=/; max-age=3600`;
       document.cookie = `netacuv_auth_action=register; path=/; max-age=3600`;
+
+      // Memorize referral code in cookie if provided and valid
+      if (referralCode.trim()) {
+        document.cookie = `netacuv_referral_code=${encodeURIComponent(referralCode.trim().toUpperCase())}; path=/; max-age=3600`;
+      } else {
+        document.cookie = `netacuv_referral_code=; path=/; max-age=0`;
+      }
 
       await signIn("google", {
         callbackUrl:
@@ -142,6 +193,85 @@ function InscriptionForm() {
                   <span>Recruteur</span>
                 </button>
               </div>
+            </div>
+
+            {/* Referral / Invitation Code Section */}
+            <div className="mb-6">
+              {!showReferralInput ? (
+                <button
+                  type="button"
+                  onClick={() => setShowReferralInput(true)}
+                  className="w-full py-2.5 px-3 rounded-xl border border-dashed border-sky-400/30 hover:border-sky-400/60 bg-sky-500/5 hover:bg-sky-500/10 transition-all text-xs text-sky-300 hover:text-white flex items-center justify-center gap-2 group"
+                >
+                  <Gift size={14} className="text-[#32A8D7] group-hover:scale-110 transition-transform" />
+                  <span>Vous avez un code de parrainage ou d&apos;invitation ?</span>
+                </button>
+              ) : (
+                <div className="p-3.5 rounded-xl bg-black/40 border border-sky-400/25 relative animate-in fade-in zoom-in-95 duration-200">
+                  <div className="flex items-center justify-between mb-2">
+                    <label
+                      htmlFor="referral-input"
+                      className="text-xs font-semibold text-slate-200 flex items-center gap-1.5"
+                    >
+                      <Gift size={14} className="text-[#32A8D7]" />
+                      <span>Code d&apos;invitation ou de parrainage</span>
+                    </label>
+                    {!urlRef && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setShowReferralInput(false);
+                          setReferralCode("");
+                          setReferralStatus("idle");
+                        }}
+                        className="text-slate-400 hover:text-white p-0.5 rounded transition-colors"
+                        title="Masquer"
+                      >
+                        <X size={14} />
+                      </button>
+                    )}
+                  </div>
+
+                  <div className="relative">
+                    <input
+                      id="referral-input"
+                      type="text"
+                      value={referralCode}
+                      onChange={(e) => setReferralCode(e.target.value.toUpperCase())}
+                      placeholder="Ex : REF-NETA-1234"
+                      className="w-full py-2 px-3 text-xs font-mono font-bold tracking-wider rounded-lg bg-black/60 border border-white/15 focus:border-[#32A8D7] text-white placeholder:text-slate-500 placeholder:font-sans placeholder:font-normal focus:outline-none transition-all uppercase"
+                    />
+                    {referralStatus === "checking" && (
+                      <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                        <Loader2 size={14} className="animate-spin text-[#32A8D7]" />
+                      </div>
+                    )}
+                  </div>
+
+                  {referralStatus === "valid" && (
+                    <div className="mt-2 flex items-center gap-1.5 text-[11px] text-emerald-400 font-medium bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-1.5 rounded-lg">
+                      <CheckCircle2 size={13} className="flex-shrink-0 text-emerald-400" />
+                      <span>
+                        Parrainage activé • Parrainé par{" "}
+                        <strong className="text-white">{referrerName}</strong>
+                      </span>
+                    </div>
+                  )}
+
+                  {referralStatus === "invalid" && referralCode.trim().length >= 3 && (
+                    <div className="mt-2 flex items-center gap-1.5 text-[11px] text-amber-300 font-medium bg-amber-500/10 border border-amber-500/20 px-2.5 py-1.5 rounded-lg">
+                      <AlertCircle size={13} className="flex-shrink-0 text-amber-400" />
+                      <span>Code non reconnu (l&apos;inscription reste possible)</span>
+                    </div>
+                  )}
+
+                  {urlRef && referralStatus === "valid" && (
+                    <p className="text-[10px] text-sky-300/80 mt-1.5 italic text-left">
+                      Appliqué automatiquement depuis votre lien d&apos;invitation.
+                    </p>
+                  )}
+                </div>
+              )}
             </div>
 
             {/* Error banner */}

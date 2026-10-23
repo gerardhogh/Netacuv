@@ -197,14 +197,65 @@ export const authOptions: NextAuthOptions = {
           if (dbUser.roleId) {
             token.role = dbUser.role?.name || "TALENT";
           } else if (user) {
-            // Première connexion (user présent) : lire le cookie pour attribuer le bon rôle
+            // Première connexion (user présent) : lire les cookies pour attribuer le bon rôle et le parrainage
             let intendedRole = "talent";
+            let rawReferralCode = "";
             try {
               const cookieStore = await cookies();
               intendedRole = cookieStore.get("netacuv_intended_role")?.value || "talent";
+              rawReferralCode = cookieStore.get("netacuv_referral_code")?.value || "";
             } catch(e) {}
             
             const expectedRoleName = intendedRole.toUpperCase();
+
+            // Gestion du parrainage si un code a été renseigné lors de l'inscription
+            let referredById: string | undefined = undefined;
+            if (rawReferralCode) {
+              try {
+                const codeToSearch = decodeURIComponent(rawReferralCode).trim();
+                const referrer = await prisma.user.findUnique({
+                  where: { referralCode: codeToSearch },
+                  select: { id: true, name: true, affiliateBalance: true },
+                });
+                if (referrer && referrer.id !== token.sub) {
+                  referredById = referrer.id;
+
+                  // Récupérer le montant de prime configuré (par défaut 1500 FCFA)
+                  let bonusAmount = 1500;
+                  try {
+                    const bonusSetting = await prisma.systemSetting.findUnique({
+                      where: { key: "AFFILIATE_BONUS_FIXED" },
+                    });
+                    if (bonusSetting?.value) {
+                      const parsed = parseFloat(bonusSetting.value);
+                      if (!isNaN(parsed) && parsed > 0) bonusAmount = parsed;
+                    }
+                  } catch (sErr) {}
+
+                  // Créditer la cagnotte du parrain
+                  await prisma.user.update({
+                    where: { id: referrer.id },
+                    data: { affiliateBalance: { increment: bonusAmount } },
+                  });
+
+                  // Notifier le parrain en temps réel
+                  try {
+                    const { createNotification } = await import("@/lib/notifications");
+                    await createNotification({
+                      userId: referrer.id,
+                      title: "Nouveau filleul inscrit ! 🎉",
+                      message: `Un nouveau membre s'est inscrit avec votre code de parrainage. Vous avez reçu ${bonusAmount.toLocaleString('fr-FR')} FCFA sur votre solde affilié.`,
+                      type: "SYSTEM_ALERT",
+                      link: "/dashboard/talent?tab=affiliation",
+                    });
+                  } catch (notifErr) {
+                    console.error("[Affiliation] Erreur notification parrain:", notifErr);
+                  }
+                }
+              } catch (refErr) {
+                console.error("[Affiliation] Erreur traitement parrainage JWT:", refErr);
+              }
+            }
 
             // Nouvel utilisateur sans rôle (via Google par exemple)
             let role = await prisma.role.findUnique({ where: { name: expectedRoleName } });
@@ -222,6 +273,7 @@ export const authOptions: NextAuthOptions = {
                 where: { id: token.sub },
                 data: { 
                   roleId: role.id,
+                  referredById: referredById || undefined,
                   talentProfile: expectedRoleName === "TALENT" ? { upsert: { create: {}, update: {} } } : undefined,
                   recruiterProfile: expectedRoleName === "RECRUTEUR" ? { upsert: { create: {}, update: {} } } : undefined,
                 }

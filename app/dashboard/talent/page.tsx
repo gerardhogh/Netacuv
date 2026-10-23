@@ -86,6 +86,7 @@ export default function TalentDashboard() {
   const [affiliationCount, setAffiliationCount] = useState(0);
   const [affiliationBalance, setAffiliationBalance] = useState(0);
   const [affiliations, setAffiliations] = useState<any[]>([]);
+  const [myReferralCode, setMyReferralCode] = useState<string>("");
   const [withdrawalModalOpen, setWithdrawalModalOpen] = useState(false);
   const [withdrawPhone, setWithdrawPhone] = useState("");
   const [withdrawMethod, setWithdrawMethod] = useState("MTN MoMo");
@@ -244,6 +245,7 @@ export default function TalentDashboard() {
       .then(res => res.json())
       .then(data => {
         if (data && !data.error) {
+          if (data.referralCode) setMyReferralCode(data.referralCode);
           setAffiliationBalance(data.cagnotte || 0);
           setAffiliations(data.affilies || []);
           setAffiliationCount(data.affilies?.length || 0);
@@ -387,7 +389,9 @@ export default function TalentDashboard() {
   };
 
   const handleCopyAffiliation = () => {
-    const link = `https://netacuv.com/inscription?ref=${(user?.name || "CANDIDAT").toUpperCase().replace(/\s+/g, "")}-750`;
+    const origin = typeof window !== "undefined" ? window.location.origin : "https://netacuv.com";
+    const code = myReferralCode || `${(user?.name || "CANDIDAT").toUpperCase().replace(/\s+/g, "")}-750`;
+    const link = `${origin}/inscription?ref=${code}`;
     navigator.clipboard.writeText(link);
     setCopiedLink(true);
     showToast(t("talent.linkCopied"));

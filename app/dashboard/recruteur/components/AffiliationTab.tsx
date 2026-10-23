@@ -127,7 +127,7 @@ export default function AffiliationTab() {
 
   const cagnotte = data?.cagnotte || 0;
   const referralCode = data?.referralCode || t("waiting");
-  const referralLink = `https://netacuv.com/inscription?ref=${referralCode}`;
+  const referralLink = typeof window !== "undefined" ? `${window.location.origin}/inscription?ref=${referralCode}` : `https://netacuv.com/inscription?ref=${referralCode}`;
   const affilies: Affilie[] = data?.affilies || [];
 
   const [copied, setCopied] = useState(false);
