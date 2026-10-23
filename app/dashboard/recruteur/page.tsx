@@ -49,6 +49,7 @@ import RecruteurPremium from "./components/RecruteurPremium";
 import LogoutButton from "../../components/LogoutButton";
 import NotificationBell from "@/app/components/NotificationBell";
 import PremiumBanner from "../../components/PremiumBanner";
+import AffiliationDetailsModal from "@/components/AffiliationDetailsModal";
 
 const fetcher = (url: string) => fetch(url).then(res => res.json());
 
@@ -87,6 +88,16 @@ export default function RecruteurDashboard() {
     return null;
   });
   const [filterValues, setFilterValues] = useState<Record<string, string>>({});
+  const [affiliationData, setAffiliationData] = useState<{
+    cagnotte: number;
+    referralCode: string;
+    affilies: any[];
+  }>({
+    cagnotte: 0,
+    referralCode: "",
+    affilies: [],
+  });
+  const [affiliationModalOpen, setAffiliationModalOpen] = useState(false);
 
   const fetchProfileAndPremium = () => {
     fetch("/api/recruiters/me", { cache: "no-store" })
@@ -105,8 +116,24 @@ export default function RecruteurDashboard() {
       .catch((err) => console.error("Erreur chargement profil:", err));
   };
 
+  const fetchAffiliationData = () => {
+    fetch("/api/affiliation/me", { cache: "no-store" })
+      .then((res) => res.json())
+      .then((data) => {
+        if (data && !data.error) {
+          setAffiliationData({
+            cagnotte: data.cagnotte || 0,
+            referralCode: data.referralCode || "",
+            affilies: data.affilies || [],
+          });
+        }
+      })
+      .catch((err) => console.error("Erreur chargement affiliation:", err));
+  };
+
   useEffect(() => {
     fetchProfileAndPremium();
+    fetchAffiliationData();
 
     // Rafraîchit quand l'utilisateur revient sur l'onglet (sync cross-appareils)
     const handleVisibility = () => {
@@ -560,16 +587,19 @@ export default function RecruteurDashboard() {
                 {/* Card 3: Affiliation */}
                 <div className="bg-white rounded-2xl p-6 border border-slate-100 shadow-sm flex flex-col justify-between">
                   <div>
-                    <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center justify-between mb-2">
                       <h3 className="font-bold text-slate-900 text-base">{t("recruiter.affiliationCard.title")}</h3>
                     </div>
-                    <p className="text-xs text-slate-500 mb-6 leading-relaxed">
-                      {t("recruiter.affiliationCard.desc", { count: 4 })}
+                    <p className="text-xs text-slate-500 mb-1 leading-relaxed">
+                      {t("recruiter.affiliationCard.desc", { count: affiliationData.affilies.length })}
+                    </p>
+                    <p className="text-[11px] font-bold text-emerald-600 mb-5">
+                      Gains disponibles : {affiliationData.cagnotte.toLocaleString()} FCFA
                     </p>
                   </div>
                   <button
-                    onClick={() => handleTabChange("affiliation")}
-                    className="w-full py-2.5 px-4 rounded-xl font-semibold text-xs text-white bg-[#08304c] hover:bg-[#062439] transition-colors flex items-center justify-center gap-2 shadow-xs"
+                    onClick={() => setAffiliationModalOpen(true)}
+                    className="w-full py-2.5 px-4 rounded-xl font-semibold text-xs text-white bg-[#08304c] hover:bg-[#062439] transition-colors flex items-center justify-center gap-2 shadow-xs cursor-pointer"
                   >
                     <Share2 size={15} /> {t("recruiter.affiliationCard.btn")}
                   </button>
@@ -860,6 +890,17 @@ export default function RecruteurDashboard() {
 
         </main>
       </div>
+
+      {/* ── MODAL: AFFILIATION DETAILS (REAL DATA) ── */}
+      <AffiliationDetailsModal
+        isOpen={affiliationModalOpen}
+        onClose={() => setAffiliationModalOpen(false)}
+        cagnotte={affiliationData.cagnotte}
+        referralCode={affiliationData.referralCode}
+        affilies={affiliationData.affilies}
+        onOpenFullProgram={() => handleTabChange("affiliation")}
+        onCopySuccess={() => showToast("Lien copié dans le presse-papier !")}
+      />
     </div>
     </>
   );

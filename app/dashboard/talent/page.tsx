@@ -50,6 +50,7 @@ import PremiumBanner from "../../components/PremiumBanner";
 import PremiumRequiredModal from "../../components/PremiumRequiredModal";
 import NotificationBell from "@/app/components/NotificationBell";
 import AffiliationProgram from "@/components/AffiliationProgram";
+import AffiliationDetailsModal from "@/components/AffiliationDetailsModal";
 
 type TalentTab =
   | "dashboard"
@@ -1097,54 +1098,16 @@ export default function TalentDashboard() {
         </div>
       )}
 
-      {/* ── MODAL: AFFILIATION DETAILS ── */}
-      {affiliationModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
-          <div className="w-full max-w-md bg-white rounded-3xl p-6 shadow-2xl border border-slate-100 text-center relative">
-            <button
-              onClick={() => setAffiliationModalOpen(false)}
-              className="absolute top-5 right-5 text-slate-400 hover:text-slate-600"
-            >
-              <X size={18} />
-            </button>
-            <div className="w-14 h-14 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center mx-auto mb-3">
-              <Share2 size={24} />
-            </div>
-            <h3 className="text-lg font-bold text-slate-900 mb-1">
-              Détails de vos parrainages
-            </h3>
-            <p className="text-xs text-slate-500 mb-4">
-              4 personnes se sont inscrites via votre recommandation.
-            </p>
-
-            <div className="space-y-2 text-left mb-6 text-xs divide-y divide-slate-100">
-              <div className="pt-2 flex justify-between">
-                <span>Marc A. (Talent)</span>
-                <span className="font-bold text-green-600">+1 500 FCFA</span>
-              </div>
-              <div className="pt-2 flex justify-between">
-                <span>Sophie D. (Talent)</span>
-                <span className="font-bold text-green-600">+1 500 FCFA</span>
-              </div>
-              <div className="pt-2 flex justify-between">
-                <span>Alain K. (Talent)</span>
-                <span className="font-bold text-green-600">+1 500 FCFA</span>
-              </div>
-              <div className="pt-2 flex justify-between">
-                <span>Fatou M. (Talent)</span>
-                <span className="font-bold text-green-600">+1 500 FCFA</span>
-              </div>
-            </div>
-
-            <button
-              onClick={handleCopyAffiliation}
-              className="btn-primary w-full justify-center py-3 text-xs mb-2"
-            >
-              Copier mon lien de parrainage
-            </button>
-          </div>
-        </div>
-      )}
+      {/* ── MODAL: AFFILIATION DETAILS (REAL DATA) ── */}
+      <AffiliationDetailsModal
+        isOpen={affiliationModalOpen}
+        onClose={() => setAffiliationModalOpen(false)}
+        cagnotte={affiliationBalance}
+        referralCode={myReferralCode}
+        affilies={affiliations}
+        onOpenFullProgram={() => setActiveTab("affiliation")}
+        onCopySuccess={() => showToast(t("affiliation.linkCopied") || "Lien copié !")}
+      />
       {/* ── MODAL: UPGRADE TO PREMIUM ── */}
       {upgradeModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm">
