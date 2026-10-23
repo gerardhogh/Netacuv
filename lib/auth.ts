@@ -244,7 +244,7 @@ export const authOptions: NextAuthOptions = {
                       title: "Nouveau filleul inscrit ! 🎉",
                       message: `Un nouveau membre s'est inscrit avec votre code de parrainage. Vous avez reçu ${bonusAmount.toLocaleString('fr-FR')} FCFA sur votre solde affilié.`,
                       type: "SYSTEM_ALERT",
-                      link: "/dashboard/talent?tab=affiliation",
+                      link: (referrer as any)?.role?.name === "RECRUTEUR" ? "/dashboard/recruteur?tab=affiliation" : "/dashboard/talent?tab=affiliation",
                     });
                   } catch (notifErr) {
                     console.error("[Affiliation] Erreur notification parrain:", notifErr);

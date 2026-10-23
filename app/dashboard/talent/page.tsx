@@ -2,8 +2,8 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { useState, useRef, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useRef, useEffect, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "../../context/AuthContext";
 import { useTranslations, useLocale } from "next-intl";
 import LanguageSwitcher from "@/app/components/LanguageSwitcher";
@@ -63,9 +63,10 @@ type TalentTab =
   | "affiliation"
   | "parametres";
 
-export default function TalentDashboard() {
+function TalentDashboard() {
   const { user, logout } = useAuth();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [activeTab, setActiveTab] = useState<TalentTab>("dashboard");
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
@@ -144,8 +145,22 @@ export default function TalentDashboard() {
     window.addEventListener("popstate", syncTabFromUrl);
     window.addEventListener("hashchange", syncTabFromUrl);
     const handleSwitchTab = (e: any) => {
-      const tab = e?.detail || e;
-      if (tab && typeof tab === "string") {
+      const tab = e?.detail?.tab || e?.detail || e;
+      if (
+        tab &&
+        typeof tab === "string" &&
+        [
+          "dashboard",
+          "profil",
+          "transactions",
+          "video",
+          "emplois",
+          "favoris",
+          "premium",
+          "affiliation",
+          "parametres",
+        ].includes(tab as TalentTab)
+      ) {
         setActiveTab(tab as TalentTab);
       }
     };
@@ -157,12 +172,41 @@ export default function TalentDashboard() {
     };
   }, []);
 
+  // Écoute réactive des searchParams pour les navigations App Router (router.push)
+  useEffect(() => {
+    const tabParam = searchParams.get("tab") as TalentTab | null;
+    if (
+      tabParam &&
+      [
+        "dashboard",
+        "profil",
+        "transactions",
+        "video",
+        "emplois",
+        "favoris",
+        "premium",
+        "affiliation",
+        "parametres",
+      ].includes(tabParam)
+    ) {
+      setActiveTab(tabParam);
+    }
+  }, [searchParams]);
+
   useEffect(() => {
     if (isFirstRender.current) {
       isFirstRender.current = false;
       return;
     }
-    window.history.replaceState(null, "", `#${activeTab}`);
+    if (typeof window !== "undefined") {
+      const currentUrl = new URL(window.location.href);
+      currentUrl.searchParams.set("tab", activeTab);
+      if (activeTab !== "emplois") {
+        currentUrl.searchParams.delete("jobId");
+      }
+      currentUrl.hash = "";
+      window.history.replaceState(null, "", currentUrl.pathname + currentUrl.search);
+    }
   }, [activeTab]);
 
   const fetchDashboardData = () => {
@@ -1224,5 +1268,13 @@ export default function TalentDashboard() {
       )}
 
     </div>
+  );
+}
+
+export default function TalentDashboardPage() {
+  return (
+    <Suspense fallback={null}>
+      <TalentDashboard />
+    </Suspense>
   );
 }

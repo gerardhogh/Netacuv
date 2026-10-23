@@ -24,6 +24,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
+import { useSearchParams } from "next/navigation";
 import useSWR from "swr";
 import toast from "react-hot-toast";
 import { useTranslations, useLocale } from "next-intl";
@@ -68,6 +69,7 @@ export default function OffresEmplois({
 }) {
   const t = useTranslations("talent.jobOffers");
   const locale = useLocale();
+  const searchParams = useSearchParams();
   const [view, setView] = useState<ViewState>("list");
   const [selectedJob, setSelectedJob] = useState<any | null>(null);
   const [companyTab, setCompanyTab] = useState<"info" | "reseaux">("info");
@@ -93,11 +95,10 @@ export default function OffresEmplois({
   const { data, error, isLoading } = useSWR("/api/jobs", fetcher);
   const jobs = data?.jobs || [];
 
-  // Deep-linking: auto-select job if jobId is passed in query params
+  // Deep-linking réactif : auto-sélectionne l'offre ciblée
   useEffect(() => {
-    if (typeof window === "undefined" || !jobs || jobs.length === 0) return;
-    const params = new URLSearchParams(window.location.search);
-    const targetJobId = params.get("jobId");
+    if (!jobs || jobs.length === 0) return;
+    const targetJobId = searchParams.get("jobId");
     if (targetJobId) {
       const found = jobs.find((j: any) => String(j.id) === String(targetJobId));
       if (found) {
@@ -105,6 +106,31 @@ export default function OffresEmplois({
         setView("detail");
       }
     }
+  }, [searchParams, jobs]);
+
+  // Écoute des événements émis par la barre de navigation et la cloche de notifications
+  useEffect(() => {
+    const handleSelectJob = (e: any) => {
+      const targetJobId = e?.detail || e;
+      if (targetJobId && jobs && jobs.length > 0) {
+        const found = jobs.find((j: any) => String(j.id) === String(targetJobId));
+        if (found) {
+          setSelectedJob(found);
+          setView("detail");
+        }
+      }
+    };
+    const handleResetView = () => {
+      setView("list");
+      setSelectedJob(null);
+    };
+
+    window.addEventListener("selectJobId", handleSelectJob);
+    window.addEventListener("resetJobView", handleResetView);
+    return () => {
+      window.removeEventListener("selectJobId", handleSelectJob);
+      window.removeEventListener("resetJobView", handleResetView);
+    };
   }, [jobs]);
 
   const { data: myAppsData, mutate: mutateApps } = useSWR("/api/applications", fetcher);

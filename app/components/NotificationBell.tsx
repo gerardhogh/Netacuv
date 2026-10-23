@@ -18,11 +18,96 @@ import {
   Sparkles,
 } from "lucide-react";
 import { useNotifications, NotificationItem } from "../context/NotificationContext";
+import { useAuth } from "../context/AuthContext";
 import { useTranslations, useLocale } from "next-intl";
 
 interface NotificationBellProps {
   align?: "left" | "right";
   variant?: "default" | "dark" | "transparent";
+}
+
+// Résolution et normalisation garantie du lien de redirection de la notification
+function resolveNotificationLink(notif: NotificationItem, userRole?: string): string {
+  let link = notif.link?.trim() || "";
+
+  // 1. Fallback si aucun lien n'est stocké dans la notification
+  if (!link) {
+    switch (notif.type) {
+      case "JOB_ALERT":
+      case "APPLICATION_STATUS":
+        link = "/dashboard/talent?tab=emplois";
+        break;
+      case "INTERVIEW_REMINDER":
+        link = "/dashboard/talent?tab=video";
+        break;
+      case "NEW_APPLICATION":
+      case "APPLICATION_SUMMARY":
+        link = "/dashboard/recruteur?tab=candidatures";
+        break;
+      case "JOB_EXPIRING_SOON":
+        link = "/dashboard/recruteur?tab=emplois";
+        break;
+      case "NEW_COMPANY_PENDING":
+        link = "/dashboard/admin/recruteurs";
+        break;
+      case "SYSTEM_ALERT":
+      default:
+        const lower = (notif.title + " " + notif.message).toLowerCase();
+        if (lower.includes("offre") || lower.includes("emploi") || lower.includes("opportunité")) {
+          link = "/dashboard/talent?tab=emplois";
+        } else if (lower.includes("candidat") || lower.includes("postul")) {
+          link = userRole === "RECRUTEUR" ? "/dashboard/recruteur?tab=candidatures" : "/dashboard/talent?tab=emplois";
+        } else if (lower.includes("entretien") || lower.includes("interview") || lower.includes("vidéo")) {
+          link = "/dashboard/talent?tab=video";
+        } else if (userRole === "RECRUTEUR") {
+          link = "/dashboard/recruteur";
+        } else if (userRole === "ADMIN" || userRole === "Super Admin") {
+          link = "/dashboard/admin";
+        } else {
+          link = "/dashboard/talent";
+        }
+        break;
+    }
+  }
+
+  // 2. Normalisation des routes publiques ou anciennes
+  if (link === "/talents" || link.startsWith("/talents#") || link.startsWith("/talents?")) {
+    link = link.replace("/talents", "/dashboard/talent");
+  }
+  if (link === "/recruteurs" || link.startsWith("/recruteurs#") || link.startsWith("/recruteurs?")) {
+    link = link.replace("/recruteurs", "/dashboard/recruteur");
+  }
+
+  // 3. Normalisation des fragments de hash (#) en query params (?tab=)
+  if (link.includes("#")) {
+    link = link
+      .replace("/dashboard/talent#emplois", "/dashboard/talent?tab=emplois")
+      .replace("/dashboard/talent#profil", "/dashboard/talent?tab=profil")
+      .replace("/dashboard/talent#video", "/dashboard/talent?tab=video")
+      .replace("/dashboard/talent#favoris", "/dashboard/talent?tab=favoris")
+      .replace("/dashboard/talent#premium", "/dashboard/talent?tab=premium")
+      .replace("/dashboard/talent#affiliation", "/dashboard/talent?tab=affiliation")
+      .replace("/dashboard/talent#parametres", "/dashboard/talent?tab=parametres")
+      .replace("/dashboard/talent#transactions", "/dashboard/talent?tab=transactions")
+      .replace("/dashboard/recruteur#candidatures", "/dashboard/recruteur?tab=candidatures")
+      .replace("/dashboard/recruteur#mes-offres", "/dashboard/recruteur?tab=emplois")
+      .replace("/dashboard/recruteur#emplois", "/dashboard/recruteur?tab=emplois")
+      .replace("/dashboard/recruteur#recherche", "/dashboard/recruteur?tab=recherche")
+      .replace("/dashboard/recruteur#favoris", "/dashboard/recruteur?tab=favoris")
+      .replace("/dashboard/recruteur#affiliation", "/dashboard/recruteur?tab=affiliation")
+      .replace("/dashboard/recruteur#parametres", "/dashboard/recruteur?tab=parametres")
+      .replace("/dashboard/recruteur#transactions", "/dashboard/recruteur?tab=transactions")
+      .replace("/dashboard/recruteur#profil", "/dashboard/recruteur?tab=profil");
+
+    if (link.startsWith("#")) {
+      const tab = link.replace("#", "");
+      link = userRole === "RECRUTEUR" ? `/dashboard/recruteur?tab=${tab}` : `/dashboard/talent?tab=${tab}`;
+    } else if (link.includes("#")) {
+      link = link.replace("#", link.includes("?") ? "&tab=" : "?tab=");
+    }
+  }
+
+  return link;
 }
 
 // Helper pour formater la date relative selon la langue
@@ -112,6 +197,7 @@ export default function NotificationBell({
   const t = useTranslations("notifications");
   const locale = useLocale();
   const router = useRouter();
+  const { user } = useAuth();
   const {
     notifications,
     unreadCount,
@@ -149,30 +235,53 @@ export default function NotificationBell({
       : notifications;
 
   const handleNotificationClick = async (notif: NotificationItem) => {
-    if (!notif.read) {
-      await markAsRead(notif.id);
+    try {
+      if (!notif.read) {
+        await markAsRead(notif.id);
+      }
+    } catch (e) {
+      console.error("Erreur markAsRead:", e);
     }
-    if (notif.link) {
-      setIsOpen(false);
-      let targetLink = notif.link;
 
-      // Si le lien pointe vers la landing page publique (/talents ou /talents#emplois), rediriger vers l'espace dashboard concerné
-      if (targetLink === "/talents" || targetLink.startsWith("/talents#") || targetLink === "/talents#emplois") {
-        targetLink = "/dashboard/talent?tab=emplois";
+    setIsOpen(false);
+    const targetLink = resolveNotificationLink(notif, user?.role);
+    if (!targetLink) return;
+
+    try {
+      const url = new URL(targetLink, typeof window !== "undefined" ? window.location.origin : "http://localhost");
+      const targetPath = url.pathname;
+      const targetTab = url.searchParams.get("tab") || (url.hash ? url.hash.replace("#", "") : null);
+      const targetJobId = url.searchParams.get("jobId");
+      const currentPath = typeof window !== "undefined" ? window.location.pathname : "";
+
+      // Si l'utilisateur est déjà sur l'espace Talent
+      if (currentPath === "/dashboard/talent" && (targetPath === "/dashboard/talent" || targetPath === "")) {
+        if (targetTab) {
+          window.dispatchEvent(new CustomEvent("switchTalentTab", { detail: targetTab }));
+        }
+        if (targetJobId) {
+          window.dispatchEvent(new CustomEvent("selectJobId", { detail: targetJobId }));
+        } else if (targetTab === "emplois") {
+          window.dispatchEvent(new CustomEvent("resetJobView"));
+        }
+        window.history.pushState(null, "", targetLink);
+        router.push(targetLink);
+        return;
       }
 
-      // Convertir les fragments de hash en query param pour App Router Next.js
-      if (targetLink.includes("#")) {
-        targetLink = targetLink
-          .replace("/dashboard/talent#emplois", "/dashboard/talent?tab=emplois")
-          .replace("/dashboard/talent#profil", "/dashboard/talent?tab=profil")
-          .replace("/dashboard/talent#video", "/dashboard/talent?tab=video")
-          .replace("/dashboard/recruteur#candidatures", "/dashboard/recruteur?tab=candidatures")
-          .replace("/dashboard/recruteur#mes-offres", "/dashboard/recruteur?tab=emplois")
-          .replace("/dashboard/recruteur#emplois", "/dashboard/recruteur?tab=emplois")
-          .replace("#", "?tab=");
+      // Si l'utilisateur est déjà sur l'espace Recruteur
+      if (currentPath === "/dashboard/recruteur" && (targetPath === "/dashboard/recruteur" || targetPath === "")) {
+        if (targetTab) {
+          window.dispatchEvent(new CustomEvent("switchRecruiterTab", { detail: targetTab }));
+        }
+        window.history.pushState(null, "", targetLink);
+        router.push(targetLink);
+        return;
       }
 
+      // Navigation vers une autre page
+      router.push(targetLink);
+    } catch {
       router.push(targetLink);
     }
   };

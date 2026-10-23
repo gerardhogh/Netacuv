@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import useSWR from "swr";
+import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import { useAuth } from "../../context/AuthContext";
@@ -67,8 +68,9 @@ type RecruiterTab =
   | "premium";
 
 // ─── Component ─────────────────────────────────────────────────────────────────
-export default function RecruteurDashboard() {
+function RecruteurDashboard() {
   const { user, logout } = useAuth();
+  const searchParams = useSearchParams();
   const locale = useLocale();
   const t = useTranslations();
   
@@ -208,7 +210,7 @@ export default function RecruteurDashboard() {
     window.addEventListener("popstate", syncTabFromUrl);
     window.addEventListener("hashchange", syncTabFromUrl);
     const handleSwitchTab = (e: any) => {
-      const tab = e?.detail || e;
+      const tab = e?.detail?.tab || e?.detail || e;
       if (tab && typeof tab === "string") {
         setActiveTab(tab as RecruiterTab);
       }
@@ -220,6 +222,28 @@ export default function RecruteurDashboard() {
       window.removeEventListener("switchRecruiterTab", handleSwitchTab);
     };
   }, []);
+
+  // Écoute réactive des searchParams pour les navigations App Router (router.push)
+  useEffect(() => {
+    const tab = searchParams.get("tab") as RecruiterTab | null;
+    if (
+      tab &&
+      [
+        "dashboard",
+        "recherche",
+        "candidatures",
+        "emplois",
+        "transactions",
+        "favoris",
+        "affiliation",
+        "parametres",
+        "premium",
+        "profil",
+      ].includes(tab)
+    ) {
+      setActiveTab(tab);
+    }
+  }, [searchParams]);
 
   const [favorites, setFavorites] = useState<string[]>([]);
 
@@ -903,5 +927,13 @@ export default function RecruteurDashboard() {
       />
     </div>
     </>
+  );
+}
+
+export default function RecruteurDashboardPage() {
+  return (
+    <Suspense fallback={null}>
+      <RecruteurDashboard />
+    </Suspense>
   );
 }
