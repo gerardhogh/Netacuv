@@ -213,10 +213,8 @@ export const authOptions: NextAuthOptions = {
             if (rawReferralCode) {
               try {
                 const codeToSearch = decodeURIComponent(rawReferralCode).trim();
-                const referrer = await prisma.user.findUnique({
-                  where: { referralCode: codeToSearch },
-                  select: { id: true, name: true, affiliateBalance: true },
-                });
+                const { findReferrer } = await import("@/lib/referral");
+                const referrer = await findReferrer(codeToSearch);
                 if (referrer && referrer.id !== token.sub) {
                   referredById = referrer.id;
 
@@ -269,10 +267,12 @@ export const authOptions: NextAuthOptions = {
               });
             }
             try {
+              const generatedReferralCode = dbUser.referralCode || `REF-${(dbUser.name || 'USR').replace(/\s+/g, '').substring(0, 4).toUpperCase()}-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
               await prisma.user.update({
                 where: { id: token.sub },
                 data: { 
                   roleId: role.id,
+                  referralCode: generatedReferralCode,
                   referredById: referredById || undefined,
                   talentProfile: expectedRoleName === "TALENT" ? { upsert: { create: {}, update: {} } } : undefined,
                   recruiterProfile: expectedRoleName === "RECRUTEUR" ? { upsert: { create: {}, update: {} } } : undefined,

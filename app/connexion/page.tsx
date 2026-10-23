@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import { signIn, getSession } from "next-auth/react";
 import { Eye, EyeOff, Lock, Mail, AlertCircle, UserPlus } from "lucide-react";
 import { supabase } from "@/lib/supabase";
+import { useTranslations } from "next-intl";
 import GoogleAuthModal from "../components/GoogleAuthModal";
 import Navbar from "../components/Navbar";
 
@@ -14,6 +15,7 @@ type UserRole = "talent" | "recruteur" | "admin";
 
 export default function ConnexionPage() {
   const router = useRouter();
+  const tAuth = useTranslations("auth");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPwd, setShowPwd] = useState(false);
@@ -49,7 +51,7 @@ export default function ConnexionPage() {
     setFormError("");
 
     if (!email.trim() || !password.trim()) {
-      setFormError("Veuillez renseigner votre email et mot de passe.");
+      setFormError(tAuth("emailPasswordRequired"));
       return;
     }
 
@@ -208,12 +210,12 @@ export default function ConnexionPage() {
             {/* Header */}
             <div className="text-center mb-5">
               <h1 className="text-2xl sm:text-3xl font-extrabold text-white mb-1.5 tracking-tight">
-                Connectez-vous
+                {tAuth("loginTitle")}
               </h1>
               <p className="text-xs sm:text-sm text-blue-100/80">
-                Vous n&apos;avez pas de compte ?{" "}
+                {tAuth("loginSubtitle")}{" "}
                 <Link href="/inscription" className="font-bold text-[#32A8D7] hover:text-sky-300 underline underline-offset-2 transition-colors">
-                  Créer un compte
+                  {tAuth("createAccountLink")}
                 </Link>
               </p>
             </div>
@@ -231,7 +233,7 @@ export default function ConnexionPage() {
                       : "text-blue-100/70 hover:text-white hover:bg-white/5"
                   }`}
                 >
-                  {t.charAt(0).toUpperCase() + t.slice(1)}s
+                  {t === "talent" ? tAuth("talents") : tAuth("recruiters")}
                 </button>
               ))}
             </div>
@@ -260,11 +262,11 @@ export default function ConnexionPage() {
                       )}
                     </div>
                     <h3 className="text-xl font-bold text-white mb-2 tracking-tight">
-                      {isNoAccountError ? "Compte introuvable" : "Oups !"}
+                      {isNoAccountError ? tAuth("accountNotFoundTitle") : "Oups !"}
                     </h3>
                     <p className="text-sm text-slate-300 mb-6 leading-relaxed">
                       {isNoAccountError
-                        ? "Vous n'avez pas encore de compte sur Netacuv. Pour accéder à la plateforme, vous devez d'abord vous inscrire."
+                        ? tAuth("accountNotFoundDesc")
                         : error}
                     </p>
 
@@ -275,14 +277,14 @@ export default function ConnexionPage() {
                           onClick={clearError}
                           className="w-full py-3 bg-[#32A8D7] hover:bg-[#2891bb] text-white rounded-xl font-bold transition-all shadow-md text-sm text-center block"
                         >
-                          S&apos;inscrire sur Netacuv
+                          {tAuth("registerOnNetacuv")}
                         </Link>
                         <button
                           type="button"
                           onClick={clearError}
                           className="w-full py-2 text-xs font-semibold text-slate-400 hover:text-white transition-colors"
                         >
-                          Réessayer
+                          {tAuth("tryAgain")}
                         </button>
                       </div>
                     ) : (
@@ -290,7 +292,7 @@ export default function ConnexionPage() {
                         onClick={clearError}
                         className="w-full py-3 bg-[#32A8D7] hover:bg-[#2891bb] text-white rounded-xl font-bold transition-all shadow-md text-sm"
                       >
-                        J&apos;ai compris
+                        {tAuth("understood")}
                       </button>
                     )}
                   </div>
@@ -332,7 +334,7 @@ export default function ConnexionPage() {
                 {googleLoading ? (
                   <>
                     <div className="w-4 h-4 border-2 border-white/40 border-t-transparent rounded-full animate-spin"></div>
-                    <span>Connexion à Google...</span>
+                    <span>{tAuth("connectingWithGoogle")}</span>
                   </>
                 ) : (
                   <>
@@ -343,7 +345,7 @@ export default function ConnexionPage() {
                       height={20}
                       className="object-contain"
                     />
-                    <span>Continuer avec Google</span>
+                    <span>{tAuth("continueWithGoogle")}</span>
                   </>
                 )}
               </button>
@@ -352,7 +354,7 @@ export default function ConnexionPage() {
             {/* Divider */}
             <div className="flex items-center gap-3 my-5">
               <div className="flex-1 h-px bg-white/10"></div>
-              <span className="text-blue-200/50 text-xs font-medium uppercase tracking-wider">ou avec e-mail</span>
+              <span className="text-blue-200/50 text-xs font-medium uppercase tracking-wider">{tAuth("orWithEmail")}</span>
               <div className="flex-1 h-px bg-white/10"></div>
             </div>
 
@@ -360,7 +362,7 @@ export default function ConnexionPage() {
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
                 <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">
-                  Adresse e-mail
+                  {tAuth("emailLabel")}
                 </label>
                 <div className="relative">
                   <Mail size={17} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
@@ -368,7 +370,7 @@ export default function ConnexionPage() {
                     type="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    placeholder="exemple@email.com"
+                    placeholder={tAuth("emailPlaceholder")}
                     className="w-full pl-10 pr-4 py-2.5 bg-white/5 border border-white/10 rounded-xl text-sm text-white placeholder-slate-400 focus:outline-none focus:border-[#32A8D7] focus:ring-1 focus:ring-[#32A8D7] transition-all [&:-webkit-autofill]:shadow-[0_0_0_1000px_#091b32_inset] [&:-webkit-autofill]:[-webkit-text-fill-color:white]"
                     id="email-connexion"
                   />
@@ -378,13 +380,13 @@ export default function ConnexionPage() {
               <div>
                 <div className="flex items-center justify-between mb-1.5">
                   <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300">
-                    Mot de passe
+                    {tAuth("passwordLabel")}
                   </label>
                   <Link
                     href="/mot-de-passe-oublie"
                     className="text-xs font-medium text-sky-400 hover:text-sky-300 transition-colors"
                   >
-                    Mot de passe oublié ?
+                    {tAuth("forgotPassword")}
                   </Link>
                 </div>
                 <div className="relative">
@@ -408,8 +410,6 @@ export default function ConnexionPage() {
                 </div>
               </div>
 
-
-
               <button
                 type="submit"
                 disabled={isLoading || !email || !password}
@@ -419,10 +419,10 @@ export default function ConnexionPage() {
                 {isLoading ? (
                   <>
                     <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                    Connexion en cours...
+                    {tAuth("signingIn")}
                   </>
                 ) : (
-                  "Se connecter"
+                  tAuth("signInButton")
                 )}
               </button>
             </form>

@@ -5,12 +5,14 @@ import Image from "next/image";
 import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { signIn } from "next-auth/react";
+import { useTranslations } from "next-intl";
 import { AlertCircle, Sparkles, Briefcase, Gift, CheckCircle2, Loader2, X } from "lucide-react";
 import Navbar from "../components/Navbar";
 
 type UserRole = "talent" | "recruteur";
 
 function InscriptionForm() {
+  const tAuth = useTranslations("auth");
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -70,7 +72,7 @@ function InscriptionForm() {
     setError("");
 
     if (!acceptTerms) {
-      setError("Veuillez accepter les conditions d'utilisation pour continuer.");
+      setError(tAuth("termsRequired"));
       return;
     }
 
@@ -156,14 +158,14 @@ function InscriptionForm() {
             {/* Header */}
             <div className="text-center mb-6">
               <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
-                Créer un compte
+                {tAuth("registerTitle")}
               </h1>
             </div>
 
             {/* Role selector */}
             <div className="mb-6">
               <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-2 text-center">
-                Je souhaite m&apos;inscrire en tant que :
+                {tAuth("registerSubtitle")}
               </label>
               <div className="flex gap-2 w-full p-1 bg-black/30 border border-white/10 rounded-xl">
                 <button
@@ -177,7 +179,7 @@ function InscriptionForm() {
                   }`}
                 >
                   <Sparkles size={14} />
-                  <span>Talent</span>
+                  <span>{tAuth("talent")}</span>
                 </button>
                 <button
                   type="button"
@@ -190,7 +192,7 @@ function InscriptionForm() {
                   }`}
                 >
                   <Briefcase size={14} />
-                  <span>Recruteur</span>
+                  <span>{tAuth("recruiter")}</span>
                 </button>
               </div>
             </div>
@@ -204,7 +206,7 @@ function InscriptionForm() {
                   className="w-full py-2.5 px-3 rounded-xl border border-dashed border-sky-400/30 hover:border-sky-400/60 bg-sky-500/5 hover:bg-sky-500/10 transition-all text-xs text-sky-300 hover:text-white flex items-center justify-center gap-2 group"
                 >
                   <Gift size={14} className="text-[#32A8D7] group-hover:scale-110 transition-transform" />
-                  <span>Vous avez un code de parrainage ou d&apos;invitation ?</span>
+                  <span>{tAuth("referralQuestion")}</span>
                 </button>
               ) : (
                 <div className="p-3.5 rounded-xl bg-black/40 border border-sky-400/25 relative animate-in fade-in zoom-in-95 duration-200">
@@ -214,7 +216,7 @@ function InscriptionForm() {
                       className="text-xs font-semibold text-slate-200 flex items-center gap-1.5"
                     >
                       <Gift size={14} className="text-[#32A8D7]" />
-                      <span>Code d&apos;invitation ou de parrainage</span>
+                      <span>{tAuth("referralLabel")}</span>
                     </label>
                     {!urlRef && (
                       <button
@@ -238,7 +240,7 @@ function InscriptionForm() {
                       type="text"
                       value={referralCode}
                       onChange={(e) => setReferralCode(e.target.value.toUpperCase())}
-                      placeholder="Ex : REF-NETA-1234"
+                      placeholder={tAuth("referralPlaceholder")}
                       className="w-full py-2 px-3 text-xs font-mono font-bold tracking-wider rounded-lg bg-black/60 border border-white/15 focus:border-[#32A8D7] text-white placeholder:text-slate-500 placeholder:font-sans placeholder:font-normal focus:outline-none transition-all uppercase"
                     />
                     {referralStatus === "checking" && (
@@ -252,8 +254,7 @@ function InscriptionForm() {
                     <div className="mt-2 flex items-center gap-1.5 text-[11px] text-emerald-400 font-medium bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-1.5 rounded-lg">
                       <CheckCircle2 size={13} className="flex-shrink-0 text-emerald-400" />
                       <span>
-                        Parrainage activé • Parrainé par{" "}
-                        <strong className="text-white">{referrerName}</strong>
+                        {tAuth("referralActivated", { name: referrerName })}
                       </span>
                     </div>
                   )}
@@ -261,13 +262,13 @@ function InscriptionForm() {
                   {referralStatus === "invalid" && referralCode.trim().length >= 3 && (
                     <div className="mt-2 flex items-center gap-1.5 text-[11px] text-amber-300 font-medium bg-amber-500/10 border border-amber-500/20 px-2.5 py-1.5 rounded-lg">
                       <AlertCircle size={13} className="flex-shrink-0 text-amber-400" />
-                      <span>Code non reconnu (l&apos;inscription reste possible)</span>
+                      <span>{tAuth("referralInvalid")}</span>
                     </div>
                   )}
 
                   {urlRef && referralStatus === "valid" && (
                     <p className="text-[10px] text-sky-300/80 mt-1.5 italic text-left">
-                      Appliqué automatiquement depuis votre lien d&apos;invitation.
+                      {tAuth("referralAutoApplied")}
                     </p>
                   )}
                 </div>
@@ -295,13 +296,13 @@ function InscriptionForm() {
                 htmlFor="terms"
                 className="text-xs text-slate-300 leading-relaxed cursor-pointer select-none"
               >
-                J&apos;accepte les{" "}
+                {tAuth("termsAccept")}{" "}
                 <Link href="/terms" className="text-sky-300 hover:underline">
-                  conditions d&apos;utilisation
+                  {tAuth("termsOfUse")}
                 </Link>{" "}
-                et la{" "}
+                {tAuth("termsAnd")}{" "}
                 <Link href="/privacy" className="text-sky-300 hover:underline">
-                  politique de confidentialité
+                  {tAuth("privacyPolicy")}
                 </Link>
                 .
               </label>
@@ -318,7 +319,7 @@ function InscriptionForm() {
               {googleLoading ? (
                 <>
                   <div className="w-5 h-5 border-2 border-white/60 border-t-transparent rounded-full animate-spin"></div>
-                  <span>Connexion avec Google...</span>
+                  <span>{tAuth("connectingWithGoogle")}</span>
                 </>
               ) : (
                 <>
@@ -329,7 +330,7 @@ function InscriptionForm() {
                     height={22}
                     className="object-contain"
                   />
-                  <span>S&apos;inscrire avec Google</span>
+                  <span>{tAuth("signUpWithGoogle")}</span>
                 </>
               )}
             </button>
@@ -337,12 +338,12 @@ function InscriptionForm() {
             {/* Footer switch to login */}
             <div className="mt-6 pt-4 border-t border-white/10 text-center">
               <p className="text-xs text-slate-300">
-                Vous avez déjà un compte ?{" "}
+                {tAuth("alreadyHaveAccount")}{" "}
                 <Link
                   href="/connexion"
                   className="font-bold text-[#32A8D7] hover:text-sky-300 underline underline-offset-2 transition-colors ml-1"
                 >
-                  Se connecter
+                  {tAuth("signInLink")}
                 </Link>
               </p>
             </div>

@@ -70,9 +70,8 @@ export async function POST(request: Request) {
     // Handle referral code if provided
     let referredById = undefined;
     if (referralCode) {
-      const referrer = await prisma.user.findUnique({
-        where: { referralCode },
-      });
+      const { findReferrer } = await import("@/lib/referral");
+      const referrer = await findReferrer(referralCode);
       if (referrer) {
         referredById = referrer.id;
 
@@ -109,12 +108,14 @@ export async function POST(request: Request) {
     }
 
     // Create user and profile
+    const generatedReferralCode = `REF-${name.replace(/\s+/g, '').substring(0, 4).toUpperCase() || 'USR'}-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
     const newUser = await prisma.user.create({
       data: {
         name,
         email,
         passwordHash,
         roleId: role.id,
+        referralCode: generatedReferralCode,
         referredById,
         // Créer le profil associé de façon atomique
         talentProfile: roleName === "TALENT" ? { create: {} } : undefined,

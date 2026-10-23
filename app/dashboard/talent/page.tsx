@@ -388,10 +388,21 @@ export default function TalentDashboard() {
     }
   };
 
-  const handleCopyAffiliation = () => {
+  const handleCopyAffiliation = async () => {
     const origin = typeof window !== "undefined" ? window.location.origin : "https://netacuv.com";
-    const code = myReferralCode || `${(user?.name || "CANDIDAT").toUpperCase().replace(/\s+/g, "")}-750`;
-    const link = `${origin}/inscription?ref=${code}`;
+    let code = myReferralCode;
+    if (!code) {
+      try {
+        const res = await fetch("/api/affiliation/me");
+        const data = await res.json();
+        if (data?.referralCode) {
+          code = data.referralCode;
+          setMyReferralCode(code);
+        }
+      } catch (e) {}
+    }
+    const finalCode = code || (user?.email || "REF");
+    const link = `${origin}/inscription?ref=${finalCode}`;
     navigator.clipboard.writeText(link);
     setCopiedLink(true);
     showToast(t("talent.linkCopied"));
