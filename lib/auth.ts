@@ -197,45 +197,14 @@ export const authOptions: NextAuthOptions = {
           if (dbUser.roleId) {
             token.role = dbUser.role?.name || "TALENT";
           } else if (user) {
-            // Première connexion (user présent) : lire les cookies pour attribuer le bon rôle et le parrainage
+            // Première connexion (user présent) : lire les cookies pour attribuer le bon rôle
             let intendedRole = "talent";
-            let rawReferralCode = "";
             try {
               const cookieStore = await cookies();
               intendedRole = cookieStore.get("netacuv_intended_role")?.value || "talent";
-              rawReferralCode = cookieStore.get("netacuv_referral_code")?.value || "";
             } catch(e) {}
             
             const expectedRoleName = intendedRole.toUpperCase();
-
-            // Gestion du parrainage si un code a été renseigné lors de l'inscription
-            let referredById: string | undefined = undefined;
-            if (rawReferralCode) {
-              try {
-                const codeToSearch = decodeURIComponent(rawReferralCode).trim();
-                const { findReferrer } = await import("@/lib/referral");
-                const referrer = await findReferrer(codeToSearch);
-                if (referrer && referrer.id !== token.sub) {
-                  referredById = referrer.id;
-
-                  // Notification au parrain de la nouvelle inscription Google (étape 1 sur 2 validée)
-                  try {
-                    const { createNotification } = await import("@/lib/notifications");
-                    await createNotification({
-                      userId: referrer.id,
-                      title: "Nouveau filleul inscrit ! 👥",
-                      message: `Un nouveau membre s'est inscrit avec votre code de parrainage via Google. Dès qu'il aura complété son profil à 100%, votre prime de 25 FCFA sera automatiquement débloquée.`,
-                      type: "SYSTEM_ALERT",
-                      link: (referrer as any)?.role?.name === "RECRUTEUR" ? "/dashboard/recruteur?tab=affiliation" : "/dashboard/talent?tab=affiliation",
-                    });
-                  } catch (notifErr) {
-                    console.error("[Affiliation] Erreur notification parrain:", notifErr);
-                  }
-                }
-              } catch (refErr) {
-                console.error("[Affiliation] Erreur traitement parrainage JWT:", refErr);
-              }
-            }
 
             // Nouvel utilisateur sans rôle (via Google par exemple)
             let role = await prisma.role.findUnique({ where: { name: expectedRoleName } });
@@ -249,13 +218,10 @@ export const authOptions: NextAuthOptions = {
               });
             }
             try {
-              const generatedReferralCode = dbUser.referralCode || `REF-${(dbUser.name || 'USR').replace(/\s+/g, '').substring(0, 4).toUpperCase()}-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
               await prisma.user.update({
                 where: { id: token.sub },
                 data: { 
                   roleId: role.id,
-                  referralCode: generatedReferralCode,
-                  referredById: referredById || undefined,
                   talentProfile: expectedRoleName === "TALENT" ? { upsert: { create: {}, update: {} } } : undefined,
                   recruiterProfile: expectedRoleName === "RECRUTEUR" ? { upsert: { create: {}, update: {} } } : undefined,
                 }

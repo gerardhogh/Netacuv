@@ -247,7 +247,6 @@ export default function InterviewPage() {
     { key: "video", icon: Video, label: t("interview.sidebar.video") },
     { key: "emplois", icon: Briefcase, label: t("interview.sidebar.jobs") },
     { key: "premium", icon: Star, label: t("interview.sidebar.premium") },
-    { key: "affiliation", icon: Share2, label: t("interview.sidebar.affiliation") },
     { key: "parametres", icon: Settings, label: t("interview.sidebar.settings") },
   ];
 

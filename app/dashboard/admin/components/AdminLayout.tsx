@@ -27,7 +27,6 @@ const getSidebarItems = (role: string = "", t: any) => {
     { href: "/dashboard/admin/favoris", icon: Bookmark, label: t("admin.sidebar.favorites"), show: true },
     { href: "/dashboard/admin/signalements", icon: Flag, label: t("admin.sidebar.reports"), show: isSuperAdmin || upperRole.includes("RH") || upperRole.includes("SUPPORT") },
     { href: "/dashboard/admin/transactions", icon: History, label: t("admin.sidebar.transactions"), show: isSuperAdmin || upperRole.includes("FINANCIER") },
-    { href: "/dashboard/admin/affiliation", icon: Gift, label: t("admin.sidebar.affiliation"), show: isSuperAdmin || upperRole.includes("FINANCIER") },
     { href: "/dashboard/admin/newsletter", icon: Mail, label: t("admin.sidebar.newsletter"), show: isSuperAdmin },
     { href: "/dashboard/admin/permissions", icon: Shield, label: t("admin.sidebar.permissions"), show: isSuperAdmin },
     { href: "/dashboard/admin/trafic", icon: Globe, label: t("admin.sidebar.traffic"), show: isSuperAdmin },

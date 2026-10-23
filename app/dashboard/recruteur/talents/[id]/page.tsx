@@ -525,7 +525,6 @@ export default function TalentDetailPage() {
     { key: "candidatures", icon: Users, label: t("nav.applications"), href: "/dashboard/recruteur?tab=candidatures" },
     { key: "emplois", icon: Briefcase, label: t("nav.myJobs"), href: "/dashboard/recruteur?tab=emplois" },
     { key: "favoris", icon: Bookmark, label: t("nav.favorites"), href: "/dashboard/recruteur?tab=favoris" },
-    { key: "affiliation", icon: Share2, label: t("nav.affiliation"), href: "/dashboard/recruteur?tab=affiliation" },
     { key: "profil", icon: Users, label: t("nav.myProfile"), href: "/dashboard/recruteur?tab=profil" },
     { key: "parametres", icon: Settings, label: t("nav.settings"), href: "/dashboard/recruteur?tab=parametres" },
   ];

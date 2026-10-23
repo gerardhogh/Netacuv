@@ -101,7 +101,6 @@ export default function RecruteursPage() {
               <ul className="space-y-4 mb-8 flex-1">
                 <li className="flex items-start gap-3"><Check className="text-[#2BAFE3] mt-0.5 flex-shrink-0" size={20} /> <span className="text-slate-600">{t("pricing.companyProfile")}</span></li>
                 <li className="flex items-start gap-3"><Check className="text-[#2BAFE3] mt-0.5 flex-shrink-0" size={20} /> <span className="text-slate-600">{t("pricing.oneFreeJob")}</span></li>
-                <li className="flex items-start gap-3"><Check className="text-[#2BAFE3] mt-0.5 flex-shrink-0" size={20} /> <span className="text-slate-600">{t("pricing.affiliation")} <span className="text-xs font-semibold text-green-600 bg-green-50 px-2 py-0.5 rounded-full ml-1 border border-green-200">{t("pricing.referralGains")}</span></span></li>
                 <li className="flex items-start gap-3 opacity-50"><X className="text-slate-400 mt-0.5 flex-shrink-0" size={20} /> <span className="text-slate-500 line-through decoration-slate-300">{t("pricing.unlimitedJobs")}</span></li>
                 <li className="flex items-start gap-3 opacity-50"><X className="text-slate-400 mt-0.5 flex-shrink-0" size={20} /> <span className="text-slate-500 line-through decoration-slate-300">{t("pricing.fullContacts")}</span></li>
                 <li className="flex items-start gap-3 opacity-50"><X className="text-slate-400 mt-0.5 flex-shrink-0" size={20} /> <span className="text-slate-500 line-through decoration-slate-300">{t("pricing.unlimitedCv")}</span></li>
@@ -135,7 +134,6 @@ export default function RecruteursPage() {
               </div>
               <ul className="space-y-4 mb-8 flex-1">
                 <li className="flex items-start gap-3"><Check className="text-[#F59E0B] mt-0.5 flex-shrink-0" size={20} /> <span className="text-white font-semibold">{t("pricing.companyProfile")}</span></li>
-                <li className="flex items-start gap-3"><Check className="text-[#F59E0B] mt-0.5 flex-shrink-0" size={20} /> <span className="text-white font-semibold">{t("pricing.affiliation")} <span className="text-xs font-bold text-[#0F172A] bg-[#F59E0B] px-2 py-0.5 rounded-full ml-1">{t("pricing.referralGains")}</span></span></li>
                 <li className="flex items-start gap-3"><Check className="text-blue-300 mt-0.5 flex-shrink-0" size={20} /> <span className="text-blue-50">{t("pricing.unlimitedJobs")}</span></li>
                 <li className="flex items-start gap-3"><Check className="text-blue-300 mt-0.5 flex-shrink-0" size={20} /> <span className="text-blue-50">{t("pricing.fullContacts")}</span></li>
                 <li className="flex items-start gap-3"><Check className="text-blue-300 mt-0.5 flex-shrink-0" size={20} /> <span className="text-blue-50">{t("pricing.unlimitedCv")}</span></li>

@@ -42,7 +42,6 @@ import TalentCard from "@/app/components/TalentCard";
 import CandidaturesTab from "./components/CandidaturesTab";
 import EmploisTab from "./components/EmploisTab";
 import FavorisTab from "./components/FavorisTab";
-import AffiliationTab from "./components/AffiliationTab";
 import ParametresTab from "./components/ParametresTab";
 import ProfilTab from "./components/ProfilTab";
 import TransactionsTab from "./components/TransactionsTab";
@@ -50,7 +49,6 @@ import RecruteurPremium from "./components/RecruteurPremium";
 import LogoutButton from "../../components/LogoutButton";
 import NotificationBell from "@/app/components/NotificationBell";
 import PremiumBanner from "../../components/PremiumBanner";
-import AffiliationDetailsModal from "@/components/AffiliationDetailsModal";
 
 const fetcher = (url: string) => fetch(url).then(res => res.json());
 
@@ -62,7 +60,6 @@ type RecruiterTab =
   | "emplois"
   | "transactions"
   | "favoris"
-  | "affiliation"
   | "parametres"
   | "profil"
   | "premium";
@@ -90,16 +87,6 @@ function RecruteurDashboard() {
     return null;
   });
   const [filterValues, setFilterValues] = useState<Record<string, string>>({});
-  const [affiliationData, setAffiliationData] = useState<{
-    cagnotte: number;
-    referralCode: string;
-    affilies: any[];
-  }>({
-    cagnotte: 0,
-    referralCode: "",
-    affilies: [],
-  });
-  const [affiliationModalOpen, setAffiliationModalOpen] = useState(false);
 
   const fetchProfileAndPremium = () => {
     fetch("/api/recruiters/me", { cache: "no-store" })
@@ -118,24 +105,8 @@ function RecruteurDashboard() {
       .catch((err) => console.error("Erreur chargement profil:", err));
   };
 
-  const fetchAffiliationData = () => {
-    fetch("/api/affiliation/me", { cache: "no-store" })
-      .then((res) => res.json())
-      .then((data) => {
-        if (data && !data.error) {
-          setAffiliationData({
-            cagnotte: data.cagnotte || 0,
-            referralCode: data.referralCode || "",
-            affilies: data.affilies || [],
-          });
-        }
-      })
-      .catch((err) => console.error("Erreur chargement affiliation:", err));
-  };
-
   useEffect(() => {
     fetchProfileAndPremium();
-    fetchAffiliationData();
 
     // Rafraîchit quand l'utilisateur revient sur l'onglet (sync cross-appareils)
     const handleVisibility = () => {
@@ -196,7 +167,6 @@ function RecruteurDashboard() {
           "emplois",
           "transactions",
           "favoris",
-          "affiliation",
           "parametres",
           "premium",
           "profil",
@@ -235,7 +205,6 @@ function RecruteurDashboard() {
         "emplois",
         "transactions",
         "favoris",
-        "affiliation",
         "parametres",
         "premium",
         "profil",
@@ -324,7 +293,6 @@ function RecruteurDashboard() {
     { key: "emplois" as RecruiterTab, icon: Briefcase, label: t("nav.myJobs") },
     { key: "transactions" as RecruiterTab, icon: CreditCard, label: t("recruiter.transactions") },
     { key: "favoris" as RecruiterTab, icon: Bookmark, label: t("nav.favorites") },
-    { key: "affiliation" as RecruiterTab, icon: Share2, label: t("nav.affiliation") },
     { key: "profil" as RecruiterTab, icon: User, label: t("nav.myProfile") },
     { key: "parametres" as RecruiterTab, icon: Settings, label: t("nav.settings") },
     { key: "premium" as RecruiterTab, icon: Crown, label: "Premium" },
@@ -453,11 +421,6 @@ function RecruteurDashboard() {
                 {t("recruiter.bookmarks")}
               </h1>
             )}
-            {activeTab === "affiliation" && (
-              <h1 className="text-xl sm:text-2xl font-bold text-[#232323] tracking-tight">
-                {t("recruiter.referral")}
-              </h1>
-            )}
             {activeTab === "parametres" && (
               <h1 className="text-xl sm:text-2xl font-bold text-[#232323] tracking-tight">
                 {t("recruiter.accountSettings")}
@@ -562,8 +525,8 @@ function RecruteurDashboard() {
           {/* TAB: DASHBOARD (ACCUEIL) */}
           {activeTab === "dashboard" && (
             <div className="space-y-6">
-              {/* Row 1 – Candidatures, Favoris, Affiliation */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-5 sm:gap-6">
+              {/* Row 1 – Candidatures, Favoris */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5 sm:gap-6">
                 {/* Card 1: Candidatures */}
                 <div className="bg-white rounded-2xl p-6 border border-slate-100 shadow-sm flex flex-col justify-between">
                   <div>
@@ -605,27 +568,6 @@ function RecruteurDashboard() {
                     className="w-full py-2.5 px-4 rounded-xl font-semibold text-xs text-white bg-[#0088cc] hover:bg-[#0077b3] transition-colors flex items-center justify-center gap-2 shadow-xs"
                   >
                     <Bookmark size={15} /> {t("recruiter.favoritesCard.btn")}
-                  </button>
-                </div>
-
-                {/* Card 3: Affiliation */}
-                <div className="bg-white rounded-2xl p-6 border border-slate-100 shadow-sm flex flex-col justify-between">
-                  <div>
-                    <div className="flex items-center justify-between mb-2">
-                      <h3 className="font-bold text-slate-900 text-base">{t("recruiter.affiliationCard.title")}</h3>
-                    </div>
-                    <p className="text-xs text-slate-500 mb-1 leading-relaxed">
-                      {t("recruiter.affiliationCard.desc", { count: affiliationData.affilies.length })}
-                    </p>
-                    <p className="text-[11px] font-bold text-emerald-600 mb-5">
-                      Gains disponibles : {affiliationData.cagnotte.toLocaleString()} FCFA
-                    </p>
-                  </div>
-                  <button
-                    onClick={() => setAffiliationModalOpen(true)}
-                    className="w-full py-2.5 px-4 rounded-xl font-semibold text-xs text-white bg-[#08304c] hover:bg-[#062439] transition-colors flex items-center justify-center gap-2 shadow-xs cursor-pointer"
-                  >
-                    <Share2 size={15} /> {t("recruiter.affiliationCard.btn")}
                   </button>
                 </div>
               </div>
@@ -901,9 +843,6 @@ function RecruteurDashboard() {
             />
           )}
 
-          {/* TAB: AFFILIATION */}
-          {activeTab === "affiliation" && <AffiliationTab />}
-
           {/* TAB: PARAMETRES */}
           {activeTab === "parametres" && <ParametresTab />}
 
@@ -914,17 +853,6 @@ function RecruteurDashboard() {
 
         </main>
       </div>
-
-      {/* ── MODAL: AFFILIATION DETAILS (REAL DATA) ── */}
-      <AffiliationDetailsModal
-        isOpen={affiliationModalOpen}
-        onClose={() => setAffiliationModalOpen(false)}
-        cagnotte={affiliationData.cagnotte}
-        referralCode={affiliationData.referralCode}
-        affilies={affiliationData.affilies}
-        onOpenFullProgram={() => handleTabChange("affiliation")}
-        onCopySuccess={() => showToast("Lien copié dans le presse-papier !")}
-      />
     </div>
     </>
   );

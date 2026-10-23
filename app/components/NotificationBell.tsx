@@ -86,7 +86,6 @@ function resolveNotificationLink(notif: NotificationItem, userRole?: string): st
       .replace("/dashboard/talent#video", "/dashboard/talent?tab=video")
       .replace("/dashboard/talent#favoris", "/dashboard/talent?tab=favoris")
       .replace("/dashboard/talent#premium", "/dashboard/talent?tab=premium")
-      .replace("/dashboard/talent#affiliation", "/dashboard/talent?tab=affiliation")
       .replace("/dashboard/talent#parametres", "/dashboard/talent?tab=parametres")
       .replace("/dashboard/talent#transactions", "/dashboard/talent?tab=transactions")
       .replace("/dashboard/recruteur#candidatures", "/dashboard/recruteur?tab=candidatures")
@@ -94,7 +93,6 @@ function resolveNotificationLink(notif: NotificationItem, userRole?: string): st
       .replace("/dashboard/recruteur#emplois", "/dashboard/recruteur?tab=emplois")
       .replace("/dashboard/recruteur#recherche", "/dashboard/recruteur?tab=recherche")
       .replace("/dashboard/recruteur#favoris", "/dashboard/recruteur?tab=favoris")
-      .replace("/dashboard/recruteur#affiliation", "/dashboard/recruteur?tab=affiliation")
       .replace("/dashboard/recruteur#parametres", "/dashboard/recruteur?tab=parametres")
       .replace("/dashboard/recruteur#transactions", "/dashboard/recruteur?tab=transactions")
       .replace("/dashboard/recruteur#profil", "/dashboard/recruteur?tab=profil");

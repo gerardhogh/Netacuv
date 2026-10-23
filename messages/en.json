@@ -36,14 +36,6 @@
     "privacyPolicy": "privacy policy",
     "termsRequired": "Please accept the terms of use to continue.",
     "emailPasswordRequired": "Please enter your email and password.",
-    "referralQuestion": "Do you have a referral or invitation code?",
-    "referralLabel": "Invitation or referral code",
-    "referralPlaceholder": "Ex: REF-NETA-1234",
-    "referralActivated": "Referral applied • Referred by {name}",
-    "referralInvalid": "Unrecognized code (registration is still possible)",
-    "referralAutoApplied": "Automatically applied from your invitation link.",
-    "referralInfoTitle": "How does this code work?",
-    "referralInfoDesc": "This code is shared by a friend or referrer who is a Netacuv member. It connects them to your account and unlocks referral perks. This field is optional: if you don't have one, simply leave it blank.",
     "accountNotFoundTitle": "Account not found",
     "accountNotFoundDesc": "You don't have a Netacuv account yet. To access the platform, please sign up first.",
     "registerOnNetacuv": "Sign up on Netacuv",
@@ -57,7 +49,6 @@
     "applications": "Applications",
     "myJobs": "My jobs",
     "favorites": "Favorites",
-    "affiliation": "Affiliation",
     "settings": "Settings",
     "myProfile": "My profile",
     "logout": "Sign out",
@@ -102,10 +93,6 @@
     "viewVideo": "View video interview",
     "startVideo": "Start video interview",
     "unlockAiInterview": "Unlock AI Interview",
-    "affiliation": "Affiliation",
-    "sponsoredCount": "You have sponsored {count} people in total",
-    "availableEarnings": "Available earnings: {amount} FCFA",
-    "viewDetails": "View details",
     "recommendedJobs": "Recommended available jobs",
     "activeJobsCount": "{count} active jobs",
     "noRecommendedJobs": "No recommended jobs at the moment",
@@ -232,22 +219,6 @@
       "ruleScoring": "• Automated AI scoring on clarity and delivery",
       "startRecording": "Start recording"
     }
-  },
-  "affiliation": {
-    "title": "Affiliation Program",
-    "subtitle": "Refer other talents and earn cash rewards",
-    "balance": "Balance: {amount} FCFA",
-    "reset": "Reset",
-    "uniqueLink": "Your unique referral link",
-    "linkDesc": "Each successful signup earns you 1,500 FCFA directly.",
-    "copyLink": "Copy my link",
-    "linkCopied": "Link copied!",
-    "myReferrals": "My referrals ({count})",
-    "noReferrals": "No referrals yet.",
-    "registeredReferrals": "Registered referrals",
-    "totalGains": "Total earnings generated",
-    "availableWithdrawal": "Available withdrawal",
-    "withdraw": "Withdraw"
   },
   "premiumBanner": {
     "title": "Level up your journey with Premium",
@@ -715,11 +686,6 @@
       "desc": "List of your favorites. Saved profiles",
       "btn": "View favorites"
     },
-    "affiliationCard": {
-      "title": "Affiliation",
-      "desc": "You have referred {count} people in total",
-      "btn": "View details"
-    },
     "createdJobsCard": {
       "title": "Created jobs",
       "badge": "{count} jobs",
@@ -982,57 +948,6 @@
       "andMore": "and {count} more",
       "unspecified": "Unspecified"
     },
-    "affiliationTab": {
-      "title": "Recruiter Affiliation Program",
-      "desc": "Share your referral link and earn rewards on every new subscription.",
-      "yourLink": "Your referral link:",
-      "copyLink": "Copy link",
-      "linkCopied": "Link copied to clipboard!",
-      "earnings": "Total earnings",
-      "activeAffiliates": "Active referrals",
-      "pendingPayout": "Pending payout",
-      "requestWithdrawal": "Request withdrawal",
-      "referralTableTitle": "Referral history",
-      "colName": "Name",
-      "colEmail": "Email",
-      "colDate": "Registration date",
-      "colStatus": "Status",
-      "colGain": "Earnings generated",
-      "noAffiliates": "No referrals yet.",
-      "withdrawalModalTitle": "Mobile Money Withdrawal",
-      "availableBalance": "Available balance:",
-      "operator": "Operator",
-      "phoneNumber": "Phone number",
-      "amountToWithdraw": "Amount to withdraw (CFA)",
-      "amountLimits": "Minimum: 500 CFA · Maximum: {max} CFA",
-      "cancel": "Cancel",
-      "confirmWithdrawal": "Confirm withdrawal",
-      "myAffiliates": "My Affiliates",
-      "affiliatesSub": "{inscrits} registered · {enAttente} pending",
-      "cagnotte": "Prize pool",
-      "cfaAvailable": "CFA available",
-      "totalEarnings": "Total earnings",
-      "cfaGenerated": "CFA generated",
-      "affiliatesList": "Affiliates list",
-      "cagnotteInvite": "Invitation pool: {amount} CFA",
-      "noAffiliatesTitle": "No affiliates",
-      "noAffiliatesDesc": "You haven't referred anyone yet. Share your link!",
-      "statusInscrit": "Registered",
-      "statusEnAttente": "Pending",
-      "statusInactif": "Inactive",
-      "myReferralLink": "My referral link",
-      "referralShareText": "Share this link and earn {amount} per registered recruiter referred.",
-      "makeWithdrawal": "Make a withdrawal",
-      "howItWorks": "How does it work?",
-      "step1": "Copy your unique referral link",
-      "step2": "Share it with recruiters in your network",
-      "step3": "Earn 2,500 CFA per registered recruiter",
-      "step4": "Withdraw your earnings via Mobile Money",
-      "withdrawalSuccess": "Withdrawal request of {amount} CFA via {operator} sent!",
-      "withdrawalError": "Error requesting withdrawal",
-      "connectionError": "Connection error.",
-      "waiting": "Pending..."
-    },
     "premiumTab": {
       "title": "Upgrade to Netacuv Recruiter Premium",
       "subtitle": "Recruit faster and with zero limits.",
@@ -1053,8 +968,6 @@
       "toStartRecruiting": "To start recruiting",
       "featureCompanyProfile": "Company profile creation",
       "feature1JobFree": "1 free job offer",
-      "featureAffiliation": "Affiliation",
-      "featureAffiliationBadge": "Referral earnings",
       "featureUnlimitedJobs": "Unlimited job postings",
       "featureFullContacts": "Full Talent contact info",
       "featureUnlimitedCv": "Unlimited CV PDF downloads",
@@ -2062,35 +1975,6 @@
       "toastReadFileError": "Error reading the file.",
       "toastUpdateError": "Update error"
     },
-    "affiliationPage": {
-      "pageTitle": "Affiliation Management",
-      "pageSubtitle": "Set referral bonuses and manage user referral codes.",
-      "bonusConfigTitle": "Bonus Configuration",
-      "bonusConfigSubtitle": "Define global rewards for referrers.",
-      "fixedBonusLabel": "Fixed Bonus (€)",
-      "fixedBonusHelp": "Fixed amount awarded to the referrer upon validated registration or action.",
-      "percentBonusLabel": "Percentage Bonus (%)",
-      "percentBonusHelp": "Percentage earned by the referrer on referred user transactions.",
-      "savingBtn": "Saving...",
-      "saveConfigBtn": "Save configuration",
-      "userCodesTitle": "Referral Code Management by User",
-      "searchPlaceholder": "Search (Name, Email, Code)...",
-      "thUser": "User",
-      "thRole": "Role",
-      "thAffiliationCode": "Referral Code",
-      "thReferrals": "Referrals (Registered)",
-      "thAffiliateBalance": "Affiliate Balance",
-      "thAction": "Action",
-      "noCode": "No code",
-      "unknownRole": "Unknown",
-      "saveTooltip": "Save",
-      "cancelTooltip": "Cancel",
-      "customizeCodeTooltip": "Customize code",
-      "noUsersFound": "No users found.",
-      "toastSettingsSaved": "Affiliation settings updated",
-      "toastCodeSaved": "Referral code updated",
-      "toastCodeError": "Error updating code"
-    },
     "maintenance": {
       "active": "Maintenance mode ACTIVATED",
       "inactive": "Maintenance mode DEACTIVATED",
@@ -2196,11 +2080,6 @@
           "num": "05",
           "title": "Get noticed by recruiters",
           "desc": "Your profile appears in searches matching your score, resume, and video."
-        },
-        {
-          "num": "06",
-          "title": "Earn with affiliation",
-          "desc": "Share your code and receive bonuses whenever your referrals join."
         }
       ],
       "recruiterSteps": [
@@ -2223,11 +2102,6 @@
           "num": "04",
           "title": "Contact candidates directly or post a job",
           "desc": "Connect directly with talents that match your requirements."
-        },
-        {
-          "num": "05",
-          "title": "Earn with affiliation",
-          "desc": "Share your referral link and earn bonuses when your referrals join."
         }
       ]
     },
@@ -2270,8 +2144,6 @@
       "upgradePremium": "Upgrade to Premium",
       "features": {
         "whatsapp": "Exclusive WhatsApp Community",
-        "affiliation": "Affiliation",
-        "affiliationBadge": "Referral Earnings",
         "talentBasicProfile": "Basic profile creation",
         "talent1FreeApp": "1 free job application",
         "talentUnlimitedApps": "Unlimited applications",
@@ -2304,10 +2176,6 @@
         {
           "q": "What benefits do recruiters get with the Premium plan?",
           "a": "Premium recruiters enjoy unlimited job postings, unrestricted candidate access (emails, phones, downloadable PDF resumes, full AI interview recordings), priority access to top-rated profiles, and advanced search filters."
-        },
-        {
-          "q": "How does the referral/affiliation program work?",
-          "a": "Whether on Free or Premium plans, you earn cash rewards by inviting peers. Whenever someone registers with your code or link and completes 100% of their profile, you earn 25 FCFA (up to 15 referrals per day)!"
         },
         {
           "q": "How do recruiters get in touch with talents?",

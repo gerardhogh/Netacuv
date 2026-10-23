@@ -49,8 +49,6 @@ import ParametresTab from "./components/ParametresTab";
 import PremiumBanner from "../../components/PremiumBanner";
 import PremiumRequiredModal from "../../components/PremiumRequiredModal";
 import NotificationBell from "@/app/components/NotificationBell";
-import AffiliationProgram from "@/components/AffiliationProgram";
-import AffiliationDetailsModal from "@/components/AffiliationDetailsModal";
 
 type TalentTab =
   | "dashboard"
@@ -60,7 +58,6 @@ type TalentTab =
   | "emplois"
   | "favoris"
   | "premium"
-  | "affiliation"
   | "parametres";
 
 function TalentDashboard() {
@@ -85,20 +82,9 @@ function TalentDashboard() {
   const [cvUploadedAt, setCvUploadedAt] = useState("Mis à jour il y a 2 jours");
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
-  // Affiliation
-  const [affiliationCount, setAffiliationCount] = useState(0);
-  const [affiliationBalance, setAffiliationBalance] = useState(0);
-  const [affiliations, setAffiliations] = useState<any[]>([]);
-  const [myReferralCode, setMyReferralCode] = useState<string>("");
-  const [withdrawalModalOpen, setWithdrawalModalOpen] = useState(false);
-  const [withdrawPhone, setWithdrawPhone] = useState("");
-  const [withdrawMethod, setWithdrawMethod] = useState("MTN MoMo");
-  const [withdrawAmount, setWithdrawAmount] = useState("");
-
   // Modals state
   const [videoModalOpen, setVideoModalOpen] = useState(false);
   const [videoStep, setVideoStep] = useState<"intro" | "recording" | "done">("intro");
-  const [affiliationModalOpen, setAffiliationModalOpen] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [profileGuideOpen, setProfileGuideOpen] = useState(false);
@@ -133,7 +119,6 @@ function TalentDashboard() {
           "emplois",
           "favoris",
           "premium",
-          "affiliation",
           "parametres",
         ].includes(targetTab)
       ) {
@@ -157,7 +142,6 @@ function TalentDashboard() {
           "emplois",
           "favoris",
           "premium",
-          "affiliation",
           "parametres",
         ].includes(tab as TalentTab)
       ) {
@@ -185,7 +169,6 @@ function TalentDashboard() {
         "emplois",
         "favoris",
         "premium",
-        "affiliation",
         "parametres",
       ].includes(tabParam)
     ) {
@@ -283,18 +266,6 @@ function TalentDashboard() {
           setHasPersonalInfo(isInfoComplete);
 
           // The completion percentage is now dynamically calculated by a useEffect based on these states.
-        }
-      })
-      .catch(console.error);
-
-    fetch("/api/affiliation/me", { cache: 'no-store' })
-      .then(res => res.json())
-      .then(data => {
-        if (data && !data.error) {
-          if (data.referralCode) setMyReferralCode(data.referralCode);
-          setAffiliationBalance(data.cagnotte || 0);
-          setAffiliations(data.affilies || []);
-          setAffiliationCount(data.affilies?.length || 0);
         }
       })
       .catch(console.error);
@@ -410,51 +381,6 @@ function TalentDashboard() {
     }, 1500);
   };
 
-  const handleWithdrawalRequest = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setWithdrawalModalOpen(false);
-    try {
-      const montant = Number(withdrawAmount);
-      const res = await fetch("/api/affiliation/withdraw", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ montant, operateur: withdrawMethod, numero: withdrawPhone })
-      });
-      if (res.ok) {
-        showToast(`Demande de retrait de ${montant.toLocaleString()} CFA via ${withdrawMethod} envoyée !`);
-        setAffiliationBalance(prev => prev - montant);
-        setWithdrawAmount("");
-        setWithdrawPhone("");
-      } else {
-        const err = await res.json();
-        showToast(err.error || "Erreur lors de la demande de retrait");
-      }
-    } catch (error) {
-      showToast("Erreur de connexion.");
-    }
-  };
-
-  const handleCopyAffiliation = async () => {
-    const origin = typeof window !== "undefined" ? window.location.origin : "https://netacuv.com";
-    let code = myReferralCode;
-    if (!code) {
-      try {
-        const res = await fetch("/api/affiliation/me");
-        const data = await res.json();
-        if (data?.referralCode) {
-          code = data.referralCode;
-          setMyReferralCode(code);
-        }
-      } catch (e) {}
-    }
-    const finalCode = code || (user?.email || "REF");
-    const link = `${origin}/inscription?ref=${finalCode}`;
-    navigator.clipboard.writeText(link);
-    setCopiedLink(true);
-    showToast(t("talent.linkCopied"));
-    setTimeout(() => setCopiedLink(false), 2500);
-  };
-
   const sidebarItems = [
     { key: "dashboard" as TalentTab, icon: Home, label: t("nav.dashboard") },
     { key: "profil" as TalentTab, icon: FileText, label: t("nav.myProfile") },
@@ -463,7 +389,6 @@ function TalentDashboard() {
     { key: "emplois" as TalentTab, icon: Briefcase, label: t("nav.jobOffers") },
     { key: "favoris" as TalentTab, icon: Bookmark, label: t("nav.favorites") },
     { key: "premium" as TalentTab, icon: Star, label: t("nav.premiumTalents") },
-    { key: "affiliation" as TalentTab, icon: Share2, label: t("nav.affiliation") },
     { key: "parametres" as TalentTab, icon: Settings, label: t("nav.settings") },
   ];
 
@@ -810,8 +735,8 @@ function TalentDashboard() {
                 </div>
               </div>
 
-              {/* Row 2 – CV, Vidéo, Affiliation */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {/* Row 2 – CV, Vidéo */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {/* CV Card */}
                 <div className="bg-white rounded-3xl p-6 border border-slate-100 shadow-xl shadow-slate-200/50 flex flex-col justify-between">
                   <div>
@@ -885,28 +810,6 @@ function TalentDashboard() {
                       <Lock size={15} /> {t("talent.unlockAiInterview")}
                     </button>
                   )}
-                </div>
-
-                {/* Affiliation Card */}
-                <div className="bg-white rounded-3xl p-6 border border-slate-100 shadow-xl shadow-slate-200/50 flex flex-col justify-between">
-                  <div>
-                    <h3 className="font-bold text-slate-800 text-sm mb-2">
-                      {t("talent.affiliation")}
-                    </h3>
-                    <p className="text-xs text-slate-500 mb-1 leading-relaxed">
-                      {t("talent.sponsoredCount", { count: affiliationCount })}
-                    </p>
-                    <p className="text-[11px] font-bold text-green-600 mb-5">
-                      {t("talent.availableEarnings", { amount: affiliationBalance.toLocaleString(lang === "en" ? "en-US" : "fr-FR") })}
-                    </p>
-                  </div>
-                  <button
-                    onClick={() => setAffiliationModalOpen(true)}
-                    className="w-full py-3 rounded-2xl font-bold text-xs text-white bg-[#0071a2] hover:bg-[#005f88] shadow-lg shadow-blue-900/15 transition-all flex items-center justify-center gap-2"
-                    id="btn-affiliation"
-                  >
-                    <Share2 size={15} /> {t("talent.viewDetails")}
-                  </button>
                 </div>
               </div>
 
@@ -1057,9 +960,6 @@ function TalentDashboard() {
           {/* TAB: PREMIUM */}
           {activeTab === "premium" && <TalentPremium isPremium={isPremium} />}
 
-          {/* TAB: AFFILIATION */}
-          {activeTab === "affiliation" && <AffiliationProgram role="talent" />}
-
           {/* TAB: PARAMETRES */}
           {activeTab === "parametres" && <ParametresTab />}
         </main>
@@ -1142,16 +1042,8 @@ function TalentDashboard() {
         </div>
       )}
 
-      {/* ── MODAL: AFFILIATION DETAILS (REAL DATA) ── */}
-      <AffiliationDetailsModal
-        isOpen={affiliationModalOpen}
-        onClose={() => setAffiliationModalOpen(false)}
-        cagnotte={affiliationBalance}
-        referralCode={myReferralCode}
-        affilies={affiliations}
-        onOpenFullProgram={() => setActiveTab("affiliation")}
-        onCopySuccess={() => showToast(t("affiliation.linkCopied") || "Lien copié !")}
-      />
+
+
       {/* ── MODAL: UPGRADE TO PREMIUM ── */}
       {upgradeModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm">
@@ -1187,73 +1079,6 @@ function TalentDashboard() {
                 {t("talent.upgradeModal.later")}
               </button>
             </div>
-          </div>
-        </div>
-      )}
-
-      {/* ── MODAL: RETRAIT ── */}
-      {withdrawalModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm">
-          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md p-6 relative animate-scale-up">
-            <div className="flex items-center justify-between mb-6">
-              <div>
-                <h3 className="text-xl font-bold text-slate-900">{t("talent.withdrawalModal.title")}</h3>
-                <p className="text-sm text-slate-500">{t("talent.withdrawalModal.balance")} <span className="font-bold text-green-600">{affiliationBalance.toLocaleString()} FCFA</span></p>
-              </div>
-              <button onClick={() => setWithdrawalModalOpen(false)} className="p-2 text-slate-400 hover:bg-slate-100 rounded-full">
-                <X size={20} />
-              </button>
-            </div>
-            <form onSubmit={handleWithdrawalRequest} className="space-y-4">
-              <div>
-                <label className="block text-sm font-semibold text-slate-700 mb-1.5">{t("talent.withdrawalModal.operator")}</label>
-                <div className="relative">
-                  <select
-                    value={withdrawMethod}
-                    onChange={(e) => setWithdrawMethod(e.target.value)}
-                    className="w-full appearance-none px-4 py-3 rounded-xl border border-slate-200 bg-slate-50 text-sm text-slate-800 outline-none focus:border-[#32A8D7] focus:bg-white"
-                  >
-                    <option>MTN MoMo</option>
-                    <option>Moov Money</option>
-                    <option>Wave</option>
-                    <option>Orange Money</option>
-                  </select>
-                  <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
-                </div>
-              </div>
-              <div>
-                <label className="block text-sm font-semibold text-slate-700 mb-1.5">{t("talent.withdrawalModal.phone")}</label>
-                <input
-                  type="tel"
-                  required
-                  value={withdrawPhone}
-                  onChange={(e) => setWithdrawPhone(e.target.value)}
-                  placeholder="+229 90 00 00 00"
-                  className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50 text-sm text-slate-800 outline-none focus:border-[#32A8D7] focus:bg-white"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-semibold text-slate-700 mb-1.5">{t("talent.withdrawalModal.amount")}</label>
-                <input
-                  type="number"
-                  required
-                  min={500}
-                  max={affiliationBalance}
-                  value={withdrawAmount}
-                  onChange={(e) => setWithdrawAmount(e.target.value)}
-                  placeholder="Ex: 5000"
-                  className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50 text-sm text-slate-800 outline-none focus:border-[#32A8D7] focus:bg-white"
-                />
-              </div>
-              <div className="flex gap-3 pt-2">
-                <button type="button" onClick={() => setWithdrawalModalOpen(false)} className="flex-1 py-3 border border-slate-200 text-slate-600 rounded-xl font-semibold hover:bg-slate-50">
-                  {t("talent.withdrawalModal.cancel")}
-                </button>
-                <button type="submit" className="flex-1 py-3 bg-[#32A8D7] text-white rounded-xl font-semibold hover:bg-[#2896c2]">
-                  {t("talent.withdrawalModal.withdraw")}
-                </button>
-              </div>
-            </form>
           </div>
         </div>
       )}

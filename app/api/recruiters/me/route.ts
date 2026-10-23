@@ -98,14 +98,6 @@ export async function PUT(req: NextRequest) {
       }
     });
 
-    // Vérifier l'éligibilité au parrainage (critère profil 100% complété) et débloquer les 25 FCFA
-    try {
-      const { checkAndRewardReferral } = await import("@/lib/referral");
-      await checkAndRewardReferral(userId);
-    } catch (refErr) {
-      console.error("Erreur checkAndRewardReferral dans PUT /api/recruiters/me:", refErr);
-    }
-
     return NextResponse.json({
       success: true,
       recruiterProfile

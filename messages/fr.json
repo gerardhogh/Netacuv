@@ -36,14 +36,6 @@
     "privacyPolicy": "politique de confidentialité",
     "termsRequired": "Veuillez accepter les conditions d'utilisation pour continuer.",
     "emailPasswordRequired": "Veuillez renseigner votre email et mot de passe.",
-    "referralQuestion": "Vous avez un code de parrainage ou d'invitation ?",
-    "referralLabel": "Code d'invitation ou de parrainage",
-    "referralPlaceholder": "Ex : REF-NETA-1234",
-    "referralActivated": "Parrainage activé • Parrainé par {name}",
-    "referralInvalid": "Code non reconnu (l'inscription reste possible)",
-    "referralAutoApplied": "Appliqué automatiquement depuis votre lien d'invitation.",
-    "referralInfoTitle": "Comment utiliser ce code ?",
-    "referralInfoDesc": "Ce code vous est partagé par un ami ou parrain membre de Netacuv. Il permet de le désigner comme votre parrain et de débloquer les récompenses d'affiliation. Ce champ est optionnel : si vous n'en avez pas, laissez-le simplement vide.",
     "accountNotFoundTitle": "Compte introuvable",
     "accountNotFoundDesc": "Vous n'avez pas encore de compte sur Netacuv. Pour accéder à la plateforme, vous devez d'abord vous inscrire.",
     "registerOnNetacuv": "S'inscrire sur Netacuv",
@@ -57,7 +49,6 @@
     "applications": "Candidatures",
     "myJobs": "Mes emplois",
     "favorites": "Favoris",
-    "affiliation": "Affiliation",
     "settings": "Paramètres",
     "myProfile": "Mon profil",
     "logout": "Déconnexion",
@@ -102,10 +93,6 @@
     "viewVideo": "Voir l'entretien vidéo",
     "startVideo": "Lancer l'entretien vidéo",
     "unlockAiInterview": "Débloquer l'Entretien IA",
-    "affiliation": "Affiliation",
-    "sponsoredCount": "Tu as parrainé {count} personnes au total",
-    "availableEarnings": "Gains disponibles : {amount} FCFA",
-    "viewDetails": "Voir les détails",
     "recommendedJobs": "Emplois disponibles recommandés",
     "activeJobsCount": "{count} offres actives",
     "noRecommendedJobs": "Aucune offre recommandée pour le moment",
@@ -232,22 +219,6 @@
       "ruleScoring": "• Scoring automatique sur la clarté et l'élocution",
       "startRecording": "Démarrer l'enregistrement"
     }
-  },
-  "affiliation": {
-    "title": "Programme d'Affiliation",
-    "subtitle": "Parrainez d'autres talents et gagnez des récompenses en espèces",
-    "balance": "Solde : {amount} FCFA",
-    "reset": "Réinitialiser",
-    "uniqueLink": "Votre lien de parrainage unique",
-    "linkDesc": "Chaque inscription réussie vous rapporte 1 500 FCFA directement.",
-    "copyLink": "Copier mon lien",
-    "linkCopied": "Lien copié !",
-    "myReferrals": "Mes filleuls ({count})",
-    "noReferrals": "Aucun filleul pour le moment.",
-    "registeredReferrals": "Filleuls inscrits",
-    "totalGains": "Gains totaux générés",
-    "availableWithdrawal": "Retrait disponible",
-    "withdraw": "Retirer"
   },
   "premiumBanner": {
     "title": "Passez à la vitesse supérieure avec le Premium",
@@ -715,11 +686,6 @@
       "desc": "Liste de vos favoris. Profils sauvegardés",
       "btn": "Voir les favoris"
     },
-    "affiliationCard": {
-      "title": "Affiliation",
-      "desc": "Vous avez parrainé {count} personnes au total",
-      "btn": "Voir les détails"
-    },
     "createdJobsCard": {
       "title": "Emplois créés",
       "badge": "{count} emplois",
@@ -982,57 +948,6 @@
       "andMore": "et {count} en plus",
       "unspecified": "Non précisé"
     },
-    "affiliationTab": {
-      "title": "Programme d'affiliation Recruteur",
-      "desc": "Partagez votre lien de parrainage et gagnez des récompenses sur chaque nouvel abonnement.",
-      "yourLink": "Votre lien de parrainage :",
-      "copyLink": "Copier le lien",
-      "linkCopied": "Lien copié dans le presse-papier !",
-      "earnings": "Vos gains totaux",
-      "activeAffiliates": "Filleuls actifs",
-      "pendingPayout": "Paiement en attente",
-      "requestWithdrawal": "Demander un retrait",
-      "referralTableTitle": "Historique de vos parrainages",
-      "colName": "Nom",
-      "colEmail": "Email",
-      "colDate": "Date d'inscription",
-      "colStatus": "Statut",
-      "colGain": "Gain généré",
-      "noAffiliates": "Aucun filleul pour le moment.",
-      "withdrawalModalTitle": "Retrait Mobile Money",
-      "availableBalance": "Solde disponible :",
-      "operator": "Opérateur",
-      "phoneNumber": "Numéro de téléphone",
-      "amountToWithdraw": "Montant à retirer (CFA)",
-      "amountLimits": "Minimum : 500 CFA · Maximum : {max} CFA",
-      "cancel": "Annuler",
-      "confirmWithdrawal": "Confirmer le retrait",
-      "myAffiliates": "Mes affiliés",
-      "affiliatesSub": "{inscrits} inscrits · {enAttente} en attente",
-      "cagnotte": "Cagnotte",
-      "cfaAvailable": "CFA disponibles",
-      "totalEarnings": "Gains totaux",
-      "cfaGenerated": "CFA générés",
-      "affiliatesList": "Liste des affiliés",
-      "cagnotteInvite": "Cagnotte sur invitation : {amount} CFA",
-      "noAffiliatesTitle": "Aucun affilié",
-      "noAffiliatesDesc": "Vous n'avez parrainé personne pour le moment. Partagez votre lien !",
-      "statusInscrit": "Inscrit",
-      "statusEnAttente": "En attente",
-      "statusInactif": "Inactif",
-      "myReferralLink": "Mon lien de parrainage",
-      "referralShareText": "Partagez ce lien et gagnez {amount} par recruteur parrainé inscrit.",
-      "makeWithdrawal": "Effectuer un retrait",
-      "howItWorks": "Comment ça fonctionne ?",
-      "step1": "Copiez votre lien de parrainage unique",
-      "step2": "Partagez-le aux recruteurs de votre réseau",
-      "step3": "Gagnez 2 500 CFA par recruteur inscrit",
-      "step4": "Retirez vos gains via Mobile Money",
-      "withdrawalSuccess": "Demande de retrait de {amount} CFA via {operator} envoyée !",
-      "withdrawalError": "Erreur lors de la demande de retrait",
-      "connectionError": "Erreur de connexion.",
-      "waiting": "En attente..."
-    },
     "premiumTab": {
       "title": "Passez à Netacuv Recruteur Premium",
       "subtitle": "Recrutez plus vite et sans aucune limite.",
@@ -1053,8 +968,6 @@
       "toStartRecruiting": "Pour commencer à recruter",
       "featureCompanyProfile": "Création de profil Entreprise",
       "feature1JobFree": "1 offre d'emploi gratuite",
-      "featureAffiliation": "Affiliation",
-      "featureAffiliationBadge": "Gains par parrainage",
       "featureUnlimitedJobs": "Publication d'offres illimitée",
       "featureFullContacts": "Coordonnées complètes des Talents",
       "featureUnlimitedCv": "Téléchargement illimité des CV PDF",
@@ -2062,35 +1975,6 @@
       "toastReadFileError": "Erreur lors de la lecture du fichier.",
       "toastUpdateError": "Erreur de mise à jour"
     },
-    "affiliationPage": {
-      "pageTitle": "Gestion de l'affiliation",
-      "pageSubtitle": "Paramétrez les bonus de parrainage et gérez les codes des utilisateurs.",
-      "bonusConfigTitle": "Configuration des Bonus",
-      "bonusConfigSubtitle": "Définissez les récompenses globales pour les parrains.",
-      "fixedBonusLabel": "Bonus Fixe (€)",
-      "fixedBonusHelp": "Montant fixe attribué au parrain lors d'une inscription ou action validée.",
-      "percentBonusLabel": "Bonus Pourcentage (%)",
-      "percentBonusHelp": "Pourcentage perçu par le parrain sur les transactions du filleul.",
-      "savingBtn": "Enregistrement...",
-      "saveConfigBtn": "Enregistrer la configuration",
-      "userCodesTitle": "Gestion des codes par Utilisateur",
-      "searchPlaceholder": "Rechercher (Nom, Email, Code)...",
-      "thUser": "Utilisateur",
-      "thRole": "Rôle",
-      "thAffiliationCode": "Code d'Affiliation",
-      "thReferrals": "Filleuls (Inscrits)",
-      "thAffiliateBalance": "Solde Affilié",
-      "thAction": "Action",
-      "noCode": "Aucun code",
-      "unknownRole": "Inconnu",
-      "saveTooltip": "Enregistrer",
-      "cancelTooltip": "Annuler",
-      "customizeCodeTooltip": "Personnaliser le code",
-      "noUsersFound": "Aucun utilisateur trouvé.",
-      "toastSettingsSaved": "Paramètres d'affiliation mis à jour",
-      "toastCodeSaved": "Code d'affiliation mis à jour",
-      "toastCodeError": "Erreur lors de la mise à jour du code"
-    },
     "maintenance": {
       "active": "Mode maintenance ACTIVÉ",
       "inactive": "Mode maintenance DÉSACTIVÉ",
@@ -2196,11 +2080,6 @@
           "num": "05",
           "title": "Sois visible par les recruteurs",
           "desc": "Ton profil apparaît dans les recherches selon ton score, ton CV et ta vidéo."
-        },
-        {
-          "num": "06",
-          "title": "Gagne avec l'affiliation",
-          "desc": "Partage ton code et reçois des bonus quand tes filleuls s'inscrivent."
         }
       ],
       "recruiterSteps": [
@@ -2223,11 +2102,6 @@
           "num": "04",
           "title": "Contactez directement les talents ou publiez une offre",
           "desc": "Entrez en contact avec les talents qui correspondent à vos critères."
-        },
-        {
-          "num": "05",
-          "title": "Gagnez avec l'affiliation",
-          "desc": "Partagez votre code et recevez des bonus quand vos filleuls s'inscrivent."
         }
       ]
     },
@@ -2270,8 +2144,6 @@
       "upgradePremium": "Passer en Premium",
       "features": {
         "whatsapp": "Communauté WhatsApp exclusive",
-        "affiliation": "Affiliation",
-        "affiliationBadge": "Gains par parrainage",
         "talentBasicProfile": "Création de profil basique",
         "talent1FreeApp": "1 candidature gratuite",
         "talentUnlimitedApps": "Candidatures illimitées",
@@ -2304,10 +2176,6 @@
         {
           "q": "Quels sont les avantages de l'offre Premium pour un recruteur ?",
           "a": "Les recruteurs Premium bénéficient de publications d'offres illimitées, d'un accès complet aux profils (coordonnées, téléchargement de CV PDF, vidéos d'entretien IA), d'un accès prioritaire aux profils étoilés et de filtres de recherche avancés."
-        },
-        {
-          "q": "Comment fonctionne le programme d'affiliation (Parrainage) ?",
-          "a": "Que vous soyez en compte Gratuit ou Premium, vous gagnez de l'argent en parrainant vos connaissances. Dès qu'une personne s'inscrit avec votre code ou lien et complète son profil à 100%, vous recevez une prime de 25 FCFA (avec une limite de 15 parrainages par jour) !"
         },
         {
           "q": "Comment les recruteurs contactent-ils les talents ?",

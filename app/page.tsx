@@ -59,16 +59,8 @@ export default function HomePage() {
     setOpenFaqIndex(openFaqIndex === index ? null : index);
   };
 
-  const faqs = [
-    t.raw("faq.items.0"),
-    t.raw("faq.items.1"),
-    t.raw("faq.items.2"),
-    t.raw("faq.items.3"),
-    t.raw("faq.items.4"),
-    t.raw("faq.items.5"),
-    t.raw("faq.items.6"),
-    t.raw("faq.items.7"),
-  ];
+  const rawFaqs = t.raw("faq.items");
+  const faqs: { q: string; a: string }[] = Array.isArray(rawFaqs) ? rawFaqs : [];
 
   return (
     <div className="min-h-screen bg-[#F8FAFC] selection:bg-[#2BAFE3]/30 selection:text-[#0F172A] font-sans">
@@ -267,7 +259,6 @@ export default function HomePage() {
                         { icon: Ticket, iconColor: "text-fuchsia-500", iconBg: "bg-fuchsia-100" },
                         { icon: Award, iconColor: "text-amber-500", iconBg: "bg-amber-100" },
                         { icon: Ticket, iconColor: "text-fuchsia-500", iconBg: "bg-fuchsia-100" },
-                        { icon: Gift, iconColor: "text-amber-500", iconBg: "bg-amber-100" },
                       ].map((stepConfig, idx) => {
                         const stepData = t.raw(`how.candidateSteps.${idx}`);
                         return (
@@ -324,7 +315,6 @@ export default function HomePage() {
                         { icon: Users, iconColor: "text-amber-500", iconBg: "bg-amber-100" },
                         { icon: Ticket, iconColor: "text-fuchsia-500", iconBg: "bg-fuchsia-100" },
                         { icon: Share2, iconColor: "text-amber-500", iconBg: "bg-amber-100" },
-                        { icon: Gift, iconColor: "text-fuchsia-500", iconBg: "bg-fuchsia-100" },
                       ].map((stepConfig, idx) => {
                         const stepData = t.raw(`how.recruiterSteps.${idx}`);
                         return (
@@ -559,7 +549,6 @@ export default function HomePage() {
                 {activePricingTab === "talents" ? (
                   <>
                     <li className="flex items-start gap-3"><Check className="text-[#2BAFE3] mt-0.5 flex-shrink-0" size={20} /> <span className="text-slate-600">{t("pricing.features.whatsapp")}</span></li>
-                    <li className="flex items-start gap-3"><Check className="text-[#2BAFE3] mt-0.5 flex-shrink-0" size={20} /> <span className="text-slate-600">{t("pricing.features.affiliation")} <span className="text-xs font-semibold text-green-600 bg-green-50 px-2 py-0.5 rounded-full ml-1 border border-green-200">{t("pricing.features.affiliationBadge")}</span></span></li>
                     <li className="flex items-start gap-3"><Check className="text-[#2BAFE3] mt-0.5 flex-shrink-0" size={20} /> <span className="text-slate-600">{t("pricing.features.talentBasicProfile")}</span></li>
                     <li className="flex items-start gap-3"><Check className="text-[#2BAFE3] mt-0.5 flex-shrink-0" size={20} /> <span className="text-slate-600">{t("pricing.features.talent1FreeApp")}</span></li>
                     <li className="flex items-start gap-3 opacity-50"><X className="text-slate-400 mt-0.5 flex-shrink-0" size={20} /> <span className="text-slate-500 line-through decoration-slate-300">{t("pricing.features.talentUnlimitedApps")}</span></li>
@@ -573,7 +562,6 @@ export default function HomePage() {
                   <>
                     <li className="flex items-start gap-3"><Check className="text-[#2BAFE3] mt-0.5 flex-shrink-0" size={20} /> <span className="text-slate-600">{t("pricing.features.recruiterCompanyProfile")}</span></li>
                     <li className="flex items-start gap-3"><Check className="text-[#2BAFE3] mt-0.5 flex-shrink-0" size={20} /> <span className="text-slate-600">{t("pricing.features.recruiter1FreeJob")}</span></li>
-                    <li className="flex items-start gap-3"><Check className="text-[#2BAFE3] mt-0.5 flex-shrink-0" size={20} /> <span className="text-slate-600">{t("pricing.features.affiliation")} <span className="text-xs font-semibold text-green-600 bg-green-50 px-2 py-0.5 rounded-full ml-1 border border-green-200">{t("pricing.features.affiliationBadge")}</span></span></li>
                     <li className="flex items-start gap-3 opacity-50"><X className="text-slate-400 mt-0.5 flex-shrink-0" size={20} /> <span className="text-slate-500 line-through decoration-slate-300">{t("pricing.features.recruiterUnlimitedJobs")}</span></li>
                     <li className="flex items-start gap-3 opacity-50"><X className="text-slate-400 mt-0.5 flex-shrink-0" size={20} /> <span className="text-slate-500 line-through decoration-slate-300">{t("pricing.features.recruiterFullContacts")}</span></li>
                     <li className="flex items-start gap-3 opacity-50"><X className="text-slate-400 mt-0.5 flex-shrink-0" size={20} /> <span className="text-slate-500 line-through decoration-slate-300">{t("pricing.features.recruiterUnlimitedCv")}</span></li>
@@ -613,7 +601,6 @@ export default function HomePage() {
                 {activePricingTab === "talents" ? (
                   <>
                     <li className="flex items-start gap-3"><Check className="text-[#F59E0B] mt-0.5 flex-shrink-0" size={20} /> <span className="text-white font-semibold">{t("pricing.features.whatsapp")}</span></li>
-                    <li className="flex items-start gap-3"><Check className="text-[#F59E0B] mt-0.5 flex-shrink-0" size={20} /> <span className="text-white font-semibold">{t("pricing.features.affiliation")} <span className="text-xs font-bold text-[#0F172A] bg-[#F59E0B] px-2 py-0.5 rounded-full ml-1">{t("pricing.features.affiliationBadge")}</span></span></li>
                     <li className="flex items-start gap-3"><Check className="text-blue-300 mt-0.5 flex-shrink-0" size={20} /> <span className="text-blue-50">{t("pricing.features.talentUnlimitedApps")}</span></li>
                     <li className="flex items-start gap-3"><Check className="text-blue-300 mt-0.5 flex-shrink-0" size={20} /> <span className="text-blue-50">{t("pricing.features.talentRecruiterPreview")}</span></li>
                     <li className="flex items-start gap-3"><Check className="text-blue-300 mt-0.5 flex-shrink-0" size={20} /> <span className="text-blue-50">{t("pricing.features.talentBadge")}</span></li>
@@ -624,7 +611,6 @@ export default function HomePage() {
                 ) : (
                   <>
                     <li className="flex items-start gap-3"><Check className="text-[#F59E0B] mt-0.5 flex-shrink-0" size={20} /> <span className="text-white font-semibold">{t("pricing.features.recruiterCompanyProfile")}</span></li>
-                    <li className="flex items-start gap-3"><Check className="text-[#F59E0B] mt-0.5 flex-shrink-0" size={20} /> <span className="text-white font-semibold">{t("pricing.features.affiliation")} <span className="text-xs font-bold text-[#0F172A] bg-[#F59E0B] px-2 py-0.5 rounded-full ml-1">{t("pricing.features.affiliationBadge")}</span></span></li>
                     <li className="flex items-start gap-3"><Check className="text-blue-300 mt-0.5 flex-shrink-0" size={20} /> <span className="text-blue-50">{t("pricing.features.recruiterUnlimitedJobs")}</span></li>
                     <li className="flex items-start gap-3"><Check className="text-blue-300 mt-0.5 flex-shrink-0" size={20} /> <span className="text-blue-50">{t("pricing.features.recruiterFullContacts")}</span></li>
                     <li className="flex items-start gap-3"><Check className="text-blue-300 mt-0.5 flex-shrink-0" size={20} /> <span className="text-blue-50">{t("pricing.features.recruiterUnlimitedCv")}</span></li>

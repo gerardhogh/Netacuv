@@ -17,7 +17,6 @@ const registerSchema = z.object({
   email: z.string().email("Adresse email invalide"),
   password: passwordSchema,
   roleName: z.enum(["TALENT", "RECRUTEUR"]).default("TALENT"),
-  referralCode: z.string().optional(),
 });
 
 export async function POST(request: Request) {
@@ -34,7 +33,7 @@ export async function POST(request: Request) {
       );
     }
     
-    const { name, email, password, roleName, referralCode } = validatedData.data;
+    const { name, email, password, roleName } = validatedData.data;
 
     // Check if user already exists
     const existingUser = await prisma.user.findUnique({
@@ -67,41 +66,13 @@ export async function POST(request: Request) {
       });
     }
 
-    // Handle referral code if provided
-    let referredById = undefined;
-    if (referralCode) {
-      const { findReferrer } = await import("@/lib/referral");
-      const referrer = await findReferrer(referralCode);
-      if (referrer) {
-        referredById = referrer.id;
-
-        // Récupérer le bonus configuré
-        // Notification au parrain de la nouvelle inscription (étape 1 sur 2 validée)
-        try {
-          const { createNotification } = await import("@/lib/notifications");
-          await createNotification({
-            userId: referrer.id,
-            title: "Nouveau filleul inscrit ! 👥",
-            message: `${name} s'est inscrit avec votre code de parrainage. Dès qu'il aura complété son profil à 100%, votre prime de 25 FCFA sera automatiquement débloquée.`,
-            type: "SYSTEM_ALERT",
-            link: (referrer as any)?.role?.name === "RECRUTEUR" ? "/dashboard/recruteur?tab=affiliation" : "/dashboard/talent?tab=affiliation",
-          });
-        } catch (notifErr) {
-          console.error("[Affiliation] Erreur notification parrain:", notifErr);
-        }
-      }
-    }
-
     // Create user and profile
-    const generatedReferralCode = `REF-${name.replace(/\s+/g, '').substring(0, 4).toUpperCase() || 'USR'}-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
     const newUser = await prisma.user.create({
       data: {
         name,
         email,
         passwordHash,
         roleId: role.id,
-        referralCode: generatedReferralCode,
-        referredById,
         // Créer le profil associé de façon atomique
         talentProfile: roleName === "TALENT" ? { create: {} } : undefined,
         recruiterProfile: roleName === "RECRUTEUR" ? { create: {} } : undefined,
