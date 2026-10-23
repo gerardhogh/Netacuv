@@ -42,7 +42,11 @@ export async function GET(request: Request) {
       });
     }
 
-    // Récupérer la liste des filleuls
+    // Date du début de la journée en cours
+    const startOfToday = new Date();
+    startOfToday.setHours(0, 0, 0, 0);
+
+    // Récupérer la liste des filleuls avec vérification des 3 critères
     const filleuls = await prisma.user.findMany({
       where: { referredById: session.user.id },
       select: {
@@ -51,26 +55,86 @@ export async function GET(request: Request) {
         email: true,
         createdAt: true,
         isPremium: true,
+        talentProfile: {
+          select: {
+            phone: true,
+            city: true,
+            country: true,
+            degree: true,
+            bio: true,
+            skills: true,
+            cvUrl: true,
+          },
+        },
+        recruiterProfile: {
+          select: {
+            companyName: true,
+            industry: true,
+          },
+        },
       },
       orderBy: { createdAt: 'desc' },
     });
 
-    // Formatter les filleuls
-    const affilies = filleuls.map((f: any) => ({
-      id: f.id,
-      name: f.name || "Utilisateur anonyme",
-      email: f.email,
-      dateInscription: new Date(f.createdAt).toLocaleDateString('fr-FR'),
-      // Si premium, le filleul est considéré comme actif/validé pour la prime
-      statut: f.isPremium ? "Inscrit" : "En attente",
-      // Si le filleul passe premium, le parrain gagne 2500 CFA
-      gain: f.isPremium ? 2500 : 0,
-    }));
+    const todayReferralsCount = filleuls.filter(
+      (f) => new Date(f.createdAt) >= startOfToday
+    ).length;
+
+    // Formatter les filleuls selon les 3 critères d'éligibilité :
+    // 1. Inscription via code/QR (validé par relation referredById)
+    // 2. Offre Premium active
+    // 3. Profil 100% complété
+    const affilies = filleuls.map((f: any) => {
+      const step1Registered = true;
+      const step2Premium = Boolean(f.isPremium);
+      const step3ProfileComplete = Boolean(
+        f.talentProfile
+          ? f.name &&
+            f.talentProfile.phone &&
+            f.talentProfile.city &&
+            f.talentProfile.country &&
+            f.talentProfile.bio &&
+            f.talentProfile.skills
+          : f.recruiterProfile
+          ? f.name &&
+            f.recruiterProfile.companyName &&
+            f.recruiterProfile.industry
+          : false
+      );
+
+      const isEligible = step1Registered && step2Premium && step3ProfileComplete;
+
+      let statut: "Validé" | "En attente" | "Profil incomplet" = "En attente";
+      if (isEligible) {
+        statut = "Validé";
+      } else if (!step2Premium) {
+        statut = "En attente";
+      } else if (!step3ProfileComplete) {
+        statut = "Profil incomplet";
+      }
+
+      return {
+        id: f.id,
+        name: f.name || "Utilisateur anonyme",
+        email: f.email,
+        dateInscription: new Date(f.createdAt).toLocaleDateString('fr-FR'),
+        step1Registered,
+        step2Premium,
+        step3ProfileComplete,
+        isEligible,
+        statut,
+        gain: isEligible ? 25 : 0,
+      };
+    });
 
     return NextResponse.json({
       referralCode: user.referralCode || "",
       cagnotte: user.affiliateBalance || 0,
       affilies,
+      dailyReferralsCount: todayReferralsCount,
+      dailyLimit: 15,
+      bonusPerReferral: 25,
+      monthlyMaxPotential: 11250,
     });
   } catch (error) {
     console.error("Erreur GET /api/affiliation/me:", error);

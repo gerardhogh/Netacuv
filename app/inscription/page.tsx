@@ -6,7 +6,7 @@ import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { signIn } from "next-auth/react";
 import { useTranslations } from "next-intl";
-import { AlertCircle, Sparkles, Briefcase, Gift, CheckCircle2, Loader2, X } from "lucide-react";
+import { AlertCircle, Sparkles, Briefcase, Gift, CheckCircle2, Loader2, X, HelpCircle, Info } from "lucide-react";
 import Navbar from "../components/Navbar";
 
 type UserRole = "talent" | "recruteur";
@@ -28,6 +28,7 @@ function InscriptionForm() {
   // Referral / Invitation code states
   const [referralCode, setReferralCode] = useState(urlRef);
   const [showReferralInput, setShowReferralInput] = useState(Boolean(urlRef));
+  const [showReferralInfo, setShowReferralInfo] = useState(false);
   const [referralStatus, setReferralStatus] = useState<"idle" | "checking" | "valid" | "invalid">(
     urlRef ? "checking" : "idle"
   );
@@ -211,13 +212,48 @@ function InscriptionForm() {
               ) : (
                 <div className="p-3.5 rounded-xl bg-black/40 border border-sky-400/25 relative animate-in fade-in zoom-in-95 duration-200">
                   <div className="flex items-center justify-between mb-2">
-                    <label
-                      htmlFor="referral-input"
-                      className="text-xs font-semibold text-slate-200 flex items-center gap-1.5"
-                    >
-                      <Gift size={14} className="text-[#32A8D7]" />
-                      <span>{tAuth("referralLabel")}</span>
-                    </label>
+                    <div className="flex items-center gap-1.5">
+                      <label
+                        htmlFor="referral-input"
+                        className="text-xs font-semibold text-slate-200 flex items-center gap-1.5 cursor-pointer"
+                      >
+                        <Gift size={14} className="text-[#32A8D7]" />
+                        <span>{tAuth("referralLabel")}</span>
+                      </label>
+
+                      {/* Interactive Help / Info Icon with Tooltip */}
+                      <div className="relative inline-flex items-center">
+                        <button
+                          type="button"
+                          onClick={() => setShowReferralInfo(!showReferralInfo)}
+                          onMouseEnter={() => setShowReferralInfo(true)}
+                          onMouseLeave={() => setShowReferralInfo(false)}
+                          className="text-sky-300/80 hover:text-sky-200 p-0.5 rounded-full hover:bg-sky-500/10 transition-all focus:outline-none cursor-pointer"
+                          aria-label="Aide sur le code de parrainage"
+                        >
+                          <HelpCircle size={13} className="hover:scale-110 transition-transform" />
+                        </button>
+
+                        {showReferralInfo && (
+                          <div className="absolute left-0 bottom-full mb-2.5 w-64 sm:w-72 p-3 bg-[#0a1e38] border border-sky-400/40 rounded-xl shadow-[0_15px_35px_rgba(0,0,0,0.7)] backdrop-blur-xl text-left z-50 animate-in fade-in zoom-in-95 duration-150">
+                            <div className="flex items-start gap-2">
+                              <Info size={14} className="text-[#32A8D7] shrink-0 mt-0.5" />
+                              <div>
+                                <p className="text-xs font-bold text-white mb-1">
+                                  {tAuth("referralInfoTitle")}
+                                </p>
+                                <p className="text-[11px] text-slate-300 leading-relaxed font-normal">
+                                  {tAuth("referralInfoDesc")}
+                                </p>
+                              </div>
+                            </div>
+                            {/* Flèche indicator */}
+                            <div className="absolute left-2.5 top-full w-0 h-0 border-x-[5px] border-x-transparent border-t-[5px] border-t-sky-400/40" />
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
                     {!urlRef && (
                       <button
                         type="button"
@@ -225,6 +261,7 @@ function InscriptionForm() {
                           setShowReferralInput(false);
                           setReferralCode("");
                           setReferralStatus("idle");
+                          setShowReferralInfo(false);
                         }}
                         className="text-slate-400 hover:text-white p-0.5 rounded transition-colors"
                         title="Masquer"

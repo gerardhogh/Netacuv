@@ -49,6 +49,7 @@ import ParametresTab from "./components/ParametresTab";
 import PremiumBanner from "../../components/PremiumBanner";
 import PremiumRequiredModal from "../../components/PremiumRequiredModal";
 import NotificationBell from "@/app/components/NotificationBell";
+import AffiliationProgram from "@/components/AffiliationProgram";
 
 type TalentTab =
   | "dashboard"
@@ -1012,92 +1013,7 @@ export default function TalentDashboard() {
           {activeTab === "premium" && <TalentPremium isPremium={isPremium} />}
 
           {/* TAB: AFFILIATION */}
-          {activeTab === "affiliation" && (
-            <div className="bg-white rounded-3xl p-8 border border-slate-100 shadow-xl space-y-6">
-              <div className="flex items-center justify-between pb-4 border-b border-slate-100">
-                <div>
-                  <h2 className="text-xl font-bold text-slate-900">
-                    {t("affiliation.title")}
-                  </h2>
-                  <p className="text-xs text-slate-400">
-                    {t("affiliation.subtitle")}
-                  </p>
-                </div>
-                <div className="flex items-center gap-3">
-                  <span className="text-xs font-bold text-green-700 bg-green-50 px-3 py-1 rounded-full border border-green-200">
-                    {t("affiliation.balance", { amount: affiliationBalance.toLocaleString(lang === "en" ? "en-US" : "fr-FR") })}
-                  </span>
-                  <button
-                    onClick={() => { setAffiliationCount(0); setAffiliationBalance(0); showToast("Compteur remis à zéro."); }}
-                    className="text-xs text-slate-400 hover:text-red-500 border border-slate-200 hover:border-red-200 px-3 py-1 rounded-full transition-colors"
-                  >
-                    {t("affiliation.reset")}
-                  </button>
-                </div>
-              </div>
-
-              <div className="p-6 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white flex flex-col md:flex-row items-center justify-between gap-6 shadow-xl">
-                <div>
-                  <h3 className="font-extrabold text-lg mb-1">
-                    {t("affiliation.uniqueLink")}
-                  </h3>
-                  <p className="text-xs text-blue-100">
-                    {t("affiliation.linkDesc")}
-                  </p>
-                </div>
-                <button
-                  onClick={handleCopyAffiliation}
-                  className="px-6 py-3 rounded-full font-bold text-xs bg-white text-blue-700 hover:bg-blue-50 transition-all shadow-lg flex items-center gap-2"
-                >
-                  {copiedLink ? <Check size={16} /> : <Copy size={16} />}
-                  {copiedLink ? t("affiliation.linkCopied") : t("affiliation.copyLink")}
-                </button>
-              </div>
-
-              {/* Referral list */}
-              <div>
-                <h4 className="text-sm font-bold text-slate-800 mb-3">{t("affiliation.myReferrals", { count: affiliationCount })}</h4>
-                <div className="space-y-2">
-                  {affiliations.slice(0, affiliationCount).map((f) => (
-                    <div key={f.name} className="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-100">
-                      <div>
-                        <p className="text-sm font-bold text-slate-800">{f.name}</p>
-                        <p className="text-xs text-slate-400">{f.date}</p>
-                      </div>
-                      <span className="text-xs font-bold text-green-600">+{f.gain.toLocaleString(lang === "en" ? "en-US" : "fr-FR")} FCFA</span>
-                    </div>
-                  ))}
-                  {affiliationCount === 0 && (
-                    <p className="text-xs text-slate-400 text-center py-4">{t("affiliation.noReferrals")}</p>
-                  )}
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-5 pt-2">
-                <div className="p-4 rounded-2xl bg-slate-50 border border-slate-100">
-                  <p className="text-xs text-slate-400">{t("affiliation.registeredReferrals")}</p>
-                  <p className="text-2xl font-black text-slate-900 mt-1">{affiliationCount}</p>
-                </div>
-                <div className="p-4 rounded-2xl bg-slate-50 border border-slate-100">
-                  <p className="text-xs text-slate-400">{t("affiliation.totalGains")}</p>
-                  <p className="text-2xl font-black text-green-600 mt-1">{affiliationBalance.toLocaleString(lang === "en" ? "en-US" : "fr-FR")} FCFA</p>
-                </div>
-                <div className="p-4 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-between">
-                  <div>
-                    <p className="text-xs text-slate-400">{t("affiliation.availableWithdrawal")}</p>
-                    <p className="text-sm font-bold text-slate-800 mt-1">Mobile Money</p>
-                  </div>
-                  <button
-                    onClick={() => setWithdrawalModalOpen(true)}
-                    disabled={affiliationBalance < 1000}
-                    className="bg-blue-600 hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed text-white text-xs font-bold px-4 py-2 rounded-xl transition-colors"
-                  >
-                    {t("affiliation.withdraw")}
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
+          {activeTab === "affiliation" && <AffiliationProgram role="talent" />}
 
           {/* TAB: PARAMETRES */}
           {activeTab === "parametres" && <ParametresTab />}

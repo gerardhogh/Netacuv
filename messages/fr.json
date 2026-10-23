@@ -42,6 +42,8 @@
     "referralActivated": "Parrainage activé • Parrainé par {name}",
     "referralInvalid": "Code non reconnu (l'inscription reste possible)",
     "referralAutoApplied": "Appliqué automatiquement depuis votre lien d'invitation.",
+    "referralInfoTitle": "Comment utiliser ce code ?",
+    "referralInfoDesc": "Ce code vous est partagé par un ami ou parrain membre de Netacuv. Il permet de le désigner comme votre parrain et de débloquer les récompenses d'affiliation. Ce champ est optionnel : si vous n'en avez pas, laissez-le simplement vide.",
     "accountNotFoundTitle": "Compte introuvable",
     "accountNotFoundDesc": "Vous n'avez pas encore de compte sur Netacuv. Pour accéder à la plateforme, vous devez d'abord vous inscrire.",
     "registerOnNetacuv": "S'inscrire sur Netacuv",

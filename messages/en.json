@@ -42,6 +42,8 @@
     "referralActivated": "Referral applied • Referred by {name}",
     "referralInvalid": "Unrecognized code (registration is still possible)",
     "referralAutoApplied": "Automatically applied from your invitation link.",
+    "referralInfoTitle": "How does this code work?",
+    "referralInfoDesc": "This code is shared by a friend or referrer who is a Netacuv member. It connects them to your account and unlocks referral perks. This field is optional: if you don't have one, simply leave it blank.",
     "accountNotFoundTitle": "Account not found",
     "accountNotFoundDesc": "You don't have a Netacuv account yet. To access the platform, please sign up first.",
     "registerOnNetacuv": "Sign up on Netacuv",

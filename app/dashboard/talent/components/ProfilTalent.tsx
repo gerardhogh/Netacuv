@@ -29,6 +29,7 @@ import PremiumRequiredModal from "../../../components/PremiumRequiredModal";
 import { compressImage } from "@/lib/compressImage";
 import { CustomSelect } from "@/components/ui/CustomSelect";
 import PremiumValidityCard from "@/app/components/PremiumValidityCard";
+import NetacuvVideoPlayer from "@/components/NetacuvVideoPlayer";
 
 type SubTab = "informations" | "reseaux" | "video";
 
